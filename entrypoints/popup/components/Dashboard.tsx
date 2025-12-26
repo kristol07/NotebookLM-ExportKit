@@ -7,12 +7,12 @@ import * as XLSX from 'xlsx';
 export default function Dashboard({ session }: { session: any }) {
     const [loading, setLoading] = useState(false);
 
-    const extractFromFrames = async (tabId: number, format: 'PDF' | 'CSV' | 'PPTX') => {
+    const extractFromFrames = async (tabId: number, format: 'PDF' | 'CSV' | 'PPTX' | 'JSON') => {
         try {
             const results = await browser.scripting.executeScript({
                 target: { tabId, allFrames: true },
                 args: [format],
-                func: (formatArg: 'PDF' | 'CSV' | 'PPTX') => {
+                func: (formatArg: 'PDF' | 'CSV' | 'PPTX' | 'JSON') => {
                     try {
                         const decodeDataAttribute = (raw: string) => {
                             const txt = document.createElement('textarea');
@@ -23,7 +23,7 @@ export default function Dashboard({ session }: { session: any }) {
                         const tryExtractFromDocument = (doc: Document, depth: number): any => {
                             if (!doc || depth > 4) return null;
 
-                            if (formatArg === 'CSV') {
+                            if (formatArg === 'CSV' || formatArg === 'JSON') {
                                 const dataElement = doc.querySelector('[data-app-data]');
                                 if (dataElement) {
                                     const rawData = dataElement.getAttribute('data-app-data');
@@ -59,7 +59,7 @@ export default function Dashboard({ session }: { session: any }) {
                             return null;
                         };
 
-                        if (formatArg === 'CSV') {
+                        if (formatArg === 'CSV' || formatArg === 'JSON') {
                             const result = tryExtractFromDocument(document, 0);
                             if (result) return result;
                             return { success: false, error: 'not_found', frameUrl: window.location.href };
@@ -92,7 +92,7 @@ export default function Dashboard({ session }: { session: any }) {
         await supabase.auth.signOut();
     };
 
-    const handleExport = async (format: 'PDF' | 'CSV' | 'PPTX') => {
+    const handleExport = async (format: 'PDF' | 'CSV' | 'PPTX' | 'JSON') => {
         setLoading(true);
         try {
             const tabs = await browser.tabs.query({ active: true, currentWindow: true });
@@ -123,12 +123,22 @@ export default function Dashboard({ session }: { session: any }) {
                     XLSX.utils.book_append_sheet(wb, ws, "Quiz");
                     XLSX.writeFile(wb, "notebooklm_quiz.xlsx");
 
-                    alert(`Success! Exported ${quizData.length} questions.`);
+                    alert(`Success! Exported ${quizData.length} questions to Excel.`);
+                } else if (format === 'JSON' && response.data?.quiz) {
+                    // Process Quiz Data for JSON
+                    const blob = new Blob([JSON.stringify(response.data.quiz, null, 2)], { type: 'application/json' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'notebooklm_quiz.json';
+                    a.click();
+                    URL.revokeObjectURL(url);
+                    alert(`Success! Exported ${response.data.quiz.length} questions to JSON.`);
                 } else {
                     alert(`Export initiated! Data preview: ${JSON.stringify(response.data).substring(0, 100)}...`);
                 }
             } else {
-                alert('Failed to extract content. Ensure you are on a NotebookLM page.');
+                alert('Failed to extract content. Ensure you are on a NotebookLM page and the content is visible.');
             }
         } catch (err) {
             console.error(err);
@@ -158,14 +168,24 @@ export default function Dashboard({ session }: { session: any }) {
                 >
                     Export Notes to PDF
                 </button>
-                <button
-                    onClick={() => handleExport('CSV')}
-                    disabled={loading}
-                    className="export-btn"
-                    style={{ padding: '10px', cursor: 'pointer' }}
-                >
-                    Export Quiz to Excel
-                </button>
+                <div style={{ display: 'flex', gap: '10px' }}>
+                    <button
+                        onClick={() => handleExport('CSV')}
+                        disabled={loading}
+                        className="export-btn"
+                        style={{ padding: '10px', cursor: 'pointer', flex: 1, fontSize: '13px' }}
+                    >
+                        Quiz to Excel
+                    </button>
+                    <button
+                        onClick={() => handleExport('JSON')}
+                        disabled={loading}
+                        className="export-btn"
+                        style={{ padding: '10px', cursor: 'pointer', flex: 1, fontSize: '13px' }}
+                    >
+                        Quiz to JSON
+                    </button>
+                </div>
                 <button
                     onClick={() => handleExport('PPTX')}
                     disabled={loading}
