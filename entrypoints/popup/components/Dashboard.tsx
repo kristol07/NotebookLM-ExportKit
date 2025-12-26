@@ -1,11 +1,42 @@
 
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { supabase } from '../../../utils/supabase';
 import { browser } from 'wxt/browser';
 import * as XLSX from 'xlsx';
 
 export default function Dashboard({ session }: { session: any }) {
     const [loading, setLoading] = useState(false);
+    const [notice, setNotice] = useState<{ type: 'success' | 'error' | 'info'; message: string } | null>(null);
+    const noticeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+    useEffect(() => {
+        return () => {
+            if (noticeTimerRef.current) {
+                clearTimeout(noticeTimerRef.current);
+            }
+        };
+    }, []);
+
+    const showNotice = (type: 'success' | 'error' | 'info', message: string) => {
+        setNotice({ type, message });
+        if (noticeTimerRef.current) {
+            clearTimeout(noticeTimerRef.current);
+        }
+        noticeTimerRef.current = setTimeout(() => setNotice(null), 3500);
+    };
+
+    const sanitizeFilename = (value: string) =>
+        value
+            .replace(/[\\/:*?"<>|]+/g, '-')
+            .replace(/\s+/g, ' ')
+            .trim()
+            .slice(0, 80);
+
+    const getTimestamp = () => {
+        const now = new Date();
+        const pad = (num: number) => num.toString().padStart(2, '0');
+        return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}_${pad(now.getHours())}-${pad(now.getMinutes())}-${pad(now.getSeconds())}`;
+    };
 
     const extractFromFrames = async (tabId: number, format: 'PDF' | 'CSV' | 'PPTX' | 'JSON') => {
         try {
@@ -97,10 +128,12 @@ export default function Dashboard({ session }: { session: any }) {
         try {
             const tabs = await browser.tabs.query({ active: true, currentWindow: true });
             if (tabs.length === 0 || !tabs[0].id) {
-                alert('No active tab found.');
+                showNotice('error', 'No active tab found.');
                 return;
             }
 
+            const tabTitle = sanitizeFilename(tabs[0].title || 'notebooklm');
+            const timestamp = getTimestamp();
             const response = await extractFromFrames(tabs[0].id, format);
 
             if (response && response.success) {
@@ -121,28 +154,29 @@ export default function Dashboard({ session }: { session: any }) {
                     const ws = XLSX.utils.json_to_sheet(quizData);
                     const wb = XLSX.utils.book_new();
                     XLSX.utils.book_append_sheet(wb, ws, "Quiz");
-                    XLSX.writeFile(wb, "notebooklm_quiz.xlsx");
+                    const excelName = `notebooklm_quiz_${tabTitle}_${timestamp}.xlsx`;
+                    XLSX.writeFile(wb, excelName);
 
-                    alert(`Success! Exported ${quizData.length} questions to Excel.`);
+                    showNotice('success', `Exported ${quizData.length} questions to Excel.`);
                 } else if (format === 'JSON' && response.data?.quiz) {
                     // Process Quiz Data for JSON
                     const blob = new Blob([JSON.stringify(response.data.quiz, null, 2)], { type: 'application/json' });
                     const url = URL.createObjectURL(blob);
                     const a = document.createElement('a');
                     a.href = url;
-                    a.download = 'notebooklm_quiz.json';
+                    a.download = `notebooklm_quiz_${tabTitle}_${timestamp}.json`;
                     a.click();
                     URL.revokeObjectURL(url);
-                    alert(`Success! Exported ${response.data.quiz.length} questions to JSON.`);
+                    showNotice('success', `Exported ${response.data.quiz.length} questions to JSON.`);
                 } else {
-                    alert(`Export initiated! Data preview: ${JSON.stringify(response.data).substring(0, 100)}...`);
+                    showNotice('info', `Export initiated. Data preview: ${JSON.stringify(response.data).substring(0, 100)}...`);
                 }
             } else {
-                alert('Failed to extract content. Ensure you are on a NotebookLM page and the content is visible.');
+                showNotice('error', 'Failed to extract content. Ensure you are on a NotebookLM page and the content is visible.');
             }
         } catch (err) {
             console.error(err);
-            alert('Error communicating with content script. Refresh the page and try again.');
+            showNotice('error', 'Error communicating with content script. Refresh the page and try again.');
         } finally {
             setLoading(false);
         }
@@ -158,6 +192,24 @@ export default function Dashboard({ session }: { session: any }) {
             <div className="user-info" style={{ marginBottom: '15px', fontSize: '14px' }}>
                 Status: <strong>{session?.user?.email ? 'Pro Member' : 'Free User'}</strong>
             </div>
+
+            {notice && (
+                <div
+                    style={{
+                        marginBottom: '12px',
+                        padding: '10px',
+                        borderRadius: '8px',
+                        fontSize: '12px',
+                        textAlign: 'left',
+                        backgroundColor:
+                            notice.type === 'success' ? '#e6f6ed' : notice.type === 'error' ? '#fdecea' : '#eef5ff',
+                        color: notice.type === 'success' ? '#0b6b3a' : notice.type === 'error' ? '#b42318' : '#1b4ea3',
+                        border: `1px solid ${notice.type === 'success' ? '#b7e4c7' : notice.type === 'error' ? '#f5c2c7' : '#c7ddff'}`,
+                    }}
+                >
+                    {notice.message}
+                </div>
+            )}
 
             <div className="actions" style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                 <button
