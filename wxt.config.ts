@@ -4,7 +4,7 @@ import { defineConfig } from 'wxt';
 export default defineConfig({
   modules: ['@wxt-dev/module-react'],
   manifest: {
-    permissions: ['activeTab', 'storage', 'identity', 'scripting'],
+    permissions: ['activeTab', 'scripting'],
     host_permissions: [
       'https://notebooklm.google.com/*',
       'https://*.usercontent.goog/*'
