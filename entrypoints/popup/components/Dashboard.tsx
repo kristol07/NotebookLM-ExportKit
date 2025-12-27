@@ -2,8 +2,10 @@ import React, { useEffect, useRef, useState } from 'react';
 import { supabase } from '../../../utils/supabase';
 import { browser } from 'wxt/browser';
 import { sanitizeFilename, getTimestamp } from '../../../utils/common';
-import { exportQuiz, extractFromFrames, ExportFormat } from '../../../utils/quiz-export';
-import { exportFlashcards } from '../../../utils/flashcard-export';
+import { ContentType, ExportFormat } from '../../../utils/export-core';
+import { exportByType } from '../../../utils/export-dispatch';
+import { extractByType } from '../../../utils/extractors';
+import { extractNotebookLmPayload } from '../../../utils/extractors/common';
 
 export default function Dashboard({ session }: { session: any }) {
     const [loading, setLoading] = useState(false);
@@ -30,7 +32,7 @@ export default function Dashboard({ session }: { session: any }) {
         await supabase.auth.signOut();
     };
 
-    const handleExport = async (format: ExportFormat) => {
+    const handleExport = async (format: ExportFormat, contentType?: ContentType) => {
         setLoading(true);
         try {
             const tabs = await browser.tabs.query({ active: true, currentWindow: true });
@@ -41,30 +43,30 @@ export default function Dashboard({ session }: { session: any }) {
 
             const tabTitle = sanitizeFilename(tabs[0].title || 'notebooklm');
             const timestamp = getTimestamp();
-            const response = await extractFromFrames(tabs[0].id, format);
-
-            if (response && response.success) {
-                if ((format === 'CSV' || format === 'JSON' || format === 'HTML' || format === 'Anki')) {
-                    if (response.data?.quiz) {
-                        const result = exportQuiz(response.data.quiz, format, tabTitle, timestamp);
-                        if (result.success) {
-                            showNotice('success', `Exported ${result.count} questions to ${format === 'CSV' ? 'Excel' : format}.`);
-                        } else {
-                            showNotice('error', result.error || 'Export failed.');
-                        }
-                    } else if (response.data?.flashcards) {
-                        const result = exportFlashcards(response.data.flashcards, format, tabTitle, timestamp);
-                        if (result.success) {
-                            showNotice('success', `Exported ${result.count} flashcards to ${format === 'CSV' ? 'Excel' : format}.`);
-                        } else {
-                            showNotice('error', result.error || 'Export failed.');
-                        }
+            if (contentType) {
+                const response = await extractByType(contentType, tabs[0].id, format);
+                if (response && response.success && response.payload) {
+                    const payload = response.payload;
+                    const result =
+                        payload.type === 'quiz'
+                            ? exportByType('quiz', payload.items, format, tabTitle, timestamp)
+                            : exportByType('flashcards', payload.items, format, tabTitle, timestamp);
+                    if (result.success) {
+                        const label = payload.type === 'quiz' ? 'questions' : 'flashcards';
+                        showNotice('success', `Exported ${result.count} ${label} to ${format === 'CSV' ? 'Excel' : format}.`);
                     } else {
-                        showNotice('info', `Export initiated. Data preview: ${JSON.stringify(response.data).substring(0, 100)}...`);
+                        showNotice('error', result.error || 'Export failed.');
                     }
-                } else {
-                    showNotice('info', `Export initiated. Data preview: ${JSON.stringify(response.data).substring(0, 100)}...`);
+                    return;
                 }
+
+                showNotice('error', `Failed to extract ${contentType} content. Ensure you are on a NotebookLM page and the content is visible.`);
+                return;
+            }
+
+            const response = await extractNotebookLmPayload(tabs[0].id, format);
+            if (response && response.success) {
+                showNotice('info', 'Export initiated.');
             } else {
                 showNotice('error', 'Failed to extract content. Ensure you are on a NotebookLM page and the content is visible.');
             }
@@ -114,39 +116,77 @@ export default function Dashboard({ session }: { session: any }) {
                 >
                     Export Notes to PDF
                 </button>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-                    <button
-                        onClick={() => handleExport('CSV')}
-                        disabled={loading}
-                        className="export-btn"
-                        style={{ padding: '10px', cursor: 'pointer', fontSize: '13px' }}
-                    >
-                        Cards/Quiz to Excel
-                    </button>
-                    <button
-                        onClick={() => handleExport('JSON')}
-                        disabled={loading}
-                        className="export-btn"
-                        style={{ padding: '10px', cursor: 'pointer', fontSize: '13px' }}
-                    >
-                        Cards/Quiz to JSON
-                    </button>
-                    <button
-                        onClick={() => handleExport('HTML')}
-                        disabled={loading}
-                        className="export-btn"
-                        style={{ padding: '10px', cursor: 'pointer', fontSize: '13px' }}
-                    >
-                        Cards/Quiz to HTML
-                    </button>
-                    <button
-                        onClick={() => handleExport('Anki')}
-                        disabled={loading}
-                        className="export-btn"
-                        style={{ padding: '10px', cursor: 'pointer', fontSize: '13px' }}
-                    >
-                        Cards/Quiz to Anki
-                    </button>
+                <div style={{ display: 'grid', gap: '10px' }}>
+                    <div style={{ fontSize: '12px', fontWeight: 600, color: '#444' }}>Quiz exports</div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                        <button
+                            onClick={() => handleExport('CSV', 'quiz')}
+                            disabled={loading}
+                            className="export-btn"
+                            style={{ padding: '10px', cursor: 'pointer', fontSize: '13px' }}
+                        >
+                            Quiz to Excel
+                        </button>
+                        <button
+                            onClick={() => handleExport('JSON', 'quiz')}
+                            disabled={loading}
+                            className="export-btn"
+                            style={{ padding: '10px', cursor: 'pointer', fontSize: '13px' }}
+                        >
+                            Quiz to JSON
+                        </button>
+                        <button
+                            onClick={() => handleExport('HTML', 'quiz')}
+                            disabled={loading}
+                            className="export-btn"
+                            style={{ padding: '10px', cursor: 'pointer', fontSize: '13px' }}
+                        >
+                            Quiz to HTML
+                        </button>
+                        <button
+                            onClick={() => handleExport('Anki', 'quiz')}
+                            disabled={loading}
+                            className="export-btn"
+                            style={{ padding: '10px', cursor: 'pointer', fontSize: '13px' }}
+                        >
+                            Quiz to Anki
+                        </button>
+                    </div>
+                    <div style={{ fontSize: '12px', fontWeight: 600, color: '#444' }}>Flashcard exports</div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                        <button
+                            onClick={() => handleExport('CSV', 'flashcards')}
+                            disabled={loading}
+                            className="export-btn"
+                            style={{ padding: '10px', cursor: 'pointer', fontSize: '13px' }}
+                        >
+                            Flashcards to Excel
+                        </button>
+                        <button
+                            onClick={() => handleExport('JSON', 'flashcards')}
+                            disabled={loading}
+                            className="export-btn"
+                            style={{ padding: '10px', cursor: 'pointer', fontSize: '13px' }}
+                        >
+                            Flashcards to JSON
+                        </button>
+                        <button
+                            onClick={() => handleExport('HTML', 'flashcards')}
+                            disabled={loading}
+                            className="export-btn"
+                            style={{ padding: '10px', cursor: 'pointer', fontSize: '13px' }}
+                        >
+                            Flashcards to HTML
+                        </button>
+                        <button
+                            onClick={() => handleExport('Anki', 'flashcards')}
+                            disabled={loading}
+                            className="export-btn"
+                            style={{ padding: '10px', cursor: 'pointer', fontSize: '13px' }}
+                        >
+                            Flashcards to Anki
+                        </button>
+                    </div>
                 </div>
                 <button
                     onClick={() => handleExport('PPTX')}

@@ -1,0 +1,36 @@
+# Export Architecture Notes
+
+This document summarizes the current export refactor and outlines how to extend it for new content types and formats. It also records the future plan for user-provided JSON inputs (not implemented).
+
+## Current Structure
+
+### Core
+- `utils/export-core.ts` owns shared types and validation.
+- `utils/export-dispatch.ts` routes by content type to the correct exporter and enforces per-type format support.
+
+### Content-specific
+- `utils/quiz-export.ts` and `utils/flashcard-export.ts` implement formatters for CSV/JSON/HTML/Anki and keep HTML UIs distinct.
+- `utils/extractors/` contains one extractor per content type and a shared `data-app-data` extraction helper.
+
+## Extending for New Content Types (Normal Workflow)
+
+Treat **type-specific extractors and type-specific format support** as the default. Quiz and flashcards only share formats by coincidence. New content types should bring their own extractor and format list even if they overlap.
+
+Recommended steps:
+1. **Type-specific extraction**
+   - Keep extraction in `utils/extractors/` and add one extractor per content type.
+2. **Supported formats per type**
+   - Define a per-type supported-format list (e.g., `supportedFormats: Record<ContentType, ExportFormat[]>`) and enforce it before dispatch.
+3. **Type-specific exporters**
+   - Keep each content type in its own file with format-specific conversion logic (e.g., `exportSlidesToPptx`, `exportMindmapToOpml`).
+
+This keeps the core small and makes it straightforward to add new export types without assuming shared formats or extraction logic.
+
+## Future: User JSON → HTML (Not Implemented)
+
+Planned direction:
+- Add a UI to let users **select the content type** (quiz or flashcards).
+- Validate against the JSON schemas in `utils/export-schemas.ts`.
+- Render HTML using the existing per-type HTML templates.
+
+This is intentionally deferred for now.

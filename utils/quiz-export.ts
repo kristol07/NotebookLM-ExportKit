@@ -1,102 +1,9 @@
 
 import * as XLSX from 'xlsx';
-import { browser } from 'wxt/browser';
-
-export type ExportFormat = 'PDF' | 'CSV' | 'PPTX' | 'JSON' | 'HTML' | 'Anki';
-
-export const downloadBlob = (content: string | Blob, filename: string, contentType: string) => {
-    const blob = content instanceof Blob ? content : new Blob([content], { type: contentType });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    a.click();
-    URL.revokeObjectURL(url);
-};
-
-export const extractFromFrames = async (tabId: number, format: ExportFormat) => {
-    try {
-        const results = await browser.scripting.executeScript({
-            target: { tabId, allFrames: true },
-            args: [format],
-            func: (formatArg: ExportFormat) => {
-                try {
-                    const decodeDataAttribute = (raw: string) => {
-                        const txt = document.createElement('textarea');
-                        txt.innerHTML = raw;
-                        return txt.value;
-                    };
-
-                    const tryExtractFromDocument = (doc: Document, depth: number): any => {
-                        if (!doc || depth > 4) return null;
-
-                        if (formatArg === 'CSV' || formatArg === 'JSON' || formatArg === 'HTML' || formatArg === 'Anki') {
-                            const dataElement = doc.querySelector('[data-app-data]');
-                            if (dataElement) {
-                                const rawData = dataElement.getAttribute('data-app-data');
-                                if (!rawData) {
-                                    return { success: false, error: 'empty_data', frameUrl: doc.URL };
-                                }
-
-                                const jsonString = decodeDataAttribute(rawData);
-                                try {
-                                    const jsonData = JSON.parse(jsonString);
-                                    if (jsonData.quiz || jsonData.notes || jsonData.sources || jsonData.flashcards) {
-                                        return { success: true, data: jsonData, frameUrl: doc.URL };
-                                    }
-                                    return { success: false, error: 'invalid_payload', frameUrl: doc.URL };
-                                } catch (parseErr) {
-                                    return { success: false, error: 'parse_error', frameUrl: doc.URL };
-                                }
-                            }
-                        }
-
-                        const iframes = Array.from(doc.querySelectorAll('iframe'));
-                        for (const frame of iframes) {
-                            try {
-                                const frameDoc = frame.contentDocument || frame.contentWindow?.document;
-                                if (!frameDoc) continue;
-                                const nestedResult = tryExtractFromDocument(frameDoc, depth + 1);
-                                if (nestedResult?.success) return nestedResult;
-                            } catch (innerErr) {
-                                // Cross-origin or inaccessible frame; ignore.
-                            }
-                        }
-
-                        return null;
-                    };
-
-                    if (formatArg === 'CSV' || formatArg === 'JSON' || formatArg === 'HTML' || formatArg === 'Anki') {
-                        const result = tryExtractFromDocument(document, 0);
-                        if (result) return result;
-                        return { success: false, error: 'not_found', frameUrl: window.location.href };
-                    }
-
-                    const content = document.body.innerText;
-                    if (content.length > 500) {
-                        return { success: true, data: content.substring(0, 100) + '...', frameUrl: window.location.href };
-                    }
-
-                    return { success: false, error: 'not_found', frameUrl: window.location.href };
-                } catch (error) {
-                    return { success: false, error: 'script_error', frameUrl: window.location.href };
-                }
-            }
-        });
-
-        const success = results.find((result) => result.result?.success);
-        if (success?.result?.success) {
-            return success.result;
-        }
-
-        return results.find((result) => result.result)?.result ?? null;
-    } catch (error) {
-        return null;
-    }
-};
+import { downloadBlob, ExportFormat, ExportResult, QuizItem } from './export-core';
 
 
-export const generateQuizHtml = (quizData: any[], title: string) => {
+export const generateQuizHtml = (quizData: QuizItem[], title: string) => {
     const jsonData = JSON.stringify(quizData);
     return `<!DOCTYPE html>
 <html lang="en">
@@ -452,9 +359,14 @@ export const generateQuizHtml = (quizData: any[], title: string) => {
 </html>`;
 };
 
-export const exportQuiz = (quizData: any[], format: ExportFormat, tabTitle: string, timestamp: string) => {
+export const exportQuiz = (
+    quizData: QuizItem[],
+    format: ExportFormat,
+    tabTitle: string,
+    timestamp: string
+): ExportResult => {
     if (format === 'CSV') {
-        const rows = quizData.map((q: any, index: number) => ({
+        const rows = quizData.map((q, index: number) => ({
             ID: index + 1,
             Question: q.question,
             "Option A": q.answerOptions[0]?.text || "",
@@ -465,7 +377,7 @@ export const exportQuiz = (quizData: any[], format: ExportFormat, tabTitle: stri
             "Rationale C": q.answerOptions[2]?.rationale || "",
             "Option D": q.answerOptions[3]?.text || "",
             "Rationale D": q.answerOptions[3]?.rationale || "",
-            "Correct Answer": q.answerOptions.find((o: any) => o.isCorrect)?.text || "",
+            "Correct Answer": q.answerOptions.find((o) => o.isCorrect)?.text || "",
             Hint: q.hint || ""
         }));
 
@@ -491,17 +403,17 @@ export const exportQuiz = (quizData: any[], format: ExportFormat, tabTitle: stri
     }
 
     if (format === 'Anki') {
-        const rows = quizData.map((q: any) => {
+        const rows = quizData.map((q) => {
             // Front: Question + Options
-            const options = q.answerOptions.map((o: any, i: number) => {
+            const options = q.answerOptions.map((o, i: number) => {
                 const label = String.fromCharCode(65 + i);
                 return `${label}. ${o.text}`;
             }).join('<br>');
             const front = `${q.question}<br><br>${options}`.replace(/\n/g, '<br>').replace(/\t/g, '    ');
 
             // Back: Correct Answer + Rationale
-            const correctOption = q.answerOptions.find((o: any) => o.isCorrect);
-            const correctIndex = q.answerOptions.indexOf(correctOption);
+            const correctIndex = q.answerOptions.findIndex((o) => o.isCorrect);
+            const correctOption = q.answerOptions[correctIndex];
             const correctLabel = correctIndex !== -1 ? String.fromCharCode(65 + correctIndex) : '?';
             const back = `<b>Correct Answer: ${correctLabel}</b><br>${correctOption?.text || ''}<br><br><i>${correctOption?.rationale || ''}</i>`.replace(/\n/g, '<br>').replace(/\t/g, '    ');
 

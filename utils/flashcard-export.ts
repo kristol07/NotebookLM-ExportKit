@@ -1,8 +1,8 @@
 import * as XLSX from 'xlsx';
-import { ExportFormat, downloadBlob } from './quiz-export';
+import { ExportFormat, ExportResult, FlashcardItem, downloadBlob } from './export-core';
 
 
-export const generateFlashcardsHtml = (flashcardsData: any[], title: string) => {
+export const generateFlashcardsHtml = (flashcardsData: FlashcardItem[], title: string) => {
     const jsonData = JSON.stringify(flashcardsData);
     return `<!DOCTYPE html>
 <html lang="en">
@@ -289,9 +289,14 @@ export const generateFlashcardsHtml = (flashcardsData: any[], title: string) => 
 </html>`;
 };
 
-export const exportFlashcards = (flashcardsData: any[], format: ExportFormat, tabTitle: string, timestamp: string) => {
+export const exportFlashcards = (
+    flashcardsData: FlashcardItem[],
+    format: ExportFormat,
+    tabTitle: string,
+    timestamp: string
+): ExportResult => {
     if (format === 'CSV') {
-        const rows = flashcardsData.map((c: any, index: number) => ({
+        const rows = flashcardsData.map((c, index: number) => ({
             ID: index + 1,
             Front: c.f,
             Back: c.b
@@ -349,7 +354,7 @@ export const exportFlashcards = (flashcardsData: any[], format: ExportFormat, ta
             return processed;
         };
 
-        const rows = flashcardsData.map((c: any) => {
+        const rows = flashcardsData.map((c) => {
             const front = formatForAnki(c.f);
             const back = formatForAnki(c.b);
             return `${front}\t${back}`;

@@ -4,20 +4,15 @@ This document describes the technical implementation of the quiz export feature 
 
 ## Overview
 
-The quiz export functionality allows users to extract quiz data from Google NotebookLM and save it as an Excel (.xlsx), JSON, or HTML file. The process involves:
-1.  Targeting the active browser tab.
-2.  Injecting a content script into **all frames** (including iframes) to locate the quiz data.
-3.  extracting and decoding the proprietary `data-app-data` attribute.
-4.  Parsing the JSON content.
-5.  Formatting and exporting the data using the `xlsx` library.
+The quiz export flow now follows the shared export architecture: extract typed data, validate it, then dispatch to a type-specific exporter. Supported formats are Excel (.xlsx via CSV), JSON, HTML, and Anki-compatible (.txt).
 
 ## Architecture
 
 ### 1. Trigger (Dashboard Component)
-The export process is initiated in `entrypoints/popup/components/Dashboard.tsx` via the `handleExport('CSV')` function.
+The export process is initiated in `entrypoints/popup/components/Dashboard.tsx` via `handleExport('CSV' | 'JSON' | 'HTML' | 'Anki', 'quiz')`.
 
-### 2. Script Injection
-The extension uses the `browser.scripting.executeScript` API to inject extraction logic. A critical configuration is `allFrames: true`, which is required because NotebookLM embeds content within cross-origin iframes (e.g., `usercontent.goog`).
+### 2. Extraction (Type-specific + Shared Core)
+`extractByType('quiz', ...)` calls the quiz extractor in `utils/extractors/quiz.ts`, which uses `extractNotebookLmPayload` from `utils/extractors/common.ts`. The injected script runs in **all frames** (`allFrames: true`) because NotebookLM embeds content within cross-origin iframes (e.g., `usercontent.goog`).
 
 ```typescript
 // Dashboard.tsx
@@ -28,42 +23,16 @@ const results = await browser.scripting.executeScript({
 });
 ```
 
-### 3. Content Extraction Logic
-The injected script runs inside every frame of the page. It performs the following steps:
+### 3. Validation + Normalization
+`utils/export-core.ts` validates the extracted payload via `validateQuizItems` and normalizes it to:
+`{ type: 'quiz', items: QuizItem[], source: 'notebooklm' }`.
 
-1.  **Locate Data Element**: Searches for an element with the `[data-app-data]` attribute.
-    ```javascript
-    const dataElement = doc.querySelector('[data-app-data]');
-    ```
-2.  **Decode Content**: The content inside `data-app-data` is HTML-encoded. A helper function decodes it:
-    ```typescript
-    const decodeDataAttribute = (raw: string) => {
-        const txt = document.createElement('textarea');
-        txt.innerHTML = raw;
-        return txt.value;
-    };
-    ```
-3.  **Parse JSON**: The decoded string is parsed as JSON.
-4.  **Validate**: Checks for the existence of `quiz`, `notes`, or `sources` properties.
-
-### 4. Data Processing
-The `Dashboard.tsx` component receives results from all frames but filters for the one that returns `{ success: true }`.
-
-If valid quiz data is found:
-1.  **Mapping**: The raw JSON is mapped to a flat structure suitable for Excel rows:
-    *   ID
-    *   Question
-    *   Options A-D
-    *   Rationales A-D
-    *   Correct Answer
-    *   Hint
-    Example row layout:
-    ```
-    ID, Question, Option A, Rationale A, Option B, Rationale B, Option C, Rationale C, Option D, Rationale D, Correct Answer, Hint
-    ```
-2.  **Excel Generation**: The `xlsx` library converts the JSON array to a worksheet and initiates a download.
-3.  **JSON Export**: The raw quiz data is stringified and downloaded as a `.json` file.
-4.  **HTML Export**: A standalone HTML document is generated using a template, including CSS for styling, and downloaded as a `.html` file.
+### 4. Dispatch + Export
+`exportByType` in `utils/export-dispatch.ts` enforces supported formats and routes to `utils/quiz-export.ts`, which:
+1.  **Excel**: Maps items to a flat row shape (ID, Question, Options A-D, Rationales A-D, Correct Answer, Hint) and writes a `.xlsx` file with `xlsx`.
+2.  **JSON**: Stringifies the `QuizItem[]` array directly (no wrapper object).
+3.  **HTML**: Generates a standalone interactive HTML quiz UI.
+4.  **Anki**: Creates a tab-delimited `.txt` file with question/options on the front and correct answer + rationale on the back.
 
 ## Permissions
 
