@@ -1,4 +1,5 @@
 import * as XLSX from 'xlsx';
+import { ExportFormat, downloadBlob } from './quiz-export';
 
 
 export const generateFlashcardsHtml = (flashcardsData: any[], title: string) => {
@@ -313,6 +314,50 @@ export const exportFlashcards = (flashcardsData: any[], format: ExportFormat, ta
         const html = generateFlashcardsHtml(flashcardsData, tabTitle);
         const filename = `notebooklm_flashcards_${tabTitle}_${timestamp}.html`;
         downloadBlob(html, filename, 'text/html');
+        return { success: true, count: flashcardsData.length };
+    }
+
+    if (format === 'Anki') {
+        const formatForAnki = (text: string) => {
+            // 1. Replace existing newlines with <br>
+            // 2. Wrap long lines if they don't have natural breaks (simple heuristic)
+            let processed = text.replace(/\n/g, '<br>');
+
+            // Simple auto-wrapping for very long continuous text without breaks
+            // This is a basic implementation; robust wrapping would require more complex logic
+            // Anki handles wrapping visually, but the user requested "wrap long lines".
+            // If the user meant "visual wrapping in the file", we just add newlines.
+            // If they meant "hard wrap in the content so it shows wrapped in Anki", we use <br>.
+            // We'll add a check for extremely long words or segments without spaces
+            const maxLineLen = 80;
+            if (processed.length > maxLineLen && !processed.includes('<br>')) {
+                const chunks = [];
+                let current = processed;
+                while (current.length > 0) {
+                    let splitIndex = current.lastIndexOf(' ', maxLineLen);
+                    if (splitIndex === -1 && current.length > maxLineLen) splitIndex = maxLineLen; // Force split if no space
+                    if (splitIndex === -1) splitIndex = current.length;
+
+                    chunks.push(current.substring(0, splitIndex).trim());
+                    current = current.substring(splitIndex).trim();
+                }
+                processed = chunks.join('<br>');
+            }
+
+            // 3. Escape tabs (Anki separator)
+            processed = processed.replace(/\t/g, '    ');
+            return processed;
+        };
+
+        const rows = flashcardsData.map((c: any) => {
+            const front = formatForAnki(c.f);
+            const back = formatForAnki(c.b);
+            return `${front}\t${back}`;
+        });
+
+        const content = rows.join('\n');
+        const filename = `notebooklm_flashcards_${tabTitle}_${timestamp}.txt`;
+        downloadBlob(content, filename, 'text/plain');
         return { success: true, count: flashcardsData.length };
     }
 

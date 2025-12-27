@@ -44,7 +44,7 @@ export default function Dashboard({ session }: { session: any }) {
             const response = await extractFromFrames(tabs[0].id, format);
 
             if (response && response.success) {
-                if ((format === 'CSV' || format === 'JSON' || format === 'HTML')) {
+                if ((format === 'CSV' || format === 'JSON' || format === 'HTML' || format === 'Anki')) {
                     if (response.data?.quiz) {
                         const result = exportQuiz(response.data.quiz, format, tabTitle, timestamp);
                         if (result.success) {
@@ -114,12 +114,12 @@ export default function Dashboard({ session }: { session: any }) {
                 >
                     Export Notes to PDF
                 </button>
-                <div style={{ display: 'flex', gap: '10px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
                     <button
                         onClick={() => handleExport('CSV')}
                         disabled={loading}
                         className="export-btn"
-                        style={{ padding: '10px', cursor: 'pointer', flex: 1, fontSize: '13px' }}
+                        style={{ padding: '10px', cursor: 'pointer', fontSize: '13px' }}
                     >
                         Cards/Quiz to Excel
                     </button>
@@ -127,7 +127,7 @@ export default function Dashboard({ session }: { session: any }) {
                         onClick={() => handleExport('JSON')}
                         disabled={loading}
                         className="export-btn"
-                        style={{ padding: '10px', cursor: 'pointer', flex: 1, fontSize: '13px' }}
+                        style={{ padding: '10px', cursor: 'pointer', fontSize: '13px' }}
                     >
                         Cards/Quiz to JSON
                     </button>
@@ -135,9 +135,17 @@ export default function Dashboard({ session }: { session: any }) {
                         onClick={() => handleExport('HTML')}
                         disabled={loading}
                         className="export-btn"
-                        style={{ padding: '10px', cursor: 'pointer', flex: 1, fontSize: '13px' }}
+                        style={{ padding: '10px', cursor: 'pointer', fontSize: '13px' }}
                     >
                         Cards/Quiz to HTML
+                    </button>
+                    <button
+                        onClick={() => handleExport('Anki')}
+                        disabled={loading}
+                        className="export-btn"
+                        style={{ padding: '10px', cursor: 'pointer', fontSize: '13px' }}
+                    >
+                        Cards/Quiz to Anki
                     </button>
                 </div>
                 <button

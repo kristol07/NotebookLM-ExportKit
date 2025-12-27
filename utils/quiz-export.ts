@@ -2,7 +2,7 @@
 import * as XLSX from 'xlsx';
 import { browser } from 'wxt/browser';
 
-export type ExportFormat = 'PDF' | 'CSV' | 'PPTX' | 'JSON' | 'HTML';
+export type ExportFormat = 'PDF' | 'CSV' | 'PPTX' | 'JSON' | 'HTML' | 'Anki';
 
 export const downloadBlob = (content: string | Blob, filename: string, contentType: string) => {
     const blob = content instanceof Blob ? content : new Blob([content], { type: contentType });
@@ -30,7 +30,7 @@ export const extractFromFrames = async (tabId: number, format: ExportFormat) => 
                     const tryExtractFromDocument = (doc: Document, depth: number): any => {
                         if (!doc || depth > 4) return null;
 
-                        if (formatArg === 'CSV' || formatArg === 'JSON' || formatArg === 'HTML') {
+                        if (formatArg === 'CSV' || formatArg === 'JSON' || formatArg === 'HTML' || formatArg === 'Anki') {
                             const dataElement = doc.querySelector('[data-app-data]');
                             if (dataElement) {
                                 const rawData = dataElement.getAttribute('data-app-data');
@@ -66,7 +66,7 @@ export const extractFromFrames = async (tabId: number, format: ExportFormat) => 
                         return null;
                     };
 
-                    if (formatArg === 'CSV' || formatArg === 'JSON' || formatArg === 'HTML') {
+                    if (formatArg === 'CSV' || formatArg === 'JSON' || formatArg === 'HTML' || formatArg === 'Anki') {
                         const result = tryExtractFromDocument(document, 0);
                         if (result) return result;
                         return { success: false, error: 'not_found', frameUrl: window.location.href };
@@ -487,6 +487,30 @@ export const exportQuiz = (quizData: any[], format: ExportFormat, tabTitle: stri
         const html = generateQuizHtml(quizData, tabTitle);
         const filename = `notebooklm_quiz_${tabTitle}_${timestamp}.html`;
         downloadBlob(html, filename, 'text/html');
+        return { success: true, count: quizData.length };
+    }
+
+    if (format === 'Anki') {
+        const rows = quizData.map((q: any) => {
+            // Front: Question + Options
+            const options = q.answerOptions.map((o: any, i: number) => {
+                const label = String.fromCharCode(65 + i);
+                return `${label}. ${o.text}`;
+            }).join('<br>');
+            const front = `${q.question}<br><br>${options}`.replace(/\n/g, '<br>').replace(/\t/g, '    ');
+
+            // Back: Correct Answer + Rationale
+            const correctOption = q.answerOptions.find((o: any) => o.isCorrect);
+            const correctIndex = q.answerOptions.indexOf(correctOption);
+            const correctLabel = correctIndex !== -1 ? String.fromCharCode(65 + correctIndex) : '?';
+            const back = `<b>Correct Answer: ${correctLabel}</b><br>${correctOption?.text || ''}<br><br><i>${correctOption?.rationale || ''}</i>`.replace(/\n/g, '<br>').replace(/\t/g, '    ');
+
+            return `${front}\t${back}`;
+        });
+
+        const content = rows.join('\n');
+        const filename = `notebooklm_quiz_${tabTitle}_${timestamp}.txt`;
+        downloadBlob(content, filename, 'text/plain');
         return { success: true, count: quizData.length };
     }
 
