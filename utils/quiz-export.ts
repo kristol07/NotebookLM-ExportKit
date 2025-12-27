@@ -41,7 +41,7 @@ export const extractFromFrames = async (tabId: number, format: ExportFormat) => 
                                 const jsonString = decodeDataAttribute(rawData);
                                 try {
                                     const jsonData = JSON.parse(jsonString);
-                                    if (jsonData.quiz || jsonData.notes || jsonData.sources) {
+                                    if (jsonData.quiz || jsonData.notes || jsonData.sources || jsonData.flashcards) {
                                         return { success: true, data: jsonData, frameUrl: doc.URL };
                                     }
                                     return { success: false, error: 'invalid_payload', frameUrl: doc.URL };
@@ -492,3 +492,4 @@ export const exportQuiz = (quizData: any[], format: ExportFormat, tabTitle: stri
 
     return { success: false, error: 'Unsupported format' };
 };
+

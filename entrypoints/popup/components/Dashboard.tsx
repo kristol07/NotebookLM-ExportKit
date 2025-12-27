@@ -3,6 +3,7 @@ import { supabase } from '../../../utils/supabase';
 import { browser } from 'wxt/browser';
 import { sanitizeFilename, getTimestamp } from '../../../utils/common';
 import { exportQuiz, extractFromFrames, ExportFormat } from '../../../utils/quiz-export';
+import { exportFlashcards } from '../../../utils/flashcard-export';
 
 export default function Dashboard({ session }: { session: any }) {
     const [loading, setLoading] = useState(false);
@@ -43,12 +44,23 @@ export default function Dashboard({ session }: { session: any }) {
             const response = await extractFromFrames(tabs[0].id, format);
 
             if (response && response.success) {
-                if ((format === 'CSV' || format === 'JSON' || format === 'HTML') && response.data?.quiz) {
-                    const result = exportQuiz(response.data.quiz, format, tabTitle, timestamp);
-                    if (result.success) {
-                        showNotice('success', `Exported ${result.count} questions to ${format === 'CSV' ? 'Excel' : format}.`);
+                if ((format === 'CSV' || format === 'JSON' || format === 'HTML')) {
+                    if (response.data?.quiz) {
+                        const result = exportQuiz(response.data.quiz, format, tabTitle, timestamp);
+                        if (result.success) {
+                            showNotice('success', `Exported ${result.count} questions to ${format === 'CSV' ? 'Excel' : format}.`);
+                        } else {
+                            showNotice('error', result.error || 'Export failed.');
+                        }
+                    } else if (response.data?.flashcards) {
+                        const result = exportFlashcards(response.data.flashcards, format, tabTitle, timestamp);
+                        if (result.success) {
+                            showNotice('success', `Exported ${result.count} flashcards to ${format === 'CSV' ? 'Excel' : format}.`);
+                        } else {
+                            showNotice('error', result.error || 'Export failed.');
+                        }
                     } else {
-                        showNotice('error', result.error || 'Export failed.');
+                        showNotice('info', `Export initiated. Data preview: ${JSON.stringify(response.data).substring(0, 100)}...`);
                     }
                 } else {
                     showNotice('info', `Export initiated. Data preview: ${JSON.stringify(response.data).substring(0, 100)}...`);
@@ -109,7 +121,7 @@ export default function Dashboard({ session }: { session: any }) {
                         className="export-btn"
                         style={{ padding: '10px', cursor: 'pointer', flex: 1, fontSize: '13px' }}
                     >
-                        Quiz to Excel
+                        Cards/Quiz to Excel
                     </button>
                     <button
                         onClick={() => handleExport('JSON')}
@@ -117,7 +129,7 @@ export default function Dashboard({ session }: { session: any }) {
                         className="export-btn"
                         style={{ padding: '10px', cursor: 'pointer', flex: 1, fontSize: '13px' }}
                     >
-                        Quiz to JSON
+                        Cards/Quiz to JSON
                     </button>
                     <button
                         onClick={() => handleExport('HTML')}
@@ -125,7 +137,7 @@ export default function Dashboard({ session }: { session: any }) {
                         className="export-btn"
                         style={{ padding: '10px', cursor: 'pointer', flex: 1, fontSize: '13px' }}
                     >
-                        Quiz to HTML
+                        Cards/Quiz to HTML
                     </button>
                 </div>
                 <button
