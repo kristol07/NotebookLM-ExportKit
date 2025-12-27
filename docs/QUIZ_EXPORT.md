@@ -54,9 +54,13 @@ If valid quiz data is found:
     *   ID
     *   Question
     *   Options A-D
+    *   Rationales A-D
     *   Correct Answer
-    *   Rationale
     *   Hint
+    Example row layout:
+    ```
+    ID, Question, Option A, Rationale A, Option B, Rationale B, Option C, Rationale C, Option D, Rationale D, Correct Answer, Hint
+    ```
 2.  **Excel Generation**: The `xlsx` library converts the JSON array to a worksheet and initiates a download.
 3.  **JSON Export**: The raw quiz data is stringified and downloaded as a `.json` file.
 4.  **HTML Export**: A standalone HTML document is generated using a template, including CSS for styling, and downloaded as a `.html` file.

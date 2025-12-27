@@ -458,11 +458,14 @@ export const exportQuiz = (quizData: any[], format: ExportFormat, tabTitle: stri
             ID: index + 1,
             Question: q.question,
             "Option A": q.answerOptions[0]?.text || "",
+            "Rationale A": q.answerOptions[0]?.rationale || "",
             "Option B": q.answerOptions[1]?.text || "",
+            "Rationale B": q.answerOptions[1]?.rationale || "",
             "Option C": q.answerOptions[2]?.text || "",
+            "Rationale C": q.answerOptions[2]?.rationale || "",
             "Option D": q.answerOptions[3]?.text || "",
+            "Rationale D": q.answerOptions[3]?.rationale || "",
             "Correct Answer": q.answerOptions.find((o: any) => o.isCorrect)?.text || "",
-            Rationale: q.answerOptions.find((o: any) => o.rationale)?.rationale || "",
             Hint: q.hint || ""
         }));
 
