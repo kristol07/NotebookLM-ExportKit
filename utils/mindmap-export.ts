@@ -41,6 +41,60 @@ const parseNumberAttr = (value: string | null): number | null => {
     return Number.isFinite(num) ? num : null;
 };
 
+type TransformToken = { type: 'translate' | 'scale'; values: number[] };
+
+const parseTransformTokens = (value: string | null): TransformToken[] => {
+    if (!value) return [];
+    const tokens: TransformToken[] = [];
+    const regex = /(\w+)\(([^)]+)\)/g;
+    let match: RegExpExecArray | null = null;
+    while ((match = regex.exec(value))) {
+        const type = match[1];
+        const raw = match[2]
+            .split(/[\s,]+/)
+            .map((part) => parseFloat(part))
+            .filter((num) => Number.isFinite(num));
+        if (type === 'translate' && raw.length >= 1) {
+            tokens.push({ type: 'translate', values: raw });
+        } else if (type === 'scale' && raw.length >= 1) {
+            tokens.push({ type: 'scale', values: raw });
+        }
+    }
+    return tokens;
+};
+
+const applyTokensToPoint = (point: { x: number; y: number }, tokens: TransformToken[]) => {
+    let { x, y } = point;
+    for (let i = tokens.length - 1; i >= 0; i -= 1) {
+        const token = tokens[i];
+        if (token.type === 'translate') {
+            const tx = token.values[0] ?? 0;
+            const ty = token.values[1] ?? 0;
+            x += tx;
+            y += ty;
+        } else if (token.type === 'scale') {
+            const sx = token.values[0] ?? 1;
+            const sy = token.values.length > 1 ? token.values[1] : sx;
+            x *= sx;
+            y *= sy;
+        }
+    }
+    return { x, y };
+};
+
+const applyAncestorTransforms = (point: { x: number; y: number }, element: Element | null) => {
+    let current = element;
+    let output = { ...point };
+    while (current && current.tagName.toLowerCase() !== 'svg') {
+        const tokens = parseTransformTokens(current.getAttribute('transform'));
+        if (tokens.length > 0) {
+            output = applyTokensToPoint(output, tokens);
+        }
+        current = current.parentElement;
+    }
+    return output;
+};
+
 const enhanceSvg = (svgContent: string): string | null => {
     const parser = new DOMParser();
     const doc = parser.parseFromString(svgContent, 'image/svg+xml');
@@ -71,6 +125,8 @@ const enhanceSvg = (svgContent: string): string | null => {
         const rect = node.querySelector('rect');
         const rectX = parseNumberAttr(rect ? rect.getAttribute('x') : null) ?? 0;
         const rectWidth = parseNumberAttr(rect ? rect.getAttribute('width') : null) ?? 0;
+        const rectY = parseNumberAttr(rect ? rect.getAttribute('y') : null) ?? 0;
+        const rectHeight = parseNumberAttr(rect ? rect.getAttribute('height') : null) ?? 0;
         const circle = node.querySelector('circle');
         const circleTranslate = parseTranslate(circle ? circle.getAttribute('transform') : null);
         const rightAnchorX = nodeTranslate.x + (circleTranslate?.x ?? rectX + rectWidth);
@@ -84,6 +140,65 @@ const enhanceSvg = (svgContent: string): string | null => {
             rightAnchorX,
             rightAnchorY
         });
+    });
+
+    let minX = Number.POSITIVE_INFINITY;
+    let minY = Number.POSITIVE_INFINITY;
+    let maxX = Number.NEGATIVE_INFINITY;
+    let maxY = Number.NEGATIVE_INFINITY;
+
+    const updateBounds = (x: number, y: number) => {
+        minX = Math.min(minX, x);
+        minY = Math.min(minY, y);
+        maxX = Math.max(maxX, x);
+        maxY = Math.max(maxY, y);
+    };
+
+    nodes.forEach((node) => {
+        const nodeTranslate = parseTranslate(node.getAttribute('transform')) || { x: 0, y: 0 };
+        const rect = node.querySelector('rect');
+        const rectX = parseNumberAttr(rect ? rect.getAttribute('x') : null) ?? 0;
+        const rectY = parseNumberAttr(rect ? rect.getAttribute('y') : null) ?? 0;
+        const rectWidth = parseNumberAttr(rect ? rect.getAttribute('width') : null) ?? 0;
+        const rectHeight = parseNumberAttr(rect ? rect.getAttribute('height') : null) ?? 0;
+
+        const rectLeft = nodeTranslate.x + rectX;
+        const rectTop = nodeTranslate.y + rectY;
+        const rectRight = rectLeft + rectWidth;
+        const rectBottom = rectTop + rectHeight;
+
+        const rectTopLeft = applyAncestorTransforms({ x: rectLeft, y: rectTop }, node.parentElement);
+        const rectBottomRight = applyAncestorTransforms({ x: rectRight, y: rectBottom }, node.parentElement);
+        updateBounds(rectTopLeft.x, rectTopLeft.y);
+        updateBounds(rectBottomRight.x, rectBottomRight.y);
+
+        const circle = node.querySelector('circle');
+        const circleTranslate = parseTranslate(circle ? circle.getAttribute('transform') : null);
+        const circleRadius = parseNumberAttr(circle ? circle.getAttribute('r') : null) ?? 0;
+        if (circleTranslate) {
+            const cx = nodeTranslate.x + circleTranslate.x;
+            const cy = nodeTranslate.y + circleTranslate.y;
+            const topLeft = applyAncestorTransforms({ x: cx - circleRadius, y: cy - circleRadius }, node.parentElement);
+            const bottomRight = applyAncestorTransforms(
+                { x: cx + circleRadius, y: cy + circleRadius },
+                node.parentElement
+            );
+            updateBounds(topLeft.x, topLeft.y);
+            updateBounds(bottomRight.x, bottomRight.y);
+        }
+    });
+
+    links.forEach((link) => {
+        const d = link.getAttribute('d') || '';
+        const numbers = d.match(/-?\d*\.?\d+(?:e[-+]?\d+)?/gi);
+        if (!numbers || numbers.length < 2) return;
+        for (let i = 0; i + 1 < numbers.length; i += 2) {
+            const x = parseFloat(numbers[i]);
+            const y = parseFloat(numbers[i + 1]);
+            if (!Number.isFinite(x) || !Number.isFinite(y)) continue;
+            const point = applyAncestorTransforms({ x, y }, link.parentElement);
+            updateBounds(point.x, point.y);
+        }
     });
 
     const findNodeByAnchor = (
@@ -151,6 +266,30 @@ const enhanceSvg = (svgContent: string): string | null => {
         link.setAttribute('data-parent-id', parentId);
         link.setAttribute('data-child-id', childId);
     });
+
+    if (Number.isFinite(minX) && Number.isFinite(minY) && Number.isFinite(maxX) && Number.isFinite(maxY)) {
+        const padding = 40;
+        const controlMinX = 0;
+        const controlMinY = 0;
+        const controlMaxX = 180;
+        const controlMaxY = 100;
+        minX = Math.min(minX, controlMinX) - padding;
+        minY = Math.min(minY, controlMinY) - padding;
+        maxX = Math.max(maxX, controlMaxX) + padding;
+        maxY = Math.max(maxY, controlMaxY) + padding;
+        const width = Math.max(1, maxX - minX);
+        const height = Math.max(1, maxY - minY);
+        svg.setAttribute('viewBox', `${minX} ${minY} ${width} ${height}`);
+        svg.setAttribute('width', `${width}`);
+        svg.setAttribute('height', `${height}`);
+        const style = svg.getAttribute('style');
+        const nextStyle = style ? `${style}; overflow: visible;` : 'overflow: visible;';
+        svg.setAttribute('style', nextStyle);
+        svg.setAttribute('overflow', 'visible');
+        if (!svg.getAttribute('preserveAspectRatio')) {
+            svg.setAttribute('preserveAspectRatio', 'xMinYMin meet');
+        }
+    }
 
     const controls = doc.createElementNS(SVG_NS, 'g');
     controls.setAttribute('id', 'export-controls');
