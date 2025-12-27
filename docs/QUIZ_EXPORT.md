@@ -4,7 +4,7 @@ This document describes the technical implementation of the quiz export feature 
 
 ## Overview
 
-The quiz export functionality allows users to extract quiz data from Google NotebookLM and save it as an Excel (.xlsx) file. The process involves:
+The quiz export functionality allows users to extract quiz data from Google NotebookLM and save it as an Excel (.xlsx), JSON, or HTML file. The process involves:
 1.  Targeting the active browser tab.
 2.  Injecting a content script into **all frames** (including iframes) to locate the quiz data.
 3.  extracting and decoding the proprietary `data-app-data` attribute.
@@ -58,6 +58,8 @@ If valid quiz data is found:
     *   Rationale
     *   Hint
 2.  **Excel Generation**: The `xlsx` library converts the JSON array to a worksheet and initiates a download.
+3.  **JSON Export**: The raw quiz data is stringified and downloaded as a `.json` file.
+4.  **HTML Export**: A standalone HTML document is generated using a template, including CSS for styling, and downloaded as a `.html` file.
 
 ## Permissions
 
