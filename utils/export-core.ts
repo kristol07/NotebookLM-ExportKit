@@ -1,4 +1,4 @@
-export type ExportFormat = 'PDF' | 'CSV' | 'PPTX' | 'JSON' | 'HTML' | 'Anki' | 'OPML' | 'JSONCanvas';
+export type ExportFormat = 'PDF' | 'CSV' | 'PPTX' | 'JSON' | 'HTML' | 'Anki' | 'OPML' | 'JSONCanvas' | 'SVG';
 export type ContentType = 'quiz' | 'flashcards' | 'mindmap';
 export type ContentSource = 'notebooklm' | 'user';
 
@@ -29,6 +29,9 @@ export interface NormalizedExportPayload<TItems> {
     type: ContentType;
     items: TItems[];
     source: ContentSource;
+    meta?: {
+        svg?: string;
+    };
 }
 
 export interface ValidationResult {

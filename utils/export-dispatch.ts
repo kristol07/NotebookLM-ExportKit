@@ -6,7 +6,7 @@ import { exportQuiz } from './quiz-export';
 export const supportedFormatsByType: Record<ContentType, ExportFormat[]> = {
     quiz: ['CSV', 'JSON', 'HTML', 'Anki'],
     flashcards: ['CSV', 'JSON', 'HTML', 'Anki'],
-    mindmap: ['OPML', 'JSONCanvas']
+    mindmap: ['OPML', 'JSONCanvas', 'SVG']
 };
 
 export const exportByType = (
@@ -14,7 +14,8 @@ export const exportByType = (
     items: QuizItem[] | FlashcardItem[] | MindmapNode[],
     format: ExportFormat,
     tabTitle: string,
-    timestamp: string
+    timestamp: string,
+    meta?: { svg?: string }
 ): ExportResult => {
     const supported = supportedFormatsByType[type] || [];
     if (!supported.includes(format)) {
@@ -29,5 +30,5 @@ export const exportByType = (
         return exportFlashcards(items as FlashcardItem[], format, tabTitle, timestamp);
     }
 
-    return exportMindmap(items as MindmapNode[], format, tabTitle, timestamp);
+    return exportMindmap(items as MindmapNode[], format, tabTitle, timestamp, meta?.svg);
 };

@@ -188,13 +188,14 @@ export const extractMindmap = async (tabId: number, format: ExportFormat): Promi
                         if (!doc || depth > 4) return null;
 
                         // Only extract mindmap for mindmap formats
-                        if (formatArg === 'OPML' || formatArg === 'JSONCanvas') {
+                        if (formatArg === 'OPML' || formatArg === 'JSONCanvas' || formatArg === 'SVG') {
                             // Look for mindmap viewer component
                             const mindmapViewer = doc.querySelector('mindmap-viewer');
                             if (mindmapViewer) {
                                 // Find all SVG nodes with role="treeitem"
                                 const svgNodes = Array.from(mindmapViewer.querySelectorAll('g.node[role="treeitem"]'));
                                 const svgLinks = Array.from(mindmapViewer.querySelectorAll('path.link'));
+                                const svgElement = mindmapViewer.querySelector('svg');
 
                                 if (svgNodes.length === 0) {
                                     return { success: false, error: 'no_nodes_found', frameUrl: doc.URL };
@@ -264,7 +265,7 @@ export const extractMindmap = async (tabId: number, format: ExportFormat): Promi
 
                                 return {
                                     success: true,
-                                    data: { mindmap: mindmapTree },
+                                    data: { mindmap: mindmapTree, svg: svgElement?.outerHTML || null },
                                     frameUrl: doc.URL
                                 };
                             }
@@ -286,7 +287,7 @@ export const extractMindmap = async (tabId: number, format: ExportFormat): Promi
                         return null;
                     };
 
-                    if (formatArg === 'OPML' || formatArg === 'JSONCanvas') {
+                    if (formatArg === 'OPML' || formatArg === 'JSONCanvas' || formatArg === 'SVG') {
                         const result = tryExtractFromDocument(document, 0);
                         if (result) return result;
                         return { success: false, error: 'mindmap_not_found', frameUrl: window.location.href };
@@ -321,7 +322,8 @@ export const extractMindmap = async (tabId: number, format: ExportFormat): Promi
                 payload: {
                     type: 'mindmap',
                     items: raw.data.mindmap as MindmapNode[],
-                    source: 'notebooklm'
+                    source: 'notebooklm',
+                    meta: raw.data.svg ? { svg: raw.data.svg } : undefined
                 },
                 raw
             };

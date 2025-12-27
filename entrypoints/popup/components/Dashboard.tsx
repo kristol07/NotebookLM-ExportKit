@@ -52,7 +52,7 @@ export default function Dashboard({ session }: { session: any }) {
                             ? exportByType('quiz', payload.items, format, tabTitle, timestamp)
                             : payload.type === 'flashcards'
                                 ? exportByType('flashcards', payload.items, format, tabTitle, timestamp)
-                                : exportByType('mindmap', payload.items, format, tabTitle, timestamp);
+                                : exportByType('mindmap', payload.items, format, tabTitle, timestamp, payload.meta);
                     if (result.success) {
                         const label = payload.type === 'quiz' ? 'questions' : payload.type === 'flashcards' ? 'flashcards' : 'nodes';
                         const formatName = format === 'CSV' ? 'Excel' : format;
@@ -207,6 +207,14 @@ export default function Dashboard({ session }: { session: any }) {
                             style={{ padding: '10px', cursor: 'pointer', fontSize: '13px' }}
                         >
                             Mindmap to JSONCanvas
+                        </button>
+                        <button
+                            onClick={() => handleExport('SVG', 'mindmap')}
+                            disabled={loading}
+                            className="export-btn"
+                            style={{ padding: '10px', cursor: 'pointer', fontSize: '13px' }}
+                        >
+                            Mindmap to SVG
                         </button>
                     </div>
                 </div>
