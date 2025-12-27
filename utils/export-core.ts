@@ -1,5 +1,5 @@
-export type ExportFormat = 'PDF' | 'CSV' | 'PPTX' | 'JSON' | 'HTML' | 'Anki';
-export type ContentType = 'quiz' | 'flashcards';
+export type ExportFormat = 'PDF' | 'CSV' | 'PPTX' | 'JSON' | 'HTML' | 'Anki' | 'OPML' | 'JSONCanvas';
+export type ContentType = 'quiz' | 'flashcards' | 'mindmap';
 export type ContentSource = 'notebooklm' | 'user';
 
 export interface QuizAnswerOption {
@@ -17,6 +17,12 @@ export interface QuizItem {
 export interface FlashcardItem {
     f: string;
     b: string;
+}
+
+export interface MindmapNode {
+    id?: string;
+    title: string;
+    children?: MindmapNode[];
 }
 
 export interface NormalizedExportPayload<TItems> {
@@ -109,6 +115,39 @@ export const validateFlashcardItems = (items: unknown): ValidationResult => {
     return { valid: errors.length === 0, errors };
 };
 
+export const validateMindmapItems = (items: unknown): ValidationResult => {
+    const errors: string[] = [];
+    if (!Array.isArray(items)) {
+        return { valid: false, errors: ['mindmap.items must be an array'] };
+    }
+
+    const validateNode = (node: unknown, path: string) => {
+        if (!isRecord(node)) {
+            errors.push(`${path} must be an object`);
+            return;
+        }
+
+        if (!isNonEmptyString(node.title)) {
+            errors.push(`${path}.title must be a non-empty string`);
+        }
+
+        if (node.id !== undefined && typeof node.id !== 'string') {
+            errors.push(`${path}.id must be a string`);
+        }
+
+        if (node.children !== undefined) {
+            if (!Array.isArray(node.children)) {
+                errors.push(`${path}.children must be an array`);
+                return;
+            }
+            node.children.forEach((child, index) => validateNode(child, `${path}.children[${index}]`));
+        }
+    };
+
+    items.forEach((item, index) => validateNode(item, `mindmap.items[${index}]`));
+    return { valid: errors.length === 0, errors };
+};
+
 export const downloadBlob = (content: string | Blob, filename: string, contentType: string) => {
     const blob = content instanceof Blob ? content : new Blob([content], { type: contentType });
     const url = URL.createObjectURL(blob);
@@ -121,7 +160,7 @@ export const downloadBlob = (content: string | Blob, filename: string, contentTy
 
 export const normalizeNotebookLmPayload = (
     payload: any
-): { payload: NormalizedExportPayload<QuizItem | FlashcardItem> | null; error?: string } => {
+): { payload: NormalizedExportPayload<QuizItem | FlashcardItem | MindmapNode> | null; error?: string } => {
     if (!payload || typeof payload !== 'object') {
         return { payload: null, error: 'Invalid payload' };
     }
@@ -155,6 +194,23 @@ export const normalizeNotebookLmPayload = (
             payload: {
                 type: 'flashcards',
                 items: payload.flashcards as FlashcardItem[],
+                source: 'notebooklm',
+            }
+        };
+    }
+
+    if (Array.isArray(payload.mindmap)) {
+        const validation = validateMindmapItems(payload.mindmap);
+        if (!validation.valid) {
+            return {
+                payload: null,
+                error: `Invalid mindmap data: ${validation.errors.join('; ')}`
+            };
+        }
+        return {
+            payload: {
+                type: 'mindmap',
+                items: payload.mindmap as MindmapNode[],
                 source: 'notebooklm',
             }
         };

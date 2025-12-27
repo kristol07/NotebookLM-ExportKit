@@ -50,10 +50,13 @@ export default function Dashboard({ session }: { session: any }) {
                     const result =
                         payload.type === 'quiz'
                             ? exportByType('quiz', payload.items, format, tabTitle, timestamp)
-                            : exportByType('flashcards', payload.items, format, tabTitle, timestamp);
+                            : payload.type === 'flashcards'
+                                ? exportByType('flashcards', payload.items, format, tabTitle, timestamp)
+                                : exportByType('mindmap', payload.items, format, tabTitle, timestamp);
                     if (result.success) {
-                        const label = payload.type === 'quiz' ? 'questions' : 'flashcards';
-                        showNotice('success', `Exported ${result.count} ${label} to ${format === 'CSV' ? 'Excel' : format}.`);
+                        const label = payload.type === 'quiz' ? 'questions' : payload.type === 'flashcards' ? 'flashcards' : 'nodes';
+                        const formatName = format === 'CSV' ? 'Excel' : format;
+                        showNotice('success', `Exported ${result.count} ${label} to ${formatName}.`);
                     } else {
                         showNotice('error', result.error || 'Export failed.');
                     }
@@ -185,6 +188,25 @@ export default function Dashboard({ session }: { session: any }) {
                             style={{ padding: '10px', cursor: 'pointer', fontSize: '13px' }}
                         >
                             Flashcards to Anki
+                        </button>
+                    </div>
+                    <div style={{ fontSize: '12px', fontWeight: 600, color: '#444' }}>Mindmap exports</div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                        <button
+                            onClick={() => handleExport('OPML', 'mindmap')}
+                            disabled={loading}
+                            className="export-btn"
+                            style={{ padding: '10px', cursor: 'pointer', fontSize: '13px' }}
+                        >
+                            Mindmap to OPML
+                        </button>
+                        <button
+                            onClick={() => handleExport('JSONCanvas', 'mindmap')}
+                            disabled={loading}
+                            className="export-btn"
+                            style={{ padding: '10px', cursor: 'pointer', fontSize: '13px' }}
+                        >
+                            Mindmap to JSONCanvas
                         </button>
                     </div>
                 </div>

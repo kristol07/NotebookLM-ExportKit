@@ -54,3 +54,41 @@ export const flashcardsExportSchema = {
         }
     }
 } as const;
+
+export const mindmapExportSchema = {
+    $schema: 'https://json-schema.org/draft/2020-12/schema',
+    type: 'object',
+    required: ['type', 'items'],
+    additionalProperties: false,
+    properties: {
+        type: { const: 'mindmap' },
+        items: {
+            type: 'array',
+            items: {
+                type: 'object',
+                required: ['title'],
+                additionalProperties: false,
+                properties: {
+                    id: { type: 'string' },
+                    title: { type: 'string' },
+                    children: { $ref: '#/$defs/mindmapNodes' }
+                }
+            }
+        }
+    },
+    $defs: {
+        mindmapNodes: {
+            type: 'array',
+            items: {
+                type: 'object',
+                required: ['title'],
+                additionalProperties: false,
+                properties: {
+                    id: { type: 'string' },
+                    title: { type: 'string' },
+                    children: { $ref: '#/$defs/mindmapNodes' }
+                }
+            }
+        }
+    }
+} as const;
