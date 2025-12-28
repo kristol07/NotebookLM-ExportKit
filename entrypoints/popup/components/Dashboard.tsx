@@ -209,6 +209,14 @@ export default function Dashboard({ session }: { session: any }) {
                             Mindmap to JSONCanvas
                         </button>
                         <button
+                            onClick={() => handleExport('Markdown', 'mindmap')}
+                            disabled={loading}
+                            className="export-btn"
+                            style={{ padding: '10px', cursor: 'pointer', fontSize: '13px' }}
+                        >
+                            Mindmap to Markdown
+                        </button>
+                        <button
                             onClick={() => handleExport('SVG', 'mindmap')}
                             disabled={loading}
                             className="export-btn"

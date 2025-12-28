@@ -188,7 +188,7 @@ export const extractMindmap = async (tabId: number, format: ExportFormat): Promi
                         if (!doc || depth > 4) return null;
 
                         // Only extract mindmap for mindmap formats
-                        if (formatArg === 'OPML' || formatArg === 'JSONCanvas' || formatArg === 'SVG') {
+                        if (formatArg === 'OPML' || formatArg === 'JSONCanvas' || formatArg === 'SVG' || formatArg === 'Markdown') {
                             // Look for mindmap viewer component
                             const mindmapViewer = doc.querySelector('mindmap-viewer');
                             if (mindmapViewer) {
@@ -287,7 +287,7 @@ export const extractMindmap = async (tabId: number, format: ExportFormat): Promi
                         return null;
                     };
 
-                    if (formatArg === 'OPML' || formatArg === 'JSONCanvas' || formatArg === 'SVG') {
+                    if (formatArg === 'OPML' || formatArg === 'JSONCanvas' || formatArg === 'SVG' || formatArg === 'Markdown') {
                         const result = tryExtractFromDocument(document, 0);
                         if (result) return result;
                         return { success: false, error: 'mindmap_not_found', frameUrl: window.location.href };

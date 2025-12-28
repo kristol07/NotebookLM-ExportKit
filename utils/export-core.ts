@@ -1,4 +1,4 @@
-export type ExportFormat = 'PDF' | 'CSV' | 'PPTX' | 'JSON' | 'HTML' | 'Anki' | 'OPML' | 'JSONCanvas' | 'SVG';
+export type ExportFormat = 'PDF' | 'CSV' | 'PPTX' | 'JSON' | 'HTML' | 'Anki' | 'OPML' | 'JSONCanvas' | 'SVG' | 'Markdown';
 export type ContentType = 'quiz' | 'flashcards' | 'mindmap';
 export type ContentSource = 'notebooklm' | 'user';
 
