@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { supabase } from '../../../utils/supabase';
 
-export default function Login() {
+export default function Login({ onClose }: { onClose?: () => void }) {
     const [email, setEmail] = useState('');
     const [otp, setOtp] = useState('');
     const [loading, setLoading] = useState(false);
@@ -10,7 +10,12 @@ export default function Login() {
     const handleSendOtp = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
-        const { error } = await supabase.auth.signInWithOtp({ email });
+        const { error } = await supabase.auth.signInWithOtp({
+            email,
+            options: {
+                shouldCreateUser: true
+            }
+        });
         if (error) {
             alert(error.message);
         } else {
@@ -40,7 +45,16 @@ export default function Login() {
     return (
         <div className="login-container" style={{ padding: '20px', textAlign: 'center' }}>
             <h2>NotebookLM Export Pro</h2>
-            <p>Sign in to unlock export features</p>
+            <p>Sign in to unlock Plus exports</p>
+            {onClose && (
+                <button
+                    type="button"
+                    onClick={onClose}
+                    style={{ marginBottom: '12px', background: 'none', border: 'none', color: '#1b4ea3', cursor: 'pointer', fontSize: '12px' }}
+                >
+                    Back to Dashboard
+                </button>
+            )}
 
             {step === 'email' ? (
                 <form onSubmit={handleSendOtp}>

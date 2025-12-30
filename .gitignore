@@ -27,3 +27,11 @@ web-ext.config.ts
 
 
 .env
+.env.test
+.env.local
+.env.production
+.env.supabase
+
+# Supabase
+**/supabase/.branches
+**/supabase/.temp
