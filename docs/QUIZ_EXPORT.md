@@ -1,6 +1,6 @@
 # NotebookLM Quiz Export Implementation
 
-This document describes the technical implementation of the quiz export feature in the NotebookLM Export Pro extension.
+This document describes the technical implementation of the quiz export feature in the NotebookLM ExportKit extension.
 
 ## Overview
 

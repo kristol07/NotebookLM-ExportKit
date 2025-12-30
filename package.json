@@ -1,6 +1,6 @@
 {
-  "name": "wxt-react-starter",
-  "description": "manifest.json description",
+  "name": "notebooklm-exportkit",
+  "description": "NotebookLM ExportKit browser extension: export quizzes, flashcards, and mindmaps to CSV, JSON, HTML, Anki, OPML, SVG, and Markdown, with more content types and formats coming.",
   "private": true,
   "version": "0.0.0",
   "type": "module",

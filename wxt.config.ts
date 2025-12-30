@@ -9,8 +9,8 @@ export default defineConfig({
       'https://notebooklm.google.com/*',
       'https://*.usercontent.goog/*'
     ],
-    name: 'NotebookLM Export Pro',
-    description: 'Export NotebookLM Notes, Quizzes, and Slides to PDF, Excel, and PowerPoint.',
+    name: 'NotebookLM ExportKit',
+    description: 'Export NotebookLM quizzes, flashcards, and mindmaps to CSV, JSON, HTML, Anki, OPML, SVG, and Markdown, with more content types and formats coming.',
     icons: {
       16: 'icon/16.png',
       32: 'icon/32.png',

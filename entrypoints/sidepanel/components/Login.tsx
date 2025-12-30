@@ -70,7 +70,7 @@ export default function Login({ onClose }: { onClose?: () => void }) {
             )}
 
             <div style={{ marginTop: '40px', marginBottom: '24px' }}>
-                <h2 style={{ margin: '0 0 8px 0', fontSize: '20px', color: '#eee' }}>NotebookLM Export Pro</h2>
+                <h2 style={{ margin: '0 0 8px 0', fontSize: '20px', color: '#eee' }}>NotebookLM ExportKit</h2>
                 <p style={{ margin: 0, fontSize: '13px', color: '#888' }}>Sign in to unlock advanced exports</p>
             </div>
 
