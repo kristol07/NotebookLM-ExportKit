@@ -4,11 +4,59 @@ import { browser } from 'wxt/browser';
 import { sanitizeFilename, getTimestamp } from '../../../utils/common';
 import { ContentType, ExportFormat } from '../../../utils/export-core';
 import { exportByType } from '../../../utils/export-dispatch';
+
 import { extractByType } from '../../../utils/extractors';
 import { extractNotebookLmPayload } from '../../../utils/extractors/common';
 import { consumeTrial, createCheckoutSession, createCustomerPortalLink, getPlan } from '../../../utils/billing';
 
-const PLUS_EXPORTS = new Set(['mindmap:OPML', 'mindmap:JSONCanvas', 'mindmap:SVG']);
+const EXPORT_SECTIONS: Array<{
+    title: string;
+    contentType: ContentType;
+    options: Array<{
+        format: ExportFormat;
+        label?: string;
+        isPlus?: boolean;
+    }>;
+}> = [
+        {
+            title: 'Quiz Exports',
+            contentType: 'quiz',
+            options: [
+                { format: 'CSV', label: 'Excel' },
+                { format: 'JSON' },
+                { format: 'HTML' },
+                { format: 'Anki', isPlus: true },
+            ],
+        },
+        {
+            title: 'Flashcard Exports',
+            contentType: 'flashcards',
+            options: [
+                { format: 'CSV', label: 'Excel' },
+                { format: 'JSON' },
+                { format: 'HTML' },
+                { format: 'Anki', isPlus: true },
+            ],
+        },
+        {
+            title: 'Mindmap Exports',
+            contentType: 'mindmap',
+            options: [
+                { format: 'Markdown' },
+                { format: 'SVG' },
+                { format: 'JSONCanvas', label: 'Obsidian', isPlus: true },
+                { format: 'OPML', isPlus: true },
+            ],
+        },
+    ];
+
+const PLUS_EXPORTS = new Set(
+    EXPORT_SECTIONS.flatMap((section) =>
+        section.options
+            .filter((option) => option.isPlus)
+            .map((option) => `${section.contentType}:${option.format}`)
+    )
+);
 
 export default function Dashboard({
     session,
@@ -17,8 +65,9 @@ export default function Dashboard({
     session: any;
     onRequestLogin?: () => void;
 }) {
-    const [loading, setLoading] = useState(false);
+    const [loadingAction, setLoadingAction] = useState<string | null>(null);
     const [notice, setNotice] = useState<{ type: 'success' | 'error' | 'info'; message: string } | null>(null);
+    const [trialRemaining, setTrialRemaining] = useState<number | null>(null);
     const noticeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const upgradeInFlightRef = useRef(false);
     const plan = getPlan(session);
@@ -55,6 +104,29 @@ export default function Dashboard({
         };
     }, []);
 
+    useEffect(() => {
+        let isActive = true;
+        if (isSignedIn && !isPlus) {
+            consumeTrial(false)
+                .then((trialResult) => {
+                    if (!isActive) {
+                        return;
+                    }
+                    if (typeof trialResult.remaining === 'number') {
+                        setTrialRemaining(trialResult.remaining);
+                    }
+                })
+                .catch((err) => {
+                    console.error(err);
+                });
+        } else {
+            setTrialRemaining(null);
+        }
+        return () => {
+            isActive = false;
+        };
+    }, [isSignedIn, isPlus]);
+
     const showNotice = (type: 'success' | 'error' | 'info', message: string) => {
         setNotice({ type, message });
         if (noticeTimerRef.current) {
@@ -84,7 +156,7 @@ export default function Dashboard({
             return;
         }
         upgradeInFlightRef.current = true;
-        setLoading(true);
+        setLoadingAction('upgrade');
         try {
             const checkoutUrl = await createCheckoutSession();
             await browser.tabs.create({ url: checkoutUrl });
@@ -92,13 +164,13 @@ export default function Dashboard({
             console.error(err);
             showNotice('error', 'Could not start checkout. Please try again.');
         } finally {
-            setLoading(false);
+            setLoadingAction(null);
             upgradeInFlightRef.current = false;
         }
     };
 
     const handleManageBilling = async () => {
-        setLoading(true);
+        setLoadingAction('billing');
         try {
             const portalUrl = await createCustomerPortalLink();
             await browser.tabs.create({ url: portalUrl });
@@ -106,25 +178,29 @@ export default function Dashboard({
             console.error(err);
             showNotice('error', 'Could not open billing portal. Please try again.');
         } finally {
-            setLoading(false);
+            setLoadingAction(null);
         }
     };
 
     const handleExport = async (format: ExportFormat, contentType?: ContentType) => {
-        setLoading(true);
+        const actionId = contentType ? `${contentType}:${format}` : 'notebooklm-payload';
+        setLoadingAction(actionId);
         try {
             const plusExport = isPlusExport(format, contentType);
             if (plusExport) {
                 if (!isSignedIn) {
-                    showNotice('info', 'Sign in to use Plus exports.');
+                    showNotice('info', 'Sign in to unlock advanced exports.');
                     onRequestLogin?.();
                     return;
                 }
                 if (!isPlus) {
                     const trialResult = await consumeTrial(false);
                     if (!trialResult.allowed) {
-                        showNotice('error', 'Your free Plus trials are used up. Upgrade to continue.');
+                        showNotice('error', 'Your free trials are used up. Upgrade to continue.');
                         return;
+                    }
+                    if (typeof trialResult.remaining === 'number') {
+                        setTrialRemaining(trialResult.remaining);
                     }
                 }
             }
@@ -155,7 +231,8 @@ export default function Dashboard({
                             const trialResult = await consumeTrial(true);
                             if (typeof trialResult.remaining === 'number') {
                                 const remainingText = trialResult.remaining === 1 ? '1 export' : `${trialResult.remaining} exports`;
-                                showNotice('info', `Plus trial used. ${remainingText} left.`);
+                                showNotice('info', `Trial used. ${remainingText} left.`);
+                                setTrialRemaining(trialResult.remaining);
                             }
                         }
                     } else {
@@ -178,221 +255,189 @@ export default function Dashboard({
             console.error(err);
             showNotice('error', 'Error communicating with content script. Refresh the page and try again.');
         } finally {
-            setLoading(false);
+            setLoadingAction(null);
         }
     };
 
-    return (
-        <div className="dashboard-container" style={{ padding: '20px', width: '300px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-                <h3>Dashboard</h3>
-                {session ? (
-                    <button onClick={handleSignOut} style={{ fontSize: '12px', padding: '4px 8px' }}>Sign Out</button>
-                ) : (
-                    <button onClick={() => onRequestLogin?.()} style={{ fontSize: '12px', padding: '4px 8px' }}>Sign In</button>
-                )}
-            </div>
+    const PlusIcon = () => (
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="currentColor" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+    );
 
-            <div className="user-info" style={{ marginBottom: '15px', fontSize: '14px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
-                    <div>
-                        Status: <strong>
-                            {isPlus
-                                ? 'Plus Member'
-                                : isSignedIn
-                                    ? 'Free'
-                                    : 'Free User'}
-                        </strong>
-                    </div>
-                    {isPlus && (
+    const Spinner = () => (
+        <svg className="spinner" width="14" height="14" viewBox="0 0 50 50" style={{ animation: 'spin 1s linear infinite' }}>
+            <circle cx="25" cy="25" r="20" fill="none" stroke="currentColor" strokeWidth="6" strokeLinecap="round" strokeDasharray="80" strokeDashoffset="0"></circle>
+            <style>{`@keyframes spin { 100% { transform: rotate(360deg); } }`}</style>
+        </svg>
+    );
+
+    return (
+        <div className="dashboard-container" style={{ padding: '20px', width: '300px', paddingBottom: '60px', position: 'relative', minHeight: '400px' }}>
+            {/* Header */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+                <h3 style={{ margin: 0 }}>Dashboard</h3>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    {isSignedIn ? (
+                        <>
+                            <div style={{ fontSize: '12px', textAlign: 'right' }}>
+                                <div style={{ fontWeight: 'bold' }}>{isPlus ? 'Plus' : 'Free'}</div>
+                            </div>
+                            <button
+                                onClick={handleSignOut}
+                                title="Sign Out"
+                                className="export-btn"
+                                style={{
+                                    padding: '4px 8px',
+                                    cursor: 'pointer',
+                                    fontSize: '11px',
+                                }}
+                            >
+                                Sign Out
+                            </button>
+                        </>
+                    ) : (
                         <button
-                            onClick={handleManageBilling}
-                            disabled={loading}
-                            style={{ padding: '6px 10px', cursor: 'pointer', fontSize: '12px' }}
+                            onClick={() => onRequestLogin?.()}
+                            className="export-btn"
+                            style={{
+                                padding: '6px 12px',
+                                cursor: 'pointer',
+                                fontSize: '12px',
+                                fontWeight: 500
+                            }}
                         >
-                            Manage billing
+                            Sign In
                         </button>
                     )}
                 </div>
-                {isPlus && isCancelScheduled && (
-                    <div style={{ marginTop: '6px', fontSize: '12px', color: '#7a4b00' }}>
-                        Ends {formattedPeriodEnd ?? 'at period end'}. You can subscribe again after it ends.
-                    </div>
-                )}
             </div>
 
+            {/* Manage Billing (Only for Subscribed users) */}
+            {isPlus && (
+                <div style={{ marginBottom: '16px', display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '8px' }}>
+                    {isCancelScheduled && (
+                        <span style={{ fontSize: '11px', color: '#B45309' }}>
+                            Ends {formattedPeriodEnd ?? 'soon'}
+                        </span>
+                    )}
+                    <button
+                        onClick={handleManageBilling}
+                        disabled={!!loadingAction}
+                        style={{
+                            background: 'none',
+                            border: 'none',
+                            textDecoration: 'underline',
+                            color: '#555',
+                            cursor: 'pointer',
+                            fontSize: '11px',
+                            padding: 0
+                        }}
+                    >
+                        Manage Subscription {loadingAction === 'billing' && <Spinner />}
+                    </button>
+                </div>
+            )}
+
+            {/* Actions Grid */}
+            <div className="actions" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                {EXPORT_SECTIONS.map((section) => (
+                    <div key={section.contentType}>
+                        <div style={{ fontSize: '12px', fontWeight: 600, color: '#444', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                            {section.title}
+                        </div>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                            {section.options.map((option) => (
+                                <button
+                                    key={`${section.contentType}-${option.format}`}
+                                    onClick={() => handleExport(option.format, section.contentType)}
+                                    disabled={!!loadingAction}
+                                    className="export-btn"
+                                    style={{ padding: '8px', cursor: 'pointer', fontSize: '13px' }}
+                                >
+                                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', justifyContent: 'center' }}>
+                                        {option.label ?? option.format}
+                                        {option.isPlus && <PlusIcon />}
+                                        {loadingAction === `${section.contentType}:${option.format}` && <Spinner />}
+                                    </span>
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                ))}
+
+                {/* Upgrade Hook (if Free) */}
+                {isSignedIn && !isPlus && (
+                    <div style={{ marginTop: '5px', textAlign: 'center' }}>
+                        <div style={{ fontSize: '12px', color: '#555', marginBottom: '8px' }}>
+                            Free trial remaining:{' '}
+                            {trialRemaining === null
+                                ? 'Checking...'
+                                : trialRemaining === 0
+                                    ? 'No exports left'
+                                    : `${trialRemaining} ${trialRemaining === 1 ? 'export' : 'exports'}`}
+                        </div>
+                        <button
+                            onClick={handleUpgrade}
+                            disabled={!!loadingAction}
+                            style={{
+                                background: 'linear-gradient(90deg, #4285f4, #34a853)',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: '6px',
+                                padding: '10px 20px',
+                                cursor: 'pointer',
+                                fontSize: '13px',
+                                fontWeight: 'bold',
+                                width: '100%',
+                            }}
+                        >
+                            Upgrade to Unlock Advanced Features <PlusIcon /> {loadingAction === 'upgrade' && <Spinner />}
+                        </button>
+                    </div>
+                )}
+
+                {/* Coming Soon */}
+                <div>
+                    <div style={{ fontSize: '12px', fontWeight: 600, color: '#888', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Coming soon</div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '8px' }}>
+                        <div style={{ padding: '8px', fontSize: '12px', fontStyle: 'italic', color: '#999', border: '1px dashed #ddd', borderRadius: '4px', textAlign: 'center' }}>
+                            Video & Audio Overviews to Transcript/Slides
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Toast Notification */}
             {notice && (
                 <div
                     style={{
-                        marginBottom: '12px',
-                        padding: '10px',
+                        position: 'fixed',
+                        bottom: '20px',
+                        left: '50%',
+                        transform: 'translateX(-50%)',
+                        width: '85%',
+                        padding: '12px 16px',
                         borderRadius: '8px',
-                        fontSize: '12px',
-                        textAlign: 'left',
+                        fontSize: '13px',
+                        textAlign: 'center',
+                        boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                        zIndex: 1000,
                         backgroundColor:
-                            notice.type === 'success' ? '#e6f6ed' : notice.type === 'error' ? '#fdecea' : '#eef5ff',
-                        color: notice.type === 'success' ? '#0b6b3a' : notice.type === 'error' ? '#b42318' : '#1b4ea3',
-                        border: `1px solid ${notice.type === 'success' ? '#b7e4c7' : notice.type === 'error' ? '#f5c2c7' : '#c7ddff'}`,
+                            notice.type === 'success' ? '#2e7d32' : notice.type === 'error' ? '#d32f2f' : '#333',
+                        color: '#fff',
+                        animation: 'fadeIn 0.3s ease-in-out'
                     }}
                 >
                     {notice.message}
                 </div>
             )}
-
-            <div className="actions" style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                <div style={{ display: 'grid', gap: '10px' }}>
-                    <div style={{ fontSize: '12px', fontWeight: 600, color: '#444' }}>Quiz exports</div>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-                        <button
-                            onClick={() => handleExport('CSV', 'quiz')}
-                            disabled={loading}
-                            className="export-btn"
-                            style={{ padding: '10px', cursor: 'pointer', fontSize: '13px' }}
-                        >
-                            Excel
-                        </button>
-                        <button
-                            onClick={() => handleExport('JSON', 'quiz')}
-                            disabled={loading}
-                            className="export-btn"
-                            style={{ padding: '10px', cursor: 'pointer', fontSize: '13px' }}
-                        >
-                            JSON
-                        </button>
-                        <button
-                            onClick={() => handleExport('HTML', 'quiz')}
-                            disabled={loading}
-                            className="export-btn"
-                            style={{ padding: '10px', cursor: 'pointer', fontSize: '13px' }}
-                        >
-                            HTML
-                        </button>
-                        <button
-                            onClick={() => handleExport('Anki', 'quiz')}
-                            disabled={loading}
-                            className="export-btn"
-                            style={{ padding: '10px', cursor: 'pointer', fontSize: '13px' }}
-                        >
-                            Anki
-                        </button>
-                    </div>
-                    <div style={{ fontSize: '12px', fontWeight: 600, color: '#444' }}>Flashcard exports</div>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-                        <button
-                            onClick={() => handleExport('CSV', 'flashcards')}
-                            disabled={loading}
-                            className="export-btn"
-                            style={{ padding: '10px', cursor: 'pointer', fontSize: '13px' }}
-                        >
-                            Excel
-                        </button>
-                        <button
-                            onClick={() => handleExport('JSON', 'flashcards')}
-                            disabled={loading}
-                            className="export-btn"
-                            style={{ padding: '10px', cursor: 'pointer', fontSize: '13px' }}
-                        >
-                            JSON
-                        </button>
-                        <button
-                            onClick={() => handleExport('HTML', 'flashcards')}
-                            disabled={loading}
-                            className="export-btn"
-                            style={{ padding: '10px', cursor: 'pointer', fontSize: '13px' }}
-                        >
-                            HTML
-                        </button>
-                        <button
-                            onClick={() => handleExport('Anki', 'flashcards')}
-                            disabled={loading}
-                            className="export-btn"
-                            style={{ padding: '10px', cursor: 'pointer', fontSize: '13px' }}
-                        >
-                            Anki
-                        </button>
-                    </div>
-                    <div style={{ fontSize: '12px', fontWeight: 600, color: '#444' }}>Mindmap exports</div>
-                    {!isPlus && (
-                        <>
-                            <div style={{ fontSize: '11px', color: '#666' }}>
-                                Plus unlocks Obsidian, OPML, and SVG exports for mindmaps.
-                            </div>
-                            <div
-                                style={{
-                                    border: '1px solid #d7d7d7',
-                                    borderRadius: '10px',
-                                    padding: '10px',
-                                    background: '#f9fafb',
-                                    fontSize: '12px',
-                                    color: '#333',
-                                }}
-                            >
-                                Unlock full mindmap exports and keep structure intact. Sign in for 3 free Plus trials.
-                            </div>
-                        </>
-                    )}
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-                        <button
-                            onClick={() => handleExport('OPML', 'mindmap')}
-                            disabled={loading}
-                            className="export-btn"
-                            style={{ padding: '10px', cursor: 'pointer', fontSize: '13px' }}
-                        >
-                            OPML (Plus)
-                        </button>
-                        <button
-                            onClick={() => handleExport('JSONCanvas', 'mindmap')}
-                            disabled={loading}
-                            className="export-btn"
-                            style={{ padding: '10px', cursor: 'pointer', fontSize: '13px' }}
-                        >
-                            JSONCanvas (Obsidian) (Plus)
-                        </button>
-                        <button
-                            onClick={() => handleExport('Markdown', 'mindmap')}
-                            disabled={loading}
-                            className="export-btn"
-                            style={{ padding: '10px', cursor: 'pointer', fontSize: '13px' }}
-                        >
-                            Markdown
-                        </button>
-                        <button
-                            onClick={() => handleExport('SVG', 'mindmap')}
-                            disabled={loading}
-                            className="export-btn"
-                            style={{ padding: '10px', cursor: 'pointer', fontSize: '13px' }}
-                        >
-                            SVG (Plus)
-                        </button>
-                    </div>
-                    {isSignedIn && !isPlus && (
-                        <button
-                            onClick={handleUpgrade}
-                            disabled={loading}
-                            style={{ marginTop: '10px', padding: '10px', cursor: 'pointer', fontSize: '13px' }}
-                        >
-                            Upgrade to Plus
-                        </button>
-                    )}
-                    <div style={{ fontSize: '12px', fontWeight: 600, color: '#444' }}>Coming soon</div>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-                        <button
-                            disabled
-                            className="export-btn"
-                            style={{ padding: '10px', cursor: 'not-allowed', fontSize: '13px', opacity: 0.7, border: '1px dashed #ccc' }}
-                        >
-                            Video overview to slide + transcipts
-                        </button>
-                        <button
-                            disabled
-                            className="export-btn"
-                            style={{ padding: '10px', cursor: 'not-allowed', fontSize: '13px', opacity: 0.7, border: '1px dashed #ccc' }}
-                        >
-                            Audio overview to transcipts
-                        </button>
-                    </div>
-                </div>
-            </div>
+            <style>{`
+                @keyframes fadeIn {
+                    from { opacity: 0; transform: translate(-50%, 10px); }
+                    to { opacity: 1; transform: translate(-50%, 0); }
+                }
+            `}</style>
         </div>
     );
 }
