@@ -194,13 +194,26 @@ export default function Dashboard({
             </div>
 
             <div className="user-info" style={{ marginBottom: '15px', fontSize: '14px' }}>
-                Status: <strong>
-                    {isPlus
-                        ? 'Plus Member'
-                        : isSignedIn
-                            ? 'Free'
-                            : 'Free User'}
-                </strong>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
+                    <div>
+                        Status: <strong>
+                            {isPlus
+                                ? 'Plus Member'
+                                : isSignedIn
+                                    ? 'Free'
+                                    : 'Free User'}
+                        </strong>
+                    </div>
+                    {isPlus && (
+                        <button
+                            onClick={handleManageBilling}
+                            disabled={loading}
+                            style={{ padding: '6px 10px', cursor: 'pointer', fontSize: '12px' }}
+                        >
+                            Manage billing
+                        </button>
+                    )}
+                </div>
                 {isPlus && isCancelScheduled && (
                     <div style={{ marginTop: '6px', fontSize: '12px', color: '#7a4b00' }}>
                         Ends {formattedPeriodEnd ?? 'at period end'}. You can subscribe again after it ends.
@@ -359,15 +372,6 @@ export default function Dashboard({
                             style={{ marginTop: '10px', padding: '10px', cursor: 'pointer', fontSize: '13px' }}
                         >
                             Upgrade to Plus
-                        </button>
-                    )}
-                    {isPlus && (
-                        <button
-                            onClick={handleManageBilling}
-                            disabled={loading}
-                            style={{ marginTop: '10px', padding: '10px', cursor: 'pointer', fontSize: '13px' }}
-                        >
-                            Manage billing
                         </button>
                     )}
                     <div style={{ fontSize: '12px', fontWeight: 600, color: '#444' }}>Coming soon</div>
