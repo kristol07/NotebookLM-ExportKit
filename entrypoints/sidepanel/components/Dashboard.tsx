@@ -16,6 +16,7 @@ const EXPORT_SECTIONS: Array<{
         format: ExportFormat;
         label?: string;
         isPlus?: boolean;
+        apps?: string[];
     }>;
 }> = [
         {
@@ -42,11 +43,11 @@ const EXPORT_SECTIONS: Array<{
             title: 'Mindmap Exports',
             contentType: 'mindmap',
             options: [
-                { format: 'Markdown' },
+                { format: 'Markdown', label: 'Markdown', isPlus: true, apps: ['Whimsical', 'Obsidian'] },
                 { format: 'SVG' },
-                { format: 'JSONCanvas', label: 'Obsidian', isPlus: true },
-                { format: 'OPML', isPlus: true },
-                { format: 'FreeMind', label: 'FreeMind (.mm)', isPlus: true },
+                { format: 'JSONCanvas', label: 'JSONCanvas', isPlus: true, apps: ['Obsidian'] },
+                { format: 'OPML', label: 'OPML', isPlus: true, apps: ['XMind', 'MindMeister'] },
+                { format: 'FreeMind', label: 'FreeMind' },
             ],
         },
         {
@@ -370,10 +371,20 @@ export default function Dashboard({
                                         key={`${section.contentType}-${option.format}`}
                                         onClick={() => handleExport(option.format, section.contentType)}
                                         disabled={!!loadingAction}
-                                        className="export-btn"
+                                        className={`export-btn${option.apps?.length ? ' has-tooltip' : ''}`}
+                                        aria-label={
+                                            option.apps?.length
+                                                ? `${option.label ?? option.format}. Supported by ${option.apps.join(', ')}`
+                                                : undefined
+                                        }
                                     >
                                         <span className="button-content">
                                             {option.label ?? option.format}
+                                            {option.apps?.length ? (
+                                                <span className="tooltip-content">
+                                                    Supported by {option.apps.join(', ')}
+                                                </span>
+                                            ) : null}
                                             {option.isPlus && <PlusIcon />}
                                             {loadingAction === `${section.contentType}:${option.format}` && <Spinner />}
                                         </span>

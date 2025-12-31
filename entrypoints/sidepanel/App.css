@@ -113,6 +113,7 @@
   align-items: center;
   gap: var(--space-1);
   justify-content: center;
+  position: relative;
 }
 
 .export-btn:hover {
@@ -156,6 +157,32 @@
   align-items: center;
   gap: var(--space-0);
   justify-content: center;
+}
+
+.tooltip-content {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  transform: translate(-50%, 4px);
+  width: max-content;
+  max-width: min(320px, calc(100vw - 40px));
+  padding: 6px 8px;
+  background: #1f1f1f;
+  color: #fff;
+  border-radius: var(--radius-xs);
+  font-size: var(--size-xxs);
+  line-height: 1.35;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s ease, transform 0.15s ease;
+  z-index: 10;
+  text-align: left;
+}
+
+.export-btn.has-tooltip:hover .tooltip-content,
+.export-btn.has-tooltip:focus-visible .tooltip-content {
+  opacity: 1;
+  transform: translate(-50%, 0);
 }
 
 .billing-row {
