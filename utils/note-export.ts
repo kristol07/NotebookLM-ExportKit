@@ -1,5 +1,18 @@
 import { downloadBlob, ExportFormat, ExportResult, NoteBlock, NoteInline } from './export-core';
-import { Document, Packer, Paragraph, Table, TableCell, TableRow, TextRun, WidthType } from 'docx';
+import {
+    AlignmentType,
+    BorderStyle,
+    Document,
+    HeadingLevel,
+    LineRuleType,
+    Packer,
+    Paragraph,
+    Table,
+    TableCell,
+    TableRow,
+    TextRun,
+    WidthType
+} from 'docx';
 
 const escapeHtml = (value: string) =>
     value
@@ -100,6 +113,38 @@ const renderTableHtml = (rows: NoteInline[][][]) => {
     return `<table><tbody>${bodyRows}</tbody></table>`;
 };
 
+const mapBlocks = <T>(
+    blocks: NoteBlock[],
+    renderParagraph: (inlines: NoteInline[]) => T,
+    renderTable: (rows: NoteInline[][][]) => T
+) =>
+    blocks.map((block) => {
+        if (block.type === 'paragraph') {
+            return renderParagraph(block.inlines);
+        }
+        return renderTable(block.rows);
+    });
+
+const DOCX_BODY_RUN = { font: 'Times New Roman', size: 24 };
+const DOCX_TITLE_RUN = { font: 'Times New Roman', size: 32, bold: true };
+const DOCX_HEADING_RUN = { font: 'Times New Roman', size: 26, bold: true };
+const DOCX_PARAGRAPH_SPACING = { after: 160, line: 276, lineRule: LineRuleType.AUTO };
+const DOCX_TABLE_BORDERS = {
+    top: { style: BorderStyle.SINGLE, size: 1, color: '999999' },
+    bottom: { style: BorderStyle.SINGLE, size: 1, color: '999999' },
+    left: { style: BorderStyle.SINGLE, size: 1, color: '999999' },
+    right: { style: BorderStyle.SINGLE, size: 1, color: '999999' },
+    insideHorizontal: { style: BorderStyle.SINGLE, size: 1, color: '999999' },
+    insideVertical: { style: BorderStyle.SINGLE, size: 1, color: '999999' }
+};
+const DOCX_TABLE_MARGINS = {
+    marginUnitType: WidthType.DXA,
+    top: 80,
+    bottom: 80,
+    left: 120,
+    right: 120
+};
+
 const buildDocxParagraph = (
     inlines: NoteInline[],
     references: Map<string, string>,
@@ -131,7 +176,11 @@ const buildDocxParagraph = (
             })
         );
     }
-    return new Paragraph({ children });
+    return new Paragraph({
+        children,
+        spacing: DOCX_PARAGRAPH_SPACING,
+        run: DOCX_BODY_RUN
+    });
 };
 
 const buildDocxTable = (
@@ -142,13 +191,15 @@ const buildDocxTable = (
     const tableRows = rows.map((row) => {
         const cells = row.map((cell) => {
             const paragraph = buildDocxParagraph(cell, references, referenceOrder);
-            return new TableCell({ children: [paragraph] });
+            return new TableCell({ children: [paragraph], margins: DOCX_TABLE_MARGINS });
         });
         return new TableRow({ children: cells });
     });
     return new Table({
         width: { size: 100, type: WidthType.PERCENTAGE },
-        rows: tableRows
+        rows: tableRows,
+        borders: DOCX_TABLE_BORDERS,
+        margins: DOCX_TABLE_MARGINS
     });
 };
 
@@ -194,13 +245,11 @@ export const exportNote = (
     if (format === 'Markdown') {
         const footnotes = new Map<string, string>();
         const footnoteOrder: string[] = [];
-        const body = blocks
-            .map((block) => {
-                if (block.type === 'paragraph') {
-                    return renderParagraphMarkdown(block.inlines, footnotes, footnoteOrder);
-                }
-                return renderTableMarkdown(block.rows, footnotes, footnoteOrder);
-            })
+        const body = mapBlocks(
+            blocks,
+            (inlines) => renderParagraphMarkdown(inlines, footnotes, footnoteOrder),
+            (rows) => renderTableMarkdown(rows, footnotes, footnoteOrder)
+        )
             .filter((line) => line.length > 0)
             .join('\n\n');
         const footnoteLines = footnoteOrder.map((key) => `[^${key}]: ${footnotes.get(key) || ''}`);
@@ -219,27 +268,49 @@ export const exportNote = (
         const referenceOrder: string[] = [];
         const children: (Paragraph | Table)[] = [
             new Paragraph({
-                children: [new TextRun({ text: title, bold: true })]
+                children: [new TextRun({ text: title, ...DOCX_TITLE_RUN })],
+                heading: HeadingLevel.HEADING_1,
+                alignment: AlignmentType.LEFT,
+                spacing: { after: 240 }
             }),
-            ...blocks.map((block) => {
-                if (block.type === 'paragraph') {
-                    return buildDocxParagraph(block.inlines, references, referenceOrder);
-                }
-                return buildDocxTable(block.rows, references, referenceOrder);
-            })
+            ...mapBlocks(
+                blocks,
+                (inlines) => buildDocxParagraph(inlines, references, referenceOrder),
+                (rows) => buildDocxTable(rows, references, referenceOrder)
+            )
         ];
 
         if (referenceOrder.length > 0) {
-            children.push(new Paragraph({ children: [] }));
-            children.push(new Paragraph({ children: [new TextRun({ text: 'References', bold: true })] }));
+            children.push(new Paragraph({ children: [], spacing: { after: 200 } }));
+            children.push(
+                new Paragraph({
+                    children: [new TextRun({ text: 'References', ...DOCX_HEADING_RUN })],
+                    heading: HeadingLevel.HEADING_2,
+                    spacing: { after: 160 }
+                })
+            );
             referenceOrder.forEach((key) => {
                 const source = references.get(key) || '';
-                children.push(new Paragraph({ children: [new TextRun({ text: `[${key}] ${source}` })] }));
+                children.push(
+                    new Paragraph({
+                        children: [new TextRun({ text: `[${key}] ${source}` })],
+                        spacing: DOCX_PARAGRAPH_SPACING,
+                        run: DOCX_BODY_RUN
+                    })
+                );
             });
         }
 
         const doc = new Document({
-            sections: [{ children }]
+            sections: [{ children }],
+            styles: {
+                default: {
+                    document: {
+                        run: DOCX_BODY_RUN,
+                        paragraph: { spacing: DOCX_PARAGRAPH_SPACING }
+                    }
+                }
+            }
         });
 
         const filename = `notebooklm_note_${tabTitle}_${timestamp}.docx`;
