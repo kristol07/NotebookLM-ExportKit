@@ -520,6 +520,8 @@ const escapeXml = (value: string) => {
 
 const normalizeOpmlText = (value: string) => value.replace(/\s+/g, ' ').trim();
 
+const normalizeFreemindText = (value: string) => value.replace(/\s+/g, ' ').trim();
+
 const buildOpmlOutline = (nodes: MindmapNode[], depth = 2): string => {
     return nodes
         .map((node) => {
@@ -537,6 +539,23 @@ const buildOpmlOutline = (nodes: MindmapNode[], depth = 2): string => {
         .join('\n');
 };
 
+const buildFreemindNode = (node: MindmapNode, depth: number): string => {
+    const text = escapeXml(normalizeFreemindText(node.title));
+    const attrs = [`TEXT="${text}"`];
+    if (node.id) {
+        attrs.push(`ID="${escapeXml(node.id)}"`);
+    }
+    const indent = '  '.repeat(depth);
+    if (node.children && node.children.length > 0) {
+        return `${indent}<node ${attrs.join(' ')}>\n${buildFreemindNodes(node.children, depth + 1)}\n${indent}</node>`;
+    }
+    return `${indent}<node ${attrs.join(' ')} />`;
+};
+
+const buildFreemindNodes = (nodes: MindmapNode[], depth: number): string => {
+    return nodes.map((node) => buildFreemindNode(node, depth)).join('\n');
+};
+
 const generateOpml = (nodes: MindmapNode[], title: string) => {
     const safeTitle = normalizeOpmlText(title) || 'NotebookLM Mindmap';
     const outline = buildOpmlOutline(nodes);
@@ -551,19 +570,32 @@ ${outline}
 </opml>`;
 };
 
+const generateFreemind = (nodes: MindmapNode[], title: string) => {
+    const safeTitle = normalizeFreemindText(title) || 'NotebookLM Mindmap';
+    let rootNode: string;
+    if (nodes.length === 1) {
+        rootNode = buildFreemindNode(nodes[0], 1);
+    } else {
+        const children = buildFreemindNodes(nodes, 2);
+        const indent = '  '.repeat(1);
+        rootNode = `${indent}<node TEXT="${escapeXml(safeTitle)}">\n${children}\n${indent}</node>`;
+    }
+    return `<?xml version="1.0" encoding="UTF-8"?>
+<map version="1.0.1">
+${rootNode}
+</map>`;
+};
+
 const normalizeMarkdownText = (value: string) => value.replace(/\s+/g, ' ').trim();
 
-const buildMarkdownHeadings = (nodes: MindmapNode[], depth = 0): string => {
+const buildMarkdownList = (nodes: MindmapNode[], depth = 0): string => {
     return nodes
         .map((node) => {
             const text = normalizeMarkdownText(node.title);
-            const level = depth + 1;
-            const line =
-                level <= 6
-                    ? `${'#'.repeat(level)} ${text}`
-                    : `${'  '.repeat(level - 7)}- ${text}`;
+            const indent = '  '.repeat(depth);
+            const line = `${indent}- ${text}`;
             if (node.children && node.children.length > 0) {
-                return `${line}\n${buildMarkdownHeadings(node.children, depth + 1)}`;
+                return `${line}\n${buildMarkdownList(node.children, depth + 1)}`;
             }
             return line;
         })
@@ -571,11 +603,11 @@ const buildMarkdownHeadings = (nodes: MindmapNode[], depth = 0): string => {
 };
 
 const generateMarkdown = (nodes: MindmapNode[], _title: string) => {
-    const headings = buildMarkdownHeadings(nodes);
-    if (!headings) {
+    const list = buildMarkdownList(nodes);
+    if (!list) {
         return '';
     }
-    return `${headings}\n`;
+    return `${list}\n`;
 };
 
 /**
@@ -694,6 +726,13 @@ export const exportMindmap = (
     if (format === 'OPML') {
         const content = generateOpml(mindmapData, tabTitle);
         const filename = `notebooklm_mindmap_${tabTitle}_${timestamp}.opml`;
+        downloadBlob(content, filename, 'text/xml');
+        return { success: true, count: mindmapData.length };
+    }
+
+    if (format === 'FreeMind') {
+        const content = generateFreemind(mindmapData, tabTitle);
+        const filename = `notebooklm_mindmap_${tabTitle}_${timestamp}.mm`;
         downloadBlob(content, filename, 'text/xml');
         return { success: true, count: mindmapData.length };
     }

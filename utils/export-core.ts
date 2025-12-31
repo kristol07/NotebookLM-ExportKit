@@ -1,4 +1,16 @@
-export type ExportFormat = 'PDF' | 'CSV' | 'PPTX' | 'JSON' | 'HTML' | 'Anki' | 'OPML' | 'JSONCanvas' | 'SVG' | 'Markdown' | 'Word';
+export type ExportFormat =
+    | 'PDF'
+    | 'CSV'
+    | 'PPTX'
+    | 'JSON'
+    | 'HTML'
+    | 'Anki'
+    | 'OPML'
+    | 'FreeMind'
+    | 'JSONCanvas'
+    | 'SVG'
+    | 'Markdown'
+    | 'Word';
 export type ContentType = 'quiz' | 'flashcards' | 'mindmap' | 'datatable' | 'note';
 export type ContentSource = 'notebooklm' | 'user';
 

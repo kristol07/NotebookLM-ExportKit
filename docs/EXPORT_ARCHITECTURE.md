@@ -24,7 +24,7 @@ Recommended steps:
 2. **Supported formats per type**
    - Define a per-type supported-format list (e.g., `supportedFormats: Record<ContentType, ExportFormat[]>`) and enforce it before dispatch.
 3. **Type-specific exporters**
-   - Keep each content type in its own file with format-specific conversion logic (e.g., `exportSlidesToPptx`, `exportMindmapToOpml`).
+   - Keep each content type in its own file with format-specific conversion logic (e.g., `exportSlidesToPptx`, `exportMindmapToOpml`, `exportMindmapToFreeMind`).
 
 This keeps the core small and makes it straightforward to add new export types without assuming shared formats or extraction logic.
 

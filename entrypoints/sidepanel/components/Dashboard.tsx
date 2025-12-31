@@ -46,14 +46,15 @@ const EXPORT_SECTIONS: Array<{
                 { format: 'SVG' },
                 { format: 'JSONCanvas', label: 'Obsidian', isPlus: true },
                 { format: 'OPML', isPlus: true },
+                { format: 'FreeMind', label: 'FreeMind (.mm)', isPlus: true },
             ],
         },
         {
             title: 'Note Exports',
             contentType: 'note',
             options: [
-                { format: 'Word', label: 'Word' },
-                { format: 'Markdown' },
+                { format: 'Word', label: 'Word', isPlus: true },
+                { format: 'Markdown', isPlus: true },
                 { format: 'PDF' },
             ],
         },
@@ -316,27 +317,27 @@ export default function Dashboard({
                 <div className="dashboard-header">
                     <h3 className="dashboard-title">Dashboard</h3>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    {isSignedIn ? (
-                        <>
-                            <div className="plan-label">
-                                <div className="plan-value">{isPlus ? 'Plus' : 'Free'}</div>
-                            </div>
+                        {isSignedIn ? (
+                            <>
+                                <div className="plan-label">
+                                    <div className="plan-value">{isPlus ? 'Plus' : 'Free'}</div>
+                                </div>
+                                <button
+                                    onClick={handleSignOut}
+                                    title="Sign Out"
+                                    className="export-btn small"
+                                >
+                                    Sign Out
+                                </button>
+                            </>
+                        ) : (
                             <button
-                                onClick={handleSignOut}
-                                title="Sign Out"
+                                onClick={() => onRequestLogin?.()}
                                 className="export-btn small"
                             >
-                                Sign Out
+                                Sign In
                             </button>
-                        </>
-                    ) : (
-                        <button
-                            onClick={() => onRequestLogin?.()}
-                            className="export-btn small"
-                        >
-                            Sign In
-                        </button>
-                    )}
+                        )}
                     </div>
                 </div>
 
