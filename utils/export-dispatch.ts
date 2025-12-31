@@ -8,7 +8,7 @@ import { exportQuiz } from './quiz-export';
 export const supportedFormatsByType: Record<ContentType, ExportFormat[]> = {
     quiz: ['CSV', 'JSON', 'HTML', 'Anki'],
     flashcards: ['CSV', 'JSON', 'HTML', 'Anki'],
-    mindmap: ['OPML', 'FreeMind', 'JSONCanvas', 'SVG', 'Markdown'],
+    mindmap: ['HTML', 'OPML', 'FreeMind', 'JSONCanvas', 'SVG', 'Markdown'],
     datatable: ['CSV', 'Markdown'],
     note: ['Word', 'Markdown', 'PDF']
 };

@@ -43,11 +43,12 @@ const EXPORT_SECTIONS: Array<{
             title: 'Mindmap Exports',
             contentType: 'mindmap',
             options: [
-                { format: 'Markdown', label: 'Markdown', isPlus: true, apps: ['Whimsical', 'Obsidian'] },
                 { format: 'SVG' },
+                { format: 'HTML', label: 'HTML' },
+                { format: 'FreeMind', label: 'FreeMind' },
+                { format: 'Markdown', label: 'Markdown', isPlus: true, apps: ['Whimsical', 'Obsidian'] },
                 { format: 'JSONCanvas', label: 'JSONCanvas', isPlus: true, apps: ['Obsidian'] },
                 { format: 'OPML', label: 'OPML', isPlus: true, apps: ['XMind', 'MindMeister'] },
-                { format: 'FreeMind', label: 'FreeMind' },
             ],
         },
         {

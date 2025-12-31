@@ -518,6 +518,15 @@ const escapeXml = (value: string) => {
         .replace(/'/g, '&apos;');
 };
 
+const escapeHtml = (value: string) => {
+    return value
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+};
+
 const normalizeOpmlText = (value: string) => value.replace(/\s+/g, ' ').trim();
 
 const normalizeFreemindText = (value: string) => value.replace(/\s+/g, ' ').trim();
@@ -608,6 +617,791 @@ const generateMarkdown = (nodes: MindmapNode[], _title: string) => {
         return '';
     }
     return `${list}\n`;
+};
+
+const generateMindmapHtml = (nodes: MindmapNode[], title: string) => {
+    const safeTitle = escapeHtml(title || 'NotebookLM Mindmap');
+    const serializedNodes = JSON.stringify(nodes).replace(/</g, '\\u003c');
+    return `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${safeTitle} - Mindmap Export</title>
+    <style>
+        :root {
+            --ink: #1c1b1a;
+            --muted: #5b5a57;
+            --panel: rgba(255, 255, 255, 0.88);
+            --panel-border: rgba(24, 24, 24, 0.12);
+            --accent: #ff6b3d;
+            --accent-2: #1b7f7a;
+            --shadow: 0 20px 60px rgba(24, 24, 24, 0.12);
+            --glow: 0 0 0 1px rgba(255, 255, 255, 0.4) inset;
+            --node-bg: #ffffff;
+            --node-border: rgba(24, 24, 24, 0.2);
+            --edge: rgba(27, 27, 27, 0.25);
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            font-family: "Sora", "Manrope", "Avenir Next", "Noto Sans", sans-serif;
+            color: var(--ink);
+            background:
+                radial-gradient(circle at 10% 20%, rgba(255, 209, 176, 0.35), transparent 55%),
+                radial-gradient(circle at 80% 10%, rgba(182, 222, 255, 0.4), transparent 60%),
+                linear-gradient(140deg, #f7f2ea, #eef4ff 55%, #f6f5f1);
+        }
+
+        .page {
+            min-height: 100vh;
+            display: grid;
+            grid-template-rows: auto 1fr auto;
+            gap: 20px;
+            padding: 28px;
+        }
+
+        .toolbar {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 16px;
+            padding: 18px 22px;
+            border-radius: 18px;
+            background: var(--panel);
+            border: 1px solid var(--panel-border);
+            box-shadow: var(--shadow);
+            backdrop-filter: blur(8px);
+        }
+
+        .title-block {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            min-width: 220px;
+        }
+
+        .title {
+            font-size: 20px;
+            font-weight: 600;
+            letter-spacing: 0.2px;
+        }
+
+        .subtitle {
+            font-size: 13px;
+            color: var(--muted);
+        }
+
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-left: auto;
+        }
+
+        .control-btn {
+            border: 1px solid transparent;
+            background: #fff;
+            color: var(--ink);
+            padding: 8px 14px;
+            border-radius: 999px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+            box-shadow: var(--glow);
+        }
+
+        .control-btn:hover {
+            transform: translateY(-1px);
+            border-color: rgba(0, 0, 0, 0.08);
+            box-shadow: 0 10px 20px rgba(24, 24, 24, 0.12);
+        }
+
+        .control-btn.primary {
+            background: linear-gradient(135deg, var(--accent), #ff9b5a);
+            color: #fff;
+        }
+
+        .control-btn.active {
+            border-color: rgba(27, 127, 122, 0.4);
+            box-shadow: 0 0 0 2px rgba(27, 127, 122, 0.18);
+        }
+
+        .mindmap-stage {
+            position: relative;
+            border-radius: 28px;
+            background: linear-gradient(140deg, #fffdf8, #f0f6ff);
+            border: 1px solid rgba(20, 20, 20, 0.08);
+            box-shadow: var(--shadow);
+            overflow: hidden;
+            min-height: 60vh;
+            touch-action: none;
+            cursor: grab;
+            user-select: none;
+        }
+
+        .mindmap-stage.dragging {
+            cursor: grabbing;
+        }
+
+        .mindmap-canvas {
+            position: relative;
+            transform-origin: 0 0;
+            will-change: transform;
+        }
+
+        .nodes-layer,
+        .edges-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        .edges-layer {
+            z-index: 1;
+        }
+
+        .nodes-layer {
+            z-index: 2;
+        }
+
+        .edge {
+            position: absolute;
+            height: 2px;
+            background: linear-gradient(90deg, rgba(27, 27, 27, 0.15), var(--edge));
+            transform-origin: 0 50%;
+            pointer-events: none;
+        }
+
+        .node {
+            position: absolute;
+            background: var(--node-bg);
+            border: 1px solid var(--node-border);
+            border-radius: 16px;
+            padding: 12px 16px;
+            box-shadow: 0 12px 24px rgba(24, 24, 24, 0.12);
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+        }
+
+        .node:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 18px 30px rgba(24, 24, 24, 0.16);
+        }
+
+        .node-title {
+            font-size: 14px;
+            font-weight: 600;
+            line-height: 1.4;
+            white-space: pre-wrap;
+        }
+
+        .node-toggle {
+            width: 24px;
+            height: 24px;
+            border-radius: 999px;
+            border: 1px solid rgba(27, 27, 27, 0.3);
+            background: #fff;
+            color: var(--ink);
+            font-weight: 700;
+            font-size: 14px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+
+        .node[data-collapsible="false"] .node-toggle {
+            display: none;
+        }
+
+        .legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px 18px;
+            padding: 14px 18px;
+            border-radius: 14px;
+            background: rgba(255, 255, 255, 0.75);
+            border: 1px solid rgba(20, 20, 20, 0.08);
+            color: var(--muted);
+            font-size: 12px;
+            letter-spacing: 0.2px;
+        }
+
+        .legend strong {
+            color: var(--ink);
+        }
+
+        .empty-state {
+            padding: 32px;
+            text-align: center;
+            color: var(--muted);
+        }
+
+        @media (max-width: 720px) {
+            .page {
+                padding: 18px;
+            }
+
+            .toolbar {
+                gap: 12px;
+            }
+
+            .controls {
+                width: 100%;
+                justify-content: flex-start;
+                margin-left: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="page">
+        <header class="toolbar">
+            <div class="title-block">
+                <div class="title">${safeTitle}</div>
+                <div class="subtitle">Interactive mindmap export</div>
+            </div>
+            <div class="controls">
+                <button class="control-btn active" data-layout="horizontal">Horizontal</button>
+                <button class="control-btn" data-layout="vertical">Vertical</button>
+                <button class="control-btn" data-layout="radial">Radial</button>
+                <button class="control-btn" data-action="zoom-out">Zoom out</button>
+                <button class="control-btn" data-action="zoom-in">Zoom in</button>
+                <button class="control-btn" data-action="fit">Fit to view</button>
+                <button class="control-btn" data-action="expand-all">Expand all</button>
+                <button class="control-btn" data-action="collapse-all">Collapse all</button>
+                <button class="control-btn primary" data-action="reset">Reset</button>
+            </div>
+        </header>
+
+        <main id="mindmap-stage" class="mindmap-stage">
+            <div id="mindmap-canvas" class="mindmap-canvas"></div>
+        </main>
+
+        <div class="legend">
+            <div><strong>Pan:</strong> drag the canvas</div>
+            <div><strong>Zoom:</strong> mouse wheel or buttons</div>
+            <div><strong>Nodes:</strong> click to expand/collapse</div>
+            <div><strong>Layout:</strong> switch via toolbar</div>
+        </div>
+    </div>
+
+    <script>
+        (function () {
+            const data = ${serializedNodes};
+            const stage = document.getElementById('mindmap-stage');
+            const canvas = document.getElementById('mindmap-canvas');
+            if (!stage || !canvas) {
+                return;
+            }
+
+            const state = { scale: 1, x: 0, y: 0 };
+            const minScale = 0.2;
+            const maxScale = 3.5;
+            let draggedRecently = false;
+
+            const clampScale = (value) => Math.min(maxScale, Math.max(minScale, value));
+
+            const applyTransform = () => {
+                canvas.style.transform =
+                    'translate(' + state.x + 'px, ' + state.y + 'px) scale(' + state.scale + ')';
+            };
+
+            const zoomAt = (delta, clientX, clientY) => {
+                const rect = stage.getBoundingClientRect();
+                const originX = clientX - rect.left;
+                const originY = clientY - rect.top;
+                const nextScale = clampScale(state.scale * delta);
+                const ratio = nextScale / state.scale;
+                state.x = originX - (originX - state.x) * ratio;
+                state.y = originY - (originY - state.y) * ratio;
+                state.scale = nextScale;
+                applyTransform();
+            };
+
+            const fitToView = () => {
+                const rect = stage.getBoundingClientRect();
+                const contentWidth = canvas.offsetWidth;
+                const contentHeight = canvas.offsetHeight;
+                if (!contentWidth || !contentHeight) return;
+                const scale = clampScale(Math.min(rect.width / contentWidth, rect.height / contentHeight) * 0.92);
+                state.scale = scale;
+                state.x = (rect.width - contentWidth * scale) / 2;
+                state.y = (rect.height - contentHeight * scale) / 2;
+                applyTransform();
+            };
+
+            const scheduleFit = () => {
+                requestAnimationFrame(() => fitToView());
+            };
+
+            const nodeMap = new Map();
+            const rootIds = [];
+
+            const buildTree = (nodes, parentId, depth) => {
+                nodes.forEach((node, index) => {
+                    const id =
+                        node.id ||
+                        ('node-' + depth + '-' + index + '-' + Math.random().toString(36).slice(2, 7));
+                    const record = {
+                        id,
+                        title: String(node.title || ''),
+                        parentId,
+                        children: [],
+                        depth,
+                        expanded: true,
+                        width: 0,
+                        height: 0,
+                        x: 0,
+                        y: 0
+                    };
+                    nodeMap.set(id, record);
+                    if (!parentId) {
+                        rootIds.push(id);
+                    } else {
+                        const parent = nodeMap.get(parentId);
+                        if (parent) parent.children.push(id);
+                    }
+                    if (Array.isArray(node.children) && node.children.length > 0) {
+                        buildTree(node.children, id, depth + 1);
+                    }
+                });
+            };
+
+            buildTree(data, null, 0);
+
+            if (nodeMap.size === 0) {
+                const empty = document.createElement('div');
+                empty.className = 'empty-state';
+                empty.textContent = 'No mindmap nodes found.';
+                stage.appendChild(empty);
+                return;
+            }
+
+            const edgesLayer = document.createElement('div');
+            edgesLayer.className = 'edges-layer';
+            const nodesLayer = document.createElement('div');
+            nodesLayer.className = 'nodes-layer';
+            canvas.append(edgesLayer, nodesLayer);
+
+            const measureNode = (node) => {
+                const minWidth = 160;
+                const maxWidth = 320;
+                const width = Math.min(maxWidth, Math.max(minWidth, node.title.length * 7 + 56));
+                node.width = width;
+                node.height = 54;
+            };
+
+            nodeMap.forEach((node) => {
+                measureNode(node);
+            });
+
+            const layoutHorizontal = () => {
+                const H_SPACING = 260;
+                const V_GAP = 30;
+
+                const subtreeHeight = (id) => {
+                    const node = nodeMap.get(id);
+                    if (!node.children.length) {
+                        return node.height + V_GAP;
+                    }
+                    return node.children.reduce((sum, childId) => sum + subtreeHeight(childId), 0);
+                };
+
+                const layout = (id, depth, offsetY) => {
+                    const node = nodeMap.get(id);
+                    const totalHeight = subtreeHeight(id);
+                    let currentY = offsetY;
+                    if (node.children.length) {
+                        currentY = offsetY + totalHeight / 2 - node.height / 2;
+                    }
+                    node.x = depth * H_SPACING;
+                    node.y = currentY;
+                    let childOffset = offsetY;
+                    node.children.forEach((childId) => {
+                        const childHeight = subtreeHeight(childId);
+                        layout(childId, depth + 1, childOffset);
+                        childOffset += childHeight;
+                    });
+                    return totalHeight;
+                };
+
+                let offset = 0;
+                rootIds.forEach((id) => {
+                    const height = layout(id, 0, offset);
+                    offset += height + V_GAP;
+                });
+            };
+
+            const layoutVertical = () => {
+                const V_SPACING = 150;
+                const H_GAP = 30;
+
+                const subtreeWidth = (id) => {
+                    const node = nodeMap.get(id);
+                    if (!node.children.length) {
+                        return node.width + H_GAP;
+                    }
+                    return node.children.reduce((sum, childId) => sum + subtreeWidth(childId), 0);
+                };
+
+                const layout = (id, depth, offsetX) => {
+                    const node = nodeMap.get(id);
+                    const totalWidth = subtreeWidth(id);
+                    node.x = offsetX + totalWidth / 2 - node.width / 2;
+                    node.y = depth * V_SPACING;
+                    let childOffset = offsetX;
+                    node.children.forEach((childId) => {
+                        const childWidth = subtreeWidth(childId);
+                        layout(childId, depth + 1, childOffset);
+                        childOffset += childWidth;
+                    });
+                    return totalWidth;
+                };
+
+                let offset = 0;
+                rootIds.forEach((id) => {
+                    const width = layout(id, 0, offset);
+                    offset += width + H_GAP;
+                });
+            };
+
+            const layoutRadial = () => {
+                const radialSpacing = 180;
+                const virtualRootId = 'virtual-root';
+                const virtualRoot = {
+                    id: virtualRootId,
+                    title: '',
+                    parentId: null,
+                    children: rootIds.slice(),
+                    depth: -1,
+                    expanded: true,
+                    width: 0,
+                    height: 0,
+                    x: 0,
+                    y: 0
+                };
+
+                const leafOrder = [];
+                const collectLeaves = (id) => {
+                    const node = id === virtualRootId ? virtualRoot : nodeMap.get(id);
+                    if (!node.children.length) {
+                        leafOrder.push(id);
+                        return;
+                    }
+                    node.children.forEach((childId) => collectLeaves(childId));
+                };
+
+                collectLeaves(virtualRootId);
+                const totalLeaves = leafOrder.length || 1;
+                const angles = new Map();
+                leafOrder.forEach((id, index) => {
+                    const angle = -Math.PI / 2 + (index / totalLeaves) * Math.PI * 2;
+                    angles.set(id, angle);
+                });
+
+                const resolveAngle = (id) => {
+                    const node = id === virtualRootId ? virtualRoot : nodeMap.get(id);
+                    if (!node.children.length) {
+                        return angles.get(id) || 0;
+                    }
+                    const childAngles = node.children.map((childId) => resolveAngle(childId));
+                    const avg = childAngles.reduce((sum, value) => sum + value, 0) / childAngles.length;
+                    angles.set(id, avg);
+                    return avg;
+                };
+
+                resolveAngle(virtualRootId);
+
+                const layoutNode = (id, depth) => {
+                    const node = nodeMap.get(id);
+                    const angle = angles.get(id) || 0;
+                    const radius = Math.max(0, depth) * radialSpacing;
+                    node.x = Math.cos(angle) * radius;
+                    node.y = Math.sin(angle) * radius;
+                    node.children.forEach((childId) => layoutNode(childId, depth + 1));
+                };
+
+                rootIds.forEach((id) => layoutNode(id, 0));
+            };
+
+            const layoutOptions = {
+                horizontal: layoutHorizontal,
+                vertical: layoutVertical,
+                radial: layoutRadial
+            };
+
+            let activeLayout = 'horizontal';
+
+            const renderNodes = () => {
+                nodesLayer.innerHTML = '';
+                edgesLayer.innerHTML = '';
+                nodeMap.forEach((node) => {
+                    const nodeEl = document.createElement('div');
+                    nodeEl.className = 'node';
+                    nodeEl.dataset.id = node.id;
+                    nodeEl.dataset.collapsible = node.children.length ? 'true' : 'false';
+                    nodeEl.style.width = node.width + 'px';
+                    nodeEl.style.left = node.x + 'px';
+                    nodeEl.style.top = node.y + 'px';
+
+                    const titleEl = document.createElement('span');
+                    titleEl.className = 'node-title';
+                    titleEl.textContent = node.title;
+
+                    const toggle = document.createElement('button');
+                    toggle.className = 'node-toggle';
+                    toggle.type = 'button';
+                    toggle.textContent = node.expanded ? '-' : '+';
+                    toggle.addEventListener('click', (event) => {
+                        event.stopPropagation();
+                        if (!node.children.length) return;
+                        node.expanded = !node.expanded;
+                        toggle.textContent = node.expanded ? '-' : '+';
+                        updateVisibility();
+                    });
+
+                    nodeEl.addEventListener('click', () => {
+                        if (draggedRecently || !node.children.length) return;
+                        node.expanded = !node.expanded;
+                        toggle.textContent = node.expanded ? '-' : '+';
+                        updateVisibility();
+                    });
+
+                    nodeEl.append(titleEl, toggle);
+                    nodesLayer.appendChild(nodeEl);
+                    node.element = nodeEl;
+                    node.edges = [];
+                });
+
+                nodeMap.forEach((node) => {
+                    node.children.forEach((childId) => {
+                        const edge = document.createElement('div');
+                        edge.className = 'edge';
+                        edge.dataset.parentId = node.id;
+                        edge.dataset.childId = childId;
+                        edgesLayer.appendChild(edge);
+                        node.edges.push(edge);
+                    });
+                });
+            };
+
+            const updateEdges = () => {
+                nodeMap.forEach((node) => {
+                    if (!node.edges) return;
+                    node.children.forEach((childId, index) => {
+                        const child = nodeMap.get(childId);
+                        const edge = node.edges[index];
+                        if (!child || !edge) return;
+                        const startX = node.x + node.width / 2;
+                        const startY = node.y + node.height / 2;
+                        const endX = child.x + child.width / 2;
+                        const endY = child.y + child.height / 2;
+                        const dx = endX - startX;
+                        const dy = endY - startY;
+                        const length = Math.hypot(dx, dy);
+                        const angle = Math.atan2(dy, dx) * 180 / Math.PI;
+                        edge.style.width = length + 'px';
+                        edge.style.transform =
+                            'translate(' + startX + 'px, ' + startY + 'px) rotate(' + angle + 'deg)';
+                    });
+                });
+            };
+
+            const updateVisibility = () => {
+                const isVisible = (id) => {
+                    let current = nodeMap.get(id);
+                    while (current && current.parentId) {
+                        const parent = nodeMap.get(current.parentId);
+                        if (!parent || !parent.expanded) return false;
+                        current = parent;
+                    }
+                    return true;
+                };
+
+                nodeMap.forEach((node) => {
+                    const visible = isVisible(node.id);
+                    if (node.element) {
+                        node.element.style.display = visible ? 'inline-flex' : 'none';
+                        const toggle = node.element.querySelector('.node-toggle');
+                        if (toggle) toggle.textContent = node.expanded ? '-' : '+';
+                    }
+                    if (node.edges) {
+                        node.children.forEach((childId, index) => {
+                            const edge = node.edges[index];
+                            if (!edge) return;
+                            const childVisible = isVisible(childId);
+                            edge.style.display = visible && childVisible && node.expanded ? 'block' : 'none';
+                        });
+                    }
+                });
+            };
+
+            const applyLayout = (layout) => {
+                activeLayout = layout;
+                const layoutFn = layoutOptions[layout] || layoutHorizontal;
+                layoutFn();
+                const bounds = {
+                    minX: Infinity,
+                    minY: Infinity,
+                    maxX: -Infinity,
+                    maxY: -Infinity
+                };
+                nodeMap.forEach((node) => {
+                    bounds.minX = Math.min(bounds.minX, node.x);
+                    bounds.minY = Math.min(bounds.minY, node.y);
+                    bounds.maxX = Math.max(bounds.maxX, node.x + node.width);
+                    bounds.maxY = Math.max(bounds.maxY, node.y + node.height);
+                });
+                const padding = 120;
+                const offsetX = -bounds.minX + padding;
+                const offsetY = -bounds.minY + padding;
+                const width = Math.max(1, bounds.maxX - bounds.minX + padding * 2);
+                const height = Math.max(1, bounds.maxY - bounds.minY + padding * 2);
+                canvas.style.width = width + 'px';
+                canvas.style.height = height + 'px';
+                nodeMap.forEach((node) => {
+                    node.x += offsetX;
+                    node.y += offsetY;
+                });
+                renderNodes();
+                updateEdges();
+                updateVisibility();
+                scheduleFit();
+            };
+
+            const expandAll = () => {
+                nodeMap.forEach((node) => {
+                    node.expanded = true;
+                });
+                updateVisibility();
+            };
+
+            const collapseAll = () => {
+                nodeMap.forEach((node) => {
+                    node.expanded = false;
+                });
+                rootIds.forEach((id) => {
+                    const root = nodeMap.get(id);
+                    if (root) root.expanded = true;
+                });
+                updateVisibility();
+            };
+
+            let pointerDown = false;
+            let isDragging = false;
+            let startX = 0;
+            let startY = 0;
+            let originX = 0;
+            let originY = 0;
+
+            stage.addEventListener('pointerdown', (event) => {
+                if (event.button !== 0) return;
+                if (event.target && event.target.closest && event.target.closest('.node')) return;
+                pointerDown = true;
+                isDragging = false;
+                startX = event.clientX;
+                startY = event.clientY;
+                originX = state.x;
+                originY = state.y;
+                stage.setPointerCapture(event.pointerId);
+            });
+
+            stage.addEventListener('pointermove', (event) => {
+                if (!pointerDown) return;
+                const deltaX = event.clientX - startX;
+                const deltaY = event.clientY - startY;
+                if (!isDragging) {
+                    if (Math.hypot(deltaX, deltaY) < 4) {
+                        return;
+                    }
+                    isDragging = true;
+                    stage.classList.add('dragging');
+                }
+                state.x = originX + deltaX;
+                state.y = originY + deltaY;
+                applyTransform();
+            });
+
+            stage.addEventListener('pointerup', (event) => {
+                if (!pointerDown) return;
+                pointerDown = false;
+                if (isDragging) {
+                    isDragging = false;
+                    stage.classList.remove('dragging');
+                    draggedRecently = true;
+                    setTimeout(() => {
+                        draggedRecently = false;
+                    }, 0);
+                }
+                stage.releasePointerCapture(event.pointerId);
+            });
+
+            stage.addEventListener('wheel', (event) => {
+                event.preventDefault();
+                const delta = event.deltaY < 0 ? 1.12 : 0.9;
+                zoomAt(delta, event.clientX, event.clientY);
+            }, { passive: false });
+
+            const runAction = (action) => {
+                if (action === 'zoom-in') {
+                    const rect = stage.getBoundingClientRect();
+                    zoomAt(1.2, rect.left + rect.width / 2, rect.top + rect.height / 2);
+                } else if (action === 'zoom-out') {
+                    const rect = stage.getBoundingClientRect();
+                    zoomAt(0.85, rect.left + rect.width / 2, rect.top + rect.height / 2);
+                } else if (action === 'fit') {
+                    fitToView();
+                } else if (action === 'expand-all') {
+                    expandAll();
+                } else if (action === 'collapse-all') {
+                    collapseAll();
+                } else if (action === 'reset') {
+                    state.scale = 1;
+                    state.x = 0;
+                    state.y = 0;
+                    applyTransform();
+                }
+            };
+
+            document.querySelectorAll('.controls [data-action]').forEach((button) => {
+                button.addEventListener('click', () => {
+                    const action = button.getAttribute('data-action');
+                    if (action) runAction(action);
+                });
+            });
+
+            document.querySelectorAll('[data-layout]').forEach((button) => {
+                button.addEventListener('click', () => {
+                    const layout = button.getAttribute('data-layout');
+                    if (!layout) return;
+                    document.querySelectorAll('[data-layout]').forEach((item) => item.classList.remove('active'));
+                    button.classList.add('active');
+                    applyLayout(layout);
+                });
+            });
+
+            window.addEventListener('resize', () => {
+                fitToView();
+            });
+
+            applyLayout(activeLayout);
+        })();
+    </script>
+</body>
+</html>`;
 };
 
 /**
@@ -762,6 +1556,13 @@ export const exportMindmap = (
         const content = `<?xml version="1.0" encoding="UTF-8"?>\n${enhanced}`;
         const filename = `notebooklm_mindmap_${tabTitle}_${timestamp}.svg`;
         downloadBlob(content, filename, 'image/svg+xml');
+        return { success: true, count: mindmapData.length };
+    }
+
+    if (format === 'HTML') {
+        const content = generateMindmapHtml(mindmapData, tabTitle);
+        const filename = `notebooklm_mindmap_${tabTitle}_${timestamp}.html`;
+        downloadBlob(content, filename, 'text/html');
         return { success: true, count: mindmapData.length };
     }
 
