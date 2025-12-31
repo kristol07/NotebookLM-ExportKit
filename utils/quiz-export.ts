@@ -12,25 +12,47 @@ export const generateQuizHtml = (quizData: QuizItem[], title: string) => {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>${title} - Quiz Export</title>
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap');
+
         :root {
-            --bg-color: #1a1c1e;
-            --container-bg: #212429;
-            --text-primary: #e2e2e6;
-            --text-secondary: #c4c6cf;
-            --option-bg: #2d3036;
-            --option-hover: #383b42;
-            --correct-bg: rgba(76, 175, 80, 0.15);
-            --correct-border: #4caf50;
-            --incorrect-bg: rgba(244, 67, 54, 0.15);
-            --incorrect-border: #f44336;
-            --accent-blue: #4d7fff;
-            --accent-blue-hover: #6a96ff;
+            --bg: #f6f1e7;
+            --bg-deep: #efe4d6;
+            --ink: #171717;
+            --muted: #5b5b5b;
+            --accent: #d3542c;
+            --accent-light: #ff8f5a;
+            --accent-dark: #b14320;
+            --teal: #1f6f78;
+            --card: #fff7ef;
+            --stroke: #e3d6c5;
+            --shadow: 0 18px 40px rgba(23, 23, 23, 0.12);
+            --radius-sm: 10px;
+            --radius-md: 12px;
+            --radius-lg: 14px;
+            --radius-xl: 18px;
+            --radius-2xl: 22px;
+            --space-1: 6px;
+            --space-2: 8px;
+            --space-3: 10px;
+            --space-4: 12px;
+            --space-5: 14px;
+            --space-6: 16px;
+            --space-7: 18px;
+            --space-8: 20px;
+            --space-9: 24px;
+            --space-10: 32px;
+            --font-display: 'Space Grotesk', sans-serif;
+            --font-body: 'IBM Plex Sans', sans-serif;
+            --error: #b54832;
         }
 
         body {
-            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-primary);
+            font-family: var(--font-body);
+            background:
+                radial-gradient(240px 140px at 10% -10%, #ffd2b9 0%, transparent 70%),
+                radial-gradient(220px 160px at 90% 0%, #cfe7e6 0%, transparent 65%),
+                linear-gradient(180deg, var(--bg) 0%, var(--bg-deep) 100%);
+            color: var(--ink);
             margin: 0;
             display: flex;
             justify-content: center;
@@ -41,8 +63,12 @@ export const generateQuizHtml = (quizData: QuizItem[], title: string) => {
         .quiz-container {
             width: 100%;
             max-width: 800px;
-            padding: 40px 20px;
+            padding: var(--space-10) var(--space-8);
             box-sizing: border-box;
+            background: var(--card);
+            border-radius: var(--radius-2xl);
+            border: 1px solid var(--stroke);
+            box-shadow: var(--shadow);
         }
 
         .progress-container {
@@ -53,7 +79,7 @@ export const generateQuizHtml = (quizData: QuizItem[], title: string) => {
         }
 
         .progress-text {
-            color: var(--text-secondary);
+            color: var(--muted);
             font-size: 0.9em;
         }
 
@@ -70,12 +96,13 @@ export const generateQuizHtml = (quizData: QuizItem[], title: string) => {
             gap: 6px;
         }
 
-        .status-correct { color: #4caf50; }
-        .status-wrong { color: #f44336; }
+        .status-correct { color: var(--teal); }
+        .status-wrong { color: var(--error); }
 
         .question-text {
+            font-family: var(--font-display);
             font-size: 1.5em;
-            font-weight: 500;
+            font-weight: 600;
             margin-bottom: 32px;
             line-height: 1.4;
         }
@@ -89,29 +116,31 @@ export const generateQuizHtml = (quizData: QuizItem[], title: string) => {
         }
 
         .option-item {
-            background-color: var(--option-bg);
-            border: 1px solid transparent;
-            padding: 16px 20px;
-            border-radius: 12px;
+            background-color: #fff;
+            border: 1px solid var(--stroke);
+            padding: var(--space-4) var(--space-6);
+            border-radius: var(--radius-lg);
             cursor: pointer;
-            transition: all 0.2s ease;
+            transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
             display: flex;
             flex-direction: column;
             gap: 8px;
         }
 
         .option-item:hover:not(.selected) {
-            background-color: var(--option-hover);
+            background-color: var(--card);
+            transform: translateY(-1px);
+            box-shadow: 0 10px 18px rgba(23, 23, 23, 0.12);
         }
 
         .option-item.selected.correct {
-            background-color: var(--correct-bg);
-            border-color: var(--correct-border);
+            background-color: rgba(31, 111, 120, 0.12);
+            border-color: var(--teal);
         }
 
         .option-item.selected.incorrect {
-            background-color: var(--incorrect-bg);
-            border-color: var(--incorrect-border);
+            background-color: rgba(181, 72, 50, 0.12);
+            border-color: var(--error);
         }
 
         .option-label {
@@ -131,12 +160,12 @@ export const generateQuizHtml = (quizData: QuizItem[], title: string) => {
             display: block;
         }
 
-        .correct .feedback-state { color: #4caf50; }
-        .incorrect .feedback-state { color: #f44336; }
+        .correct .feedback-state { color: var(--teal); }
+        .incorrect .feedback-state { color: var(--error); }
 
         .rationale {
             font-size: 0.95em;
-            color: var(--text-secondary);
+            color: var(--muted);
             margin-top: 4px;
             line-height: 1.5;
             display: none;
@@ -147,32 +176,32 @@ export const generateQuizHtml = (quizData: QuizItem[], title: string) => {
         }
 
         .hint-toggle {
-            background: none;
-            border: none;
-            color: var(--text-secondary);
+            border: 1px solid var(--stroke);
+            color: var(--muted);
             cursor: pointer;
-            padding: 8px 16px;
-            border-radius: 12px;
-            background-color: var(--option-bg);
+            padding: var(--space-2) var(--space-6);
+            border-radius: var(--radius-md);
+            background-color: #fff;
             display: flex;
             align-items: center;
             gap: 8px;
             font-size: 0.9em;
-            transition: background-color 0.2s;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
         }
 
         .hint-toggle:hover {
-            background-color: var(--option-hover);
+            transform: translateY(-1px);
+            box-shadow: 0 10px 18px rgba(23, 23, 23, 0.12);
         }
 
         .hint-content {
             margin-top: 32px;
-            padding: 20px;
-            background-color: var(--container-bg);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            border-radius: 16px;
+            padding: var(--space-6);
+            background-color: #fff;
+            border: 1px solid var(--stroke);
+            border-radius: var(--radius-lg);
             font-size: 0.95em;
-            color: var(--text-secondary);
+            color: var(--muted);
             display: none;
             align-items: flex-start;
             gap: 16px;
@@ -183,7 +212,7 @@ export const generateQuizHtml = (quizData: QuizItem[], title: string) => {
         }
 
         .hint-icon-box {
-            color: var(--text-secondary);
+            color: var(--accent-dark);
             font-size: 1.2em;
             margin-top: -2px;
         }
@@ -201,31 +230,34 @@ export const generateQuizHtml = (quizData: QuizItem[], title: string) => {
         }
 
         .btn {
-            border-radius: 20px;
-            padding: 10px 24px;
+            border-radius: var(--radius-md);
+            padding: var(--space-2) var(--space-7);
             font-size: 0.95em;
             font-weight: 500;
             cursor: pointer;
-            border: none;
-            transition: background-color 0.2s;
+            border: 1px solid transparent;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
         }
 
         .btn-prev {
-            background-color: rgba(255,255,255,0.05);
-            color: var(--text-primary);
+            background-color: #fff;
+            color: var(--ink);
+            border-color: var(--stroke);
         }
 
         .btn-prev:hover:not(:disabled) {
-            background-color: rgba(255,255,255,0.1);
+            transform: translateY(-1px);
+            box-shadow: 0 10px 18px rgba(23, 23, 23, 0.12);
         }
 
         .btn-next {
-            background-color: var(--accent-blue);
-            color: white;
+            background: linear-gradient(90deg, var(--accent), var(--accent-light));
+            color: #fff;
         }
 
         .btn-next:hover:not(:disabled) {
-            background-color: var(--accent-blue-hover);
+            transform: translateY(-1px);
+            box-shadow: 0 10px 18px rgba(23, 23, 23, 0.12);
         }
 
         .btn:disabled {
@@ -234,6 +266,62 @@ export const generateQuizHtml = (quizData: QuizItem[], title: string) => {
         }
 
         .hidden { display: none; }
+
+        @media (max-width: 900px) {
+            .quiz-container {
+                margin: var(--space-8);
+                max-width: 100%;
+            }
+        }
+
+        @media (max-width: 720px) {
+            .quiz-container {
+                padding: var(--space-8) var(--space-6);
+            }
+
+            .question-text {
+                font-size: 1.3em;
+            }
+
+            .option-item {
+                padding: var(--space-4);
+            }
+        }
+
+        @media (max-width: 520px) {
+            body {
+                align-items: flex-start;
+            }
+
+            .quiz-container {
+                margin: var(--space-6);
+                padding: var(--space-7) var(--space-5);
+            }
+
+            .progress-container {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: var(--space-3);
+            }
+
+            .navigation {
+                flex-direction: column;
+                align-items: stretch;
+                gap: var(--space-4);
+            }
+
+            .nav-buttons {
+                width: 100%;
+            }
+
+            .btn {
+                width: 100%;
+            }
+
+            .hint-toggle {
+                justify-content: space-between;
+            }
+        }
     </style>
 </head>
 <body>

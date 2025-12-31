@@ -11,26 +11,46 @@ export const generateFlashcardsHtml = (flashcardsData: FlashcardItem[], title: s
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>${title} - Flashcards Export</title>
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap');
+
         :root {
-            --bg-color: #1e1e1e;
-            --card-bg: #2d2e31;
-            --text-primary: #e3e3e3;
-            --text-secondary: #c4c7c5;
-            --accent-color: #a8c7fa;
-            --btn-bg: #3c4043;
-            --btn-hover: #4e5155;
-            --progress-bg: #444746;
-            --text-secondary: #a8a8a8;
-            --accent-color: #a8c7fa;
-            --btn-hover: rgba(255, 255, 255, 0.1);
+            --bg: #f6f1e7;
+            --bg-deep: #efe4d6;
+            --ink: #171717;
+            --muted: #5b5b5b;
+            --accent: #d3542c;
+            --accent-light: #ff8f5a;
+            --accent-dark: #b14320;
+            --teal: #1f6f78;
+            --card: #fff7ef;
+            --stroke: #e3d6c5;
+            --shadow: 0 18px 40px rgba(23, 23, 23, 0.12);
+            --radius-sm: 10px;
+            --radius-md: 12px;
+            --radius-lg: 14px;
+            --radius-xl: 18px;
+            --radius-2xl: 22px;
+            --space-1: 6px;
+            --space-2: 8px;
+            --space-3: 10px;
+            --space-4: 12px;
+            --space-5: 14px;
+            --space-6: 16px;
+            --space-7: 18px;
+            --space-8: 20px;
+            --space-9: 24px;
+            --space-10: 32px;
+            --font-display: 'Space Grotesk', sans-serif;
+            --font-body: 'IBM Plex Sans', sans-serif;
         }
 
         body {
-            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            background-color: var(--bg-color);
-            background-image: radial-gradient(circle at 10% 20%, rgba(9, 61, 137, 0.4) 0%, transparent 40%),
-                              radial-gradient(circle at 90% 80%, rgba(26, 88, 51, 0.4) 0%, transparent 40%);
-            color: var(--text-primary);
+            font-family: var(--font-body);
+            background:
+                radial-gradient(240px 140px at 10% -10%, #ffd2b9 0%, transparent 70%),
+                radial-gradient(220px 160px at 90% 0%, #cfe7e6 0%, transparent 65%),
+                linear-gradient(180deg, var(--bg) 0%, var(--bg-deep) 100%);
+            color: var(--ink);
             margin: 0;
             display: flex;
             flex-direction: column;
@@ -42,8 +62,8 @@ export const generateFlashcardsHtml = (flashcardsData: FlashcardItem[], title: s
 
         .container {
             width: 100%;
-            max-width: 600px;
-            padding: 20px;
+            max-width: 640px;
+            padding: var(--space-8);
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -65,8 +85,8 @@ export const generateFlashcardsHtml = (flashcardsData: FlashcardItem[], title: s
             position: relative;
             transform-style: preserve-3d;
             transition: transform 0.6s cubic-bezier(0.4, 0.0, 0.2, 1);
-            border-radius: 24px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+            border-radius: var(--radius-2xl);
+            box-shadow: var(--shadow);
         }
 
         .card.flipped {
@@ -82,19 +102,19 @@ export const generateFlashcardsHtml = (flashcardsData: FlashcardItem[], title: s
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            padding: 40px;
+            padding: var(--space-10);
             box-sizing: border-box;
-            background-color: var(--card-bg);
-            border: 1px solid rgba(255,255,255,0.05); /* Subtle border */
-            border-radius: 24px;
+            background-color: var(--card);
+            border: 1px solid var(--stroke);
+            border-radius: var(--radius-2xl);
             text-align: center;
-            font-size: 1.5em;
+            font-size: 1.35em;
             line-height: 1.5;
         }
 
         .card-back {
             transform: rotateY(180deg);
-            background-color: var(--card-bg);
+            background-color: var(--card);
         }
 
         .card-content {
@@ -107,11 +127,11 @@ export const generateFlashcardsHtml = (flashcardsData: FlashcardItem[], title: s
         }
 
         .action-hint {
-            margin-top: 20px;
+            margin-top: var(--space-6);
             font-size: 0.8rem;
-            color: var(--text-secondary);
+            color: var(--teal);
             text-transform: uppercase;
-            letter-spacing: 1px;
+            letter-spacing: 0.08em;
             pointer-events: none;
         }
         
@@ -120,30 +140,31 @@ export const generateFlashcardsHtml = (flashcardsData: FlashcardItem[], title: s
             justify-content: space-between;
             align-items: center;
             width: 100%;
-            max-width: 800px;
-            margin-top: 40px;
-            padding: 0 20px;
-            gap: 24px;
+            max-width: 760px;
+            margin-top: var(--space-9);
+            padding: 0 var(--space-6);
+            gap: var(--space-8);
         }
 
         .nav-btn {
-            background: var(--btn-bg);
-            border: none;
-            color: var(--text-primary);
+            background: #fff;
+            border: 1px solid var(--stroke);
+            color: var(--ink);
             width: 56px;
             height: 56px;
-            border-radius: 50%;
+            border-radius: var(--radius-xl);
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
             font-size: 1.5em;
-            transition: background 0.2s, opacity 0.2s;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
             flex-shrink: 0;
         }
 
         .nav-btn:hover:not(:disabled) {
-            background: var(--btn-hover);
+            transform: translateY(-1px);
+            box-shadow: 0 10px 18px rgba(23, 23, 23, 0.12);
         }
 
         .nav-btn:disabled {
@@ -154,7 +175,7 @@ export const generateFlashcardsHtml = (flashcardsData: FlashcardItem[], title: s
         .progress-bar {
             flex: 1;
             height: 6px;
-            background: var(--progress-bg);
+            background: var(--stroke);
             border-radius: 3px;
             position: relative;
             overflow: hidden;
@@ -162,7 +183,7 @@ export const generateFlashcardsHtml = (flashcardsData: FlashcardItem[], title: s
 
         .progress-fill {
             height: 100%;
-            background-color: var(--accent-color);
+            background: linear-gradient(90deg, var(--accent), var(--accent-light));
             border-radius: 2px;
             width: 0%;
             transition: width 0.3s ease;
@@ -170,7 +191,7 @@ export const generateFlashcardsHtml = (flashcardsData: FlashcardItem[], title: s
 
         .progress-text {
             font-size: 1em;
-            color: var(--text-secondary);
+            color: var(--muted);
             min-width: 60px;
             text-align: center;
             font-variant-numeric: tabular-nums;
@@ -178,9 +199,75 @@ export const generateFlashcardsHtml = (flashcardsData: FlashcardItem[], title: s
 
         .top-hint {
             position: absolute;
-            top: 20px;
-            color: var(--text-secondary);
+            top: var(--space-6);
+            color: var(--muted);
             font-size: 0.85em;
+        }
+
+        @media (max-width: 720px) {
+            .container {
+                padding: var(--space-7);
+            }
+
+            .card-container {
+                height: 360px;
+            }
+
+            .card-face {
+                padding: var(--space-8);
+                font-size: 1.2em;
+            }
+
+            .controls {
+                gap: var(--space-6);
+                padding: 0 var(--space-4);
+            }
+
+            .nav-btn {
+                width: 48px;
+                height: 48px;
+                font-size: 1.3em;
+            }
+        }
+
+        @media (max-width: 520px) {
+            body {
+                overflow: auto;
+            }
+
+            .container {
+                height: auto;
+                min-height: 100vh;
+            }
+
+            .card-container {
+                height: 320px;
+            }
+
+            .card-face {
+                padding: var(--space-6);
+                font-size: 1.1em;
+            }
+
+            .controls {
+                flex-wrap: wrap;
+                justify-content: center;
+                gap: var(--space-4);
+            }
+
+            .progress-bar {
+                order: 3;
+                min-width: 100%;
+            }
+
+            .progress-text {
+                order: 2;
+            }
+
+            .top-hint {
+                position: static;
+                margin-bottom: var(--space-4);
+            }
         }
     </style>
 </head>
