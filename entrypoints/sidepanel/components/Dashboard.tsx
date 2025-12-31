@@ -49,6 +49,14 @@ const EXPORT_SECTIONS: Array<{
             ],
         },
         {
+            title: 'Note Exports',
+            contentType: 'note',
+            options: [
+                { format: 'Word', label: 'Word' },
+                { format: 'Markdown' },
+            ],
+        },
+        {
             title: 'Data Table Exports',
             contentType: 'datatable',
             options: [
@@ -225,14 +233,24 @@ export default function Dashboard({
                 const response = await extractByType(contentType, tabs[0].id, format);
                 if (response && response.success && response.payload) {
                     const payload = response.payload;
-                    const result =
-                        payload.type === 'quiz'
-                            ? exportByType('quiz', payload.items, format, tabTitle, timestamp)
-                            : payload.type === 'flashcards'
-                                ? exportByType('flashcards', payload.items, format, tabTitle, timestamp)
-                                : payload.type === 'mindmap'
-                                    ? exportByType('mindmap', payload.items, format, tabTitle, timestamp, payload.meta)
-                                    : exportByType('datatable', payload.items, format, tabTitle, timestamp);
+                    let result;
+                    switch (payload.type) {
+                        case 'quiz':
+                            result = exportByType('quiz', payload.items, format, tabTitle, timestamp);
+                            break;
+                        case 'flashcards':
+                            result = exportByType('flashcards', payload.items, format, tabTitle, timestamp);
+                            break;
+                        case 'mindmap':
+                            result = exportByType('mindmap', payload.items, format, tabTitle, timestamp, payload.meta);
+                            break;
+                        case 'note':
+                            result = exportByType('note', payload.items, format, tabTitle, timestamp, payload.meta);
+                            break;
+                        default:
+                            result = exportByType('datatable', payload.items, format, tabTitle, timestamp);
+                            break;
+                    }
                     if (result.success) {
                         const label = payload.type === 'quiz'
                             ? 'questions'
@@ -240,7 +258,9 @@ export default function Dashboard({
                                 ? 'flashcards'
                                 : payload.type === 'mindmap'
                                     ? 'nodes'
-                                    : 'rows';
+                                    : payload.type === 'note'
+                                        ? 'blocks'
+                                        : 'rows';
                         const formatName = format === 'CSV' ? 'Excel' : format;
                         showNotice('success', `Exported ${result.count} ${label} to ${formatName}.`);
                         if (plusExport && !isPlus) {

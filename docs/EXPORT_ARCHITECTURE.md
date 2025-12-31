@@ -9,8 +9,9 @@ This document summarizes the current export refactor and outlines how to extend 
 - `utils/export-dispatch.ts` routes by content type to the correct exporter and enforces per-type format support.
 
 ### Content-specific
-- `utils/quiz-export.ts`, `utils/flashcard-export.ts`, and `utils/datatable-export.ts` implement per-type formats and keep HTML UIs distinct where needed.
-- `utils/extractors/` contains one extractor per content type and a shared `data-app-data` extraction helper.
+- `utils/quiz-export.ts`, `utils/flashcard-export.ts`, `utils/datatable-export.ts`, and `utils/note-export.ts` implement per-type formats and keep HTML UIs distinct where needed.
+- `utils/extractors/` contains one extractor per content type (including notes) and a shared `data-app-data` extraction helper.
+- Note extraction details: see `docs/NOTE_EXTRACTION.md`.
 
 ## Extending for New Content Types (Normal Workflow)
 

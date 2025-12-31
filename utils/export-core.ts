@@ -1,5 +1,5 @@
-export type ExportFormat = 'PDF' | 'CSV' | 'PPTX' | 'JSON' | 'HTML' | 'Anki' | 'OPML' | 'JSONCanvas' | 'SVG' | 'Markdown';
-export type ContentType = 'quiz' | 'flashcards' | 'mindmap' | 'datatable';
+export type ExportFormat = 'PDF' | 'CSV' | 'PPTX' | 'JSON' | 'HTML' | 'Anki' | 'OPML' | 'JSONCanvas' | 'SVG' | 'Markdown' | 'Word';
+export type ContentType = 'quiz' | 'flashcards' | 'mindmap' | 'datatable' | 'note';
 export type ContentSource = 'notebooklm' | 'user';
 
 export interface QuizAnswerOption {
@@ -29,12 +29,35 @@ export interface DataTableRow {
     cells: string[];
 }
 
+export interface NoteInline {
+    text: string;
+    bold?: boolean;
+    italic?: boolean;
+    citation?: {
+        id: string;
+        source: string;
+    };
+}
+
+export interface NoteParagraphBlock {
+    type: 'paragraph';
+    inlines: NoteInline[];
+}
+
+export interface NoteTableBlock {
+    type: 'table';
+    rows: NoteInline[][][];
+}
+
+export type NoteBlock = NoteParagraphBlock | NoteTableBlock;
+
 export interface NormalizedExportPayload<TItems> {
     type: ContentType;
     items: TItems[];
     source: ContentSource;
     meta?: {
         svg?: string;
+        title?: string;
     };
 }
 
@@ -175,6 +198,89 @@ export const validateDataTableItems = (items: unknown): ValidationResult => {
                 errors.push(`datatable.items[${index}].cells[${cellIndex}] must be a string`);
             }
         });
+    });
+
+    return { valid: errors.length === 0, errors };
+};
+
+export const validateNoteBlocks = (items: unknown): ValidationResult => {
+    const errors: string[] = [];
+    if (!Array.isArray(items)) {
+        return { valid: false, errors: ['note.items must be an array'] };
+    }
+
+    const validateInline = (inline: unknown, path: string) => {
+        if (!isRecord(inline)) {
+            errors.push(`${path} must be an object`);
+            return;
+        }
+        if (typeof inline.text !== 'string') {
+            errors.push(`${path}.text must be a string`);
+        }
+        if (inline.bold !== undefined && typeof inline.bold !== 'boolean') {
+            errors.push(`${path}.bold must be a boolean`);
+        }
+        if (inline.italic !== undefined && typeof inline.italic !== 'boolean') {
+            errors.push(`${path}.italic must be a boolean`);
+        }
+        if (inline.citation !== undefined) {
+            if (!isRecord(inline.citation)) {
+                errors.push(`${path}.citation must be an object`);
+            } else {
+                if (typeof inline.citation.id !== 'string') {
+                    errors.push(`${path}.citation.id must be a string`);
+                }
+                if (typeof inline.citation.source !== 'string') {
+                    errors.push(`${path}.citation.source must be a string`);
+                }
+            }
+        }
+    };
+
+    const validateParagraph = (block: Record<string, unknown>, path: string) => {
+        if (!Array.isArray(block.inlines)) {
+            errors.push(`${path}.inlines must be an array`);
+            return;
+        }
+        (block.inlines as unknown[]).forEach((inline, index) => validateInline(inline, `${path}.inlines[${index}]`));
+    };
+
+    const validateTable = (block: Record<string, unknown>, path: string) => {
+        if (!Array.isArray(block.rows)) {
+            errors.push(`${path}.rows must be an array`);
+            return;
+        }
+        (block.rows as unknown[]).forEach((row, rowIndex) => {
+            if (!Array.isArray(row)) {
+                errors.push(`${path}.rows[${rowIndex}] must be an array`);
+                return;
+            }
+            (row as unknown[]).forEach((cell, cellIndex) => {
+                if (!Array.isArray(cell)) {
+                    errors.push(`${path}.rows[${rowIndex}][${cellIndex}] must be an array`);
+                    return;
+                }
+                (cell as unknown[]).forEach((inline, inlineIndex) =>
+                    validateInline(inline, `${path}.rows[${rowIndex}][${cellIndex}][${inlineIndex}]`)
+                );
+            });
+        });
+    };
+
+    items.forEach((item, index) => {
+        if (!isRecord(item)) {
+            errors.push(`note.items[${index}] must be an object`);
+            return;
+        }
+        if (item.type !== 'paragraph' && item.type !== 'table') {
+            errors.push(`note.items[${index}].type must be paragraph or table`);
+            return;
+        }
+        if (item.type === 'paragraph') {
+            validateParagraph(item, `note.items[${index}]`);
+            return;
+        }
+        validateTable(item, `note.items[${index}]`);
     });
 
     return { valid: errors.length === 0, errors };
