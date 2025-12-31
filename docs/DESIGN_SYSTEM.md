@@ -41,20 +41,38 @@ Use these tokens as the source of truth across UI and site.
 | `--radius-xs` | `8px` | Tight radius (chips) |
 | `--radius-sm` | `10px` | Inputs/small buttons |
 | `--radius-md` | `12px` | Buttons/default cards |
-| `--radius-lg` | `18px` | Hero/success cards |
-| `--radius-xl` | `22px` | Large marketing cards |
+| `--radius-lg` | `14px` | Section cards |
+| `--radius-xl` | `18px` | Hero/success cards |
+| `--radius-2xl` | `22px` | Large marketing cards |
+| `--space-0` | `4px` | Hairline spacing |
 | `--space-1` | `6px` | Micro spacing |
-| `--space-2` | `10px` | Tight spacing |
-| `--space-3` | `14px` | Default spacing |
-| `--space-4` | `18px` | Section spacing |
-| `--space-5` | `24px` | Large spacing |
+| `--space-2` | `8px` | Tight spacing |
+| `--space-3` | `10px` | Button padding |
+| `--space-4` | `12px` | Compact padding |
+| `--space-5` | `14px` | Default spacing |
+| `--space-6` | `16px` | Base padding |
+| `--space-7` | `18px` | Section spacing |
+| `--space-8` | `20px` | Comfortable padding |
+| `--space-9` | `24px` | Large spacing |
+| `--space-10` | `32px` | Oversized spacing |
+| `--space-11` | `28px` | Marketing padding |
+| `--space-12` | `36px` | Hero padding |
+| `--space-13` | `48px` | Large gaps |
+| `--space-14` | `64px` | Section padding |
+| `--space-15` | `72px` | Large vertical spacing |
+| `--space-16` | `88px` | Section separation |
+| `--space-17` | `96px` | Footer/CTA spacing |
 | `--font-display` | `'Space Grotesk', sans-serif` | Headlines |
 | `--font-body` | `'IBM Plex Sans', sans-serif` | Body/UI |
+| `--size-xxs` | `10px` | Tiny labels |
 | `--size-xs` | `11px` | Micro labels |
 | `--size-sm` | `12px` | UI text |
 | `--size-md` | `14px` | Body text |
+| `--size-base` | `16px` | Secondary headings |
 | `--size-lg` | `18px` | Section titles |
-| `--size-xl` | `24px` | Hero titles |
+| `--size-xl` | `20px` | Page titles |
+| `--size-2xl` | `24px` | Hero titles |
+| `--size-3xl` | `28px` | Section headings |
 
 ## Color
 Primary palette:

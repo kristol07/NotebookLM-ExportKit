@@ -7,31 +7,15 @@
   <title>Payment complete - NotebookLM ExportKit</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link
-    href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap"
-    rel="stylesheet" />
+  <link rel="stylesheet" href="../theme.css" />
   <style>
-    :root {
-      color-scheme: light;
-      --bg: #f6f1e7;
-      --bg-deep: #efe4d6;
-      --ink: #171717;
-      --muted: #5b5b5b;
-      --accent: #d3542c;
-      --accent-dark: #b14320;
-      --teal: #1f6f78;
-      --card: #fff7ef;
-      --stroke: #e3d6c5;
-      --shadow: 0 18px 40px rgba(23, 23, 23, 0.12);
-    }
-
     * {
       box-sizing: border-box;
     }
 
     body {
       margin: 0;
-      font-family: 'IBM Plex Sans', sans-serif;
+      font-family: var(--font-body);
       color: var(--ink);
       min-height: 100vh;
       display: grid;
@@ -45,9 +29,9 @@
     .card {
       width: min(520px, 90vw);
       background: var(--card);
-      border-radius: 22px;
+      border-radius: var(--radius-2xl);
       border: 1px solid var(--stroke);
-      padding: 32px;
+      padding: var(--space-10);
       box-shadow: var(--shadow);
       text-align: center;
     }
@@ -55,37 +39,37 @@
     .brand {
       display: inline-flex;
       align-items: center;
-      gap: 10px;
-      font-family: 'Space Grotesk', sans-serif;
+      gap: var(--space-3);
+      font-family: var(--font-display);
       font-weight: 700;
       letter-spacing: -0.02em;
-      margin-bottom: 18px;
+      margin-bottom: var(--space-7);
     }
 
     .brand-dot {
-      width: 14px;
-      height: 14px;
+      width: var(--space-4);
+      height: var(--space-4);
       border-radius: 50%;
-      background: linear-gradient(135deg, var(--accent), #ff8f5a);
-      box-shadow: 0 0 0 6px rgba(211, 84, 44, 0.15);
+      background: linear-gradient(135deg, var(--accent), var(--accent-light));
+      box-shadow: 0 0 0 var(--space-1) rgba(211, 84, 44, 0.15);
     }
 
     h1 {
-      margin: 0 0 10px;
-      font-size: 24px;
-      font-family: 'Space Grotesk', sans-serif;
+      margin: 0 0 var(--space-3);
+      font-size: var(--size-2xl);
+      font-family: var(--font-display);
     }
 
     p {
       margin: 0;
       color: var(--muted);
-      font-size: 15px;
+      font-size: var(--size-md);
       line-height: 1.5;
     }
 
     .message {
-      margin-top: 18px;
-      padding-top: 18px;
+      margin-top: var(--space-7);
+      padding-top: var(--space-7);
       border-top: 1px solid var(--stroke);
     }
 
@@ -105,7 +89,7 @@
     <h1>Payment successful</h1>
     <p>Your Plus subscription is active.</p>
     <div class="message">
-      <p>Return to the extension and enjoy your access to Plus features.</p>
+      <p>Enjoy your access to Plus features.</p>
       <p class="highlight">Thanks for supporting the project.</p>
     </div>
   </main>

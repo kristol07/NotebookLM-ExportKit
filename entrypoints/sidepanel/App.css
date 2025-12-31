@@ -6,11 +6,47 @@
   --ink: #171717;
   --muted: #5b5b5b;
   --accent: #d3542c;
+  --accent-light: #ff8f5a;
   --accent-dark: #b14320;
   --teal: #1f6f78;
   --card: #fff7ef;
   --stroke: #e3d6c5;
   --shadow: 0 18px 40px rgba(23, 23, 23, 0.12);
+  --radius-xs: 8px;
+  --radius-sm: 10px;
+  --radius-md: 12px;
+  --radius-lg: 14px;
+  --radius-xl: 18px;
+  --radius-2xl: 22px;
+  --space-0: 4px;
+  --space-1: 6px;
+  --space-2: 8px;
+  --space-3: 10px;
+  --space-4: 12px;
+  --space-5: 14px;
+  --space-6: 16px;
+  --space-7: 18px;
+  --space-8: 20px;
+  --space-9: 24px;
+  --space-10: 32px;
+  --space-11: 28px;
+  --space-12: 36px;
+  --space-13: 48px;
+  --space-14: 64px;
+  --space-15: 72px;
+  --space-16: 88px;
+  --space-17: 96px;
+  --font-display: 'Space Grotesk', sans-serif;
+  --font-body: 'IBM Plex Sans', sans-serif;
+  --size-xxs: 10px;
+  --size-xs: 11px;
+  --size-sm: 12px;
+  --size-md: 14px;
+  --size-base: 16px;
+  --size-lg: 18px;
+  --size-xl: 20px;
+  --size-2xl: 24px;
+  --size-3xl: 28px;
 }
 
 #root {
@@ -18,7 +54,7 @@
 }
 
 .exportkit-shell {
-  font-family: 'IBM Plex Sans', system-ui, -apple-system, sans-serif;
+  font-family: var(--font-body);
   color: var(--ink);
   background:
     radial-gradient(240px 140px at 10% -10%, #ffd2b9 0%, transparent 70%),
@@ -32,7 +68,7 @@
 
 .dashboard-container,
 .login-container {
-  padding: 16px;
+  padding: var(--space-7) var(--space-6) var(--space-6);
   position: relative;
   width: 280px;
   min-height: 380px;
@@ -42,18 +78,18 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 14px;
+  margin-bottom: var(--space-5);
 }
 
 .dashboard-title {
   margin: 0;
-  font-family: 'Space Grotesk', sans-serif;
-  font-size: 18px;
+  font-family: var(--font-display);
+  font-size: var(--size-lg);
   letter-spacing: -0.02em;
 }
 
 .plan-label {
-  font-size: 11px;
+  font-size: var(--size-xs);
   text-align: right;
   color: var(--muted);
 }
@@ -64,10 +100,10 @@
 }
 
 .export-btn {
-  padding: 7px 10px;
+  padding: var(--space-1) var(--space-3);
   cursor: pointer;
-  font-size: 12px;
-  border-radius: 12px;
+  font-size: var(--size-sm);
+  border-radius: var(--radius-md);
   border: 1px solid var(--stroke);
   background: #fff;
   color: var(--ink);
@@ -75,7 +111,7 @@
   transition: transform 0.2s ease, box-shadow 0.2s ease;
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--space-1);
   justify-content: center;
 }
 
@@ -91,51 +127,51 @@
 }
 
 .export-btn.small {
-  padding: 5px 10px;
-  font-size: 11px;
+  padding: var(--space-1) var(--space-3);
+  font-size: var(--size-xs);
 }
 
 .export-btn.primary {
-  background: linear-gradient(90deg, #d3542c, #f28c5b);
+  background: linear-gradient(90deg, var(--accent), var(--accent-light));
   color: #fff;
   border: none;
 }
 
 .export-btn.upgrade-btn {
   width: 100%;
-  background: linear-gradient(90deg, #d3542c, #f28c5b);
+  background: linear-gradient(90deg, var(--accent), var(--accent-light));
   color: #fff;
   border: none;
 }
 
 .export-btn.ghost {
   position: absolute;
-  top: 16px;
-  left: 16px;
+  top: var(--space-6);
+  left: var(--space-6);
   background: #fff;
 }
 
 .button-content {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: var(--space-0);
   justify-content: center;
 }
 
 .billing-row {
-  margin-bottom: 12px;
+  margin-bottom: var(--space-4);
   display: flex;
   justify-content: flex-end;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .billing-badge {
-  font-size: 10px;
+  font-size: var(--size-xxs);
   color: #8f4b10;
   background: rgba(211, 84, 44, 0.12);
-  padding: 4px 6px;
-  border-radius: 8px;
+  padding: var(--space-0) var(--space-1);
+  border-radius: var(--radius-xs);
 }
 
 .link-button {
@@ -144,29 +180,29 @@
   text-decoration: underline;
   color: var(--muted);
   cursor: pointer;
-  font-size: 11px;
+  font-size: var(--size-xs);
   padding: 0;
 }
 
 .actions {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: var(--space-5);
 }
 
 .export-section {
   background: var(--card);
   border: 1px solid var(--stroke);
-  border-radius: 14px;
-  padding: 10px;
+  border-radius: var(--radius-lg);
+  padding: var(--space-3);
   box-shadow: 0 12px 24px rgba(23, 23, 23, 0.08);
 }
 
 .section-label {
-  font-size: 10px;
+  font-size: var(--size-xxs);
   font-weight: 700;
   color: var(--teal);
-  margin-bottom: 6px;
+  margin-bottom: var(--space-1);
   text-transform: uppercase;
   letter-spacing: 0.08em;
 }
@@ -178,50 +214,50 @@
 .section-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 6px;
+  gap: var(--space-1);
 }
 
 .upgrade-card {
-  margin-top: 2px;
+  margin-top: var(--space-0);
   text-align: center;
   background: #fff;
-  border-radius: 14px;
+  border-radius: var(--radius-lg);
   border: 1px solid var(--stroke);
-  padding: 10px;
+  padding: var(--space-3);
 }
 
 .upgrade-note {
-  font-size: 11px;
+  font-size: var(--size-xs);
   color: var(--muted);
-  margin-bottom: 8px;
+  margin-bottom: var(--space-2);
 }
 
 .coming-soon {
   background: #fff;
-  border-radius: 14px;
+  border-radius: var(--radius-lg);
   border: 1px dashed var(--stroke);
-  padding: 10px;
+  padding: var(--space-3);
 }
 
 .coming-card {
-  padding: 8px;
-  font-size: 11px;
+  padding: var(--space-2);
+  font-size: var(--size-xs);
   font-style: italic;
   color: var(--muted);
   text-align: center;
   background: rgba(255, 255, 255, 0.8);
-  border-radius: 10px;
+  border-radius: var(--radius-sm);
 }
 
 .toast {
   position: fixed;
-  bottom: 16px;
+  bottom: var(--space-6);
   left: 50%;
   transform: translateX(-50%);
   width: 85%;
-  padding: 10px 12px;
-  border-radius: 12px;
-  font-size: 12px;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  font-size: var(--size-sm);
   text-align: center;
   box-shadow: 0 12px 24px rgba(0, 0, 0, 0.18);
   z-index: 1000;
@@ -242,76 +278,76 @@
 }
 
 .login-card {
-  margin-top: 32px;
+  margin-top: var(--space-10);
   background: var(--card);
   border: 1px solid var(--stroke);
-  border-radius: 18px;
-  padding: 18px 16px;
+  border-radius: var(--radius-xl);
+  padding: var(--space-7) var(--space-6);
   box-shadow: var(--shadow);
 }
 
 .login-header {
-  margin-bottom: 16px;
+  margin-bottom: var(--space-6);
 }
 
 .brand-line {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 10px;
-  font-family: 'Space Grotesk', sans-serif;
-  font-size: 16px;
+  gap: var(--space-3);
+  font-family: var(--font-display);
+  font-size: var(--size-base);
   letter-spacing: -0.02em;
 }
 
 .brand-dot {
-  width: 12px;
-  height: 12px;
+  width: var(--space-4);
+  height: var(--space-4);
   border-radius: 50%;
-  background: linear-gradient(135deg, var(--accent), #ff8f5a);
-  box-shadow: 0 0 0 6px rgba(211, 84, 44, 0.15);
+  background: linear-gradient(135deg, var(--accent), var(--accent-light));
+  box-shadow: 0 0 0 var(--space-1) rgba(211, 84, 44, 0.15);
 }
 
 .login-subtitle {
-  margin: 8px 0 0;
-  font-size: 12px;
+  margin: var(--space-2) 0 0;
+  font-size: var(--size-sm);
   color: var(--muted);
 }
 
 .login-form {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: var(--space-3);
 }
 
 .login-input {
-  padding: 9px 10px;
-  border-radius: 10px;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
   border: 1px solid var(--stroke);
   background: #fff;
   color: var(--ink);
   width: 100%;
-  font-size: 12px;
+  font-size: var(--size-sm);
 }
 
 .login-input:focus {
   outline: none;
   border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(211, 84, 44, 0.15);
+  box-shadow: 0 0 0 var(--space-0) rgba(211, 84, 44, 0.15);
 }
 
 .login-hint {
-  font-size: 11px;
+  font-size: var(--size-xs);
   margin: 0;
   text-align: left;
   color: var(--muted);
 }
 
 .message-box {
-  padding: 10px 12px;
-  border-radius: 10px;
-  font-size: 12px;
-  margin-bottom: 12px;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-sm);
+  font-size: var(--size-sm);
+  margin-bottom: var(--space-4);
   text-align: left;
   border: 1px solid;
 }
@@ -343,15 +379,15 @@
   .dashboard-container,
   .login-container {
     width: 320px;
-    padding: 18px;
+    padding: var(--space-8);
   }
 
   .dashboard-title {
-    font-size: 19px;
+    font-size: var(--size-xl);
   }
 
   .section-grid {
-    gap: 8px;
+    gap: var(--space-2);
   }
 }
 
@@ -359,18 +395,18 @@
   .dashboard-container,
   .login-container {
     width: 360px;
-    padding: 20px;
+    padding: var(--space-9);
   }
 
   .dashboard-title {
-    font-size: 20px;
+    font-size: var(--size-xl);
   }
 
   .actions {
-    gap: 16px;
+    gap: var(--space-6);
   }
 
   .section-grid {
-    gap: 10px;
+    gap: var(--space-3);
   }
 }
