@@ -100,6 +100,12 @@ export const extractNote = async (tabId: number, format: ExportFormat): Promise<
                         return trimInlines(inlines);
                     };
 
+                    const collectCodeText = (element: Element) => {
+                        const codeElement = element.querySelector('code') || element;
+                        const rawText = codeElement.textContent || '';
+                        return rawText.replace(/\r\n/g, '\n').replace(/\r/g, '\n').replace(/\n+$/, '');
+                    };
+
                     const root =
                         document.querySelector('note-editor') ||
                         document.querySelector('labs-tailwind-doc-viewer') ||
@@ -114,7 +120,7 @@ export const extractNote = async (tabId: number, format: ExportFormat): Promise<
                         | null;
                     const title = titleInput?.value?.trim() || '';
 
-                    const elements = Array.from(root.querySelectorAll('div.paragraph, table'));
+                    const elements = Array.from(root.querySelectorAll('div.paragraph, table, pre'));
                     const blocks: NoteBlock[] = [];
 
                     for (const element of elements) {
@@ -127,6 +133,17 @@ export const extractNote = async (tabId: number, format: ExportFormat): Promise<
                                 .filter((row) => row.some((cell) => cell.length > 0));
                             if (rows.length > 0) {
                                 blocks.push({ type: 'table', rows });
+                            }
+                            continue;
+                        }
+
+                        if (element.tagName === 'PRE') {
+                            if (element.closest('table')) {
+                                continue;
+                            }
+                            const text = collectCodeText(element);
+                            if (text.length > 0) {
+                                blocks.push({ type: 'code', text });
                             }
                             continue;
                         }

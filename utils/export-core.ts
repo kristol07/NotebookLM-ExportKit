@@ -49,7 +49,12 @@ export interface NoteTableBlock {
     rows: NoteInline[][][];
 }
 
-export type NoteBlock = NoteParagraphBlock | NoteTableBlock;
+export interface NoteCodeBlock {
+    type: 'code';
+    text: string;
+}
+
+export type NoteBlock = NoteParagraphBlock | NoteTableBlock | NoteCodeBlock;
 
 export interface NormalizedExportPayload<TItems> {
     type: ContentType;
@@ -267,17 +272,27 @@ export const validateNoteBlocks = (items: unknown): ValidationResult => {
         });
     };
 
+    const validateCode = (block: Record<string, unknown>, path: string) => {
+        if (typeof block.text !== 'string') {
+            errors.push(`${path}.text must be a string`);
+        }
+    };
+
     items.forEach((item, index) => {
         if (!isRecord(item)) {
             errors.push(`note.items[${index}] must be an object`);
             return;
         }
-        if (item.type !== 'paragraph' && item.type !== 'table') {
-            errors.push(`note.items[${index}].type must be paragraph or table`);
+        if (item.type !== 'paragraph' && item.type !== 'table' && item.type !== 'code') {
+            errors.push(`note.items[${index}].type must be paragraph, table, or code`);
             return;
         }
         if (item.type === 'paragraph') {
             validateParagraph(item, `note.items[${index}]`);
+            return;
+        }
+        if (item.type === 'code') {
+            validateCode(item, `note.items[${index}]`);
             return;
         }
         validateTable(item, `note.items[${index}]`);

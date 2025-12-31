@@ -113,22 +113,22 @@ const renderTableHtml = (rows: NoteInline[][][]) => {
     return `<table><tbody>${bodyRows}</tbody></table>`;
 };
 
-const mapBlocks = <T>(
-    blocks: NoteBlock[],
-    renderParagraph: (inlines: NoteInline[]) => T,
-    renderTable: (rows: NoteInline[][][]) => T
-) =>
-    blocks.map((block) => {
-        if (block.type === 'paragraph') {
-            return renderParagraph(block.inlines);
-        }
-        return renderTable(block.rows);
-    });
+const renderCodeMarkdown = (text: string) => {
+    const normalized = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n').replace(/\n+$/, '');
+    return `\`\`\`\n${normalized}\n\`\`\``;
+};
+
+const renderCodeHtml = (text: string) => {
+    const normalized = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+    return `<pre><code>${escapeHtml(normalized)}</code></pre>`;
+};
 
 const DOCX_BODY_RUN = { font: 'Times New Roman', size: 24 };
 const DOCX_TITLE_RUN = { font: 'Times New Roman', size: 32, bold: true };
 const DOCX_HEADING_RUN = { font: 'Times New Roman', size: 26, bold: true };
+const DOCX_CODE_RUN = { font: 'Consolas', size: 22 };
 const DOCX_PARAGRAPH_SPACING = { after: 160, line: 276, lineRule: LineRuleType.AUTO };
+const DOCX_CODE_SPACING = { after: 160, line: 240, lineRule: LineRuleType.AUTO };
 const DOCX_TABLE_BORDERS = {
     top: { style: BorderStyle.SINGLE, size: 1, color: '999999' },
     bottom: { style: BorderStyle.SINGLE, size: 1, color: '999999' },
@@ -203,11 +203,30 @@ const buildDocxTable = (
     });
 };
 
+const buildDocxCodeBlock = (text: string) => {
+    const normalized = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n').replace(/\n+$/, '');
+    const lines = normalized.split('\n');
+    const children = lines.map((line, index) =>
+        new TextRun({
+            text: line,
+            break: index === 0 ? undefined : 1
+        })
+    );
+    return new Paragraph({
+        children,
+        spacing: DOCX_CODE_SPACING,
+        run: DOCX_CODE_RUN
+    });
+};
+
 const generateLegacyDocHtml = (title: string, blocks: NoteBlock[]) => {
     const body = blocks
         .map((block) => {
             if (block.type === 'paragraph') {
                 return renderParagraphHtml(block.inlines);
+            }
+            if (block.type === 'code') {
+                return renderCodeHtml(block.text);
             }
             return renderTableHtml(block.rows);
         })
@@ -245,11 +264,16 @@ export const exportNote = (
     if (format === 'Markdown') {
         const footnotes = new Map<string, string>();
         const footnoteOrder: string[] = [];
-        const body = mapBlocks(
-            blocks,
-            (inlines) => renderParagraphMarkdown(inlines, footnotes, footnoteOrder),
-            (rows) => renderTableMarkdown(rows, footnotes, footnoteOrder)
-        )
+        const body = blocks
+            .map((block) => {
+                if (block.type === 'paragraph') {
+                    return renderParagraphMarkdown(block.inlines, footnotes, footnoteOrder);
+                }
+                if (block.type === 'code') {
+                    return renderCodeMarkdown(block.text);
+                }
+                return renderTableMarkdown(block.rows, footnotes, footnoteOrder);
+            })
             .filter((line) => line.length > 0)
             .join('\n\n');
         const footnoteLines = footnoteOrder.map((key) => `[^${key}]: ${footnotes.get(key) || ''}`);
@@ -273,11 +297,15 @@ export const exportNote = (
                 alignment: AlignmentType.LEFT,
                 spacing: { after: 240 }
             }),
-            ...mapBlocks(
-                blocks,
-                (inlines) => buildDocxParagraph(inlines, references, referenceOrder),
-                (rows) => buildDocxTable(rows, references, referenceOrder)
-            )
+            ...blocks.flatMap((block) => {
+                if (block.type === 'paragraph') {
+                    return buildDocxParagraph(block.inlines, references, referenceOrder);
+                }
+                if (block.type === 'code') {
+                    return buildDocxCodeBlock(block.text);
+                }
+                return buildDocxTable(block.rows, references, referenceOrder);
+            })
         ];
 
         if (referenceOrder.length > 0) {
