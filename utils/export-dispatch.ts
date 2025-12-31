@@ -1,4 +1,5 @@
-import { ContentType, ExportFormat, ExportResult, FlashcardItem, MindmapNode, QuizItem } from './export-core';
+import { ContentType, DataTableRow, ExportFormat, ExportResult, FlashcardItem, MindmapNode, QuizItem } from './export-core';
+import { exportDatatable } from './datatable-export';
 import { exportFlashcards } from './flashcard-export';
 import { exportMindmap } from './mindmap-export';
 import { exportQuiz } from './quiz-export';
@@ -6,12 +7,13 @@ import { exportQuiz } from './quiz-export';
 export const supportedFormatsByType: Record<ContentType, ExportFormat[]> = {
     quiz: ['CSV', 'JSON', 'HTML', 'Anki'],
     flashcards: ['CSV', 'JSON', 'HTML', 'Anki'],
-    mindmap: ['OPML', 'JSONCanvas', 'SVG', 'Markdown']
+    mindmap: ['OPML', 'JSONCanvas', 'SVG', 'Markdown'],
+    datatable: ['CSV', 'Markdown']
 };
 
 export const exportByType = (
     type: ContentType,
-    items: QuizItem[] | FlashcardItem[] | MindmapNode[],
+    items: QuizItem[] | FlashcardItem[] | MindmapNode[] | DataTableRow[],
     format: ExportFormat,
     tabTitle: string,
     timestamp: string,
@@ -30,5 +32,9 @@ export const exportByType = (
         return exportFlashcards(items as FlashcardItem[], format, tabTitle, timestamp);
     }
 
-    return exportMindmap(items as MindmapNode[], format, tabTitle, timestamp, meta?.svg);
+    if (type === 'mindmap') {
+        return exportMindmap(items as MindmapNode[], format, tabTitle, timestamp, meta?.svg);
+    }
+
+    return exportDatatable(items as DataTableRow[], format, tabTitle, timestamp);
 };

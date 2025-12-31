@@ -48,6 +48,14 @@ const EXPORT_SECTIONS: Array<{
                 { format: 'OPML', isPlus: true },
             ],
         },
+        {
+            title: 'Data Table Exports',
+            contentType: 'datatable',
+            options: [
+                { format: 'CSV', label: 'Excel' },
+                { format: 'Markdown' },
+            ],
+        },
     ];
 
 const PLUS_EXPORTS = new Set(
@@ -222,9 +230,17 @@ export default function Dashboard({
                             ? exportByType('quiz', payload.items, format, tabTitle, timestamp)
                             : payload.type === 'flashcards'
                                 ? exportByType('flashcards', payload.items, format, tabTitle, timestamp)
-                                : exportByType('mindmap', payload.items, format, tabTitle, timestamp, payload.meta);
+                                : payload.type === 'mindmap'
+                                    ? exportByType('mindmap', payload.items, format, tabTitle, timestamp, payload.meta)
+                                    : exportByType('datatable', payload.items, format, tabTitle, timestamp);
                     if (result.success) {
-                        const label = payload.type === 'quiz' ? 'questions' : payload.type === 'flashcards' ? 'flashcards' : 'nodes';
+                        const label = payload.type === 'quiz'
+                            ? 'questions'
+                            : payload.type === 'flashcards'
+                                ? 'flashcards'
+                                : payload.type === 'mindmap'
+                                    ? 'nodes'
+                                    : 'rows';
                         const formatName = format === 'CSV' ? 'Excel' : format;
                         showNotice('success', `Exported ${result.count} ${label} to ${formatName}.`);
                         if (plusExport && !isPlus) {

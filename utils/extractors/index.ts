@@ -1,12 +1,14 @@
-import { ContentType, ExportFormat, NormalizedExportPayload, QuizItem, FlashcardItem, MindmapNode } from '../export-core';
+import { ContentType, ExportFormat, NormalizedExportPayload, QuizItem, FlashcardItem, MindmapNode, DataTableRow } from '../export-core';
 import { extractQuiz } from './quiz';
 import { extractFlashcards } from './flashcards';
 import { extractMindmap } from './mindmap';
+import { extractDatatable } from './datatable';
 
 type ExtractPayload =
     | NormalizedExportPayload<QuizItem>
     | NormalizedExportPayload<FlashcardItem>
-    | NormalizedExportPayload<MindmapNode>;
+    | NormalizedExportPayload<MindmapNode>
+    | NormalizedExportPayload<DataTableRow>;
 
 export type AnyExtractResult = {
     success: boolean;
@@ -24,7 +26,9 @@ export const extractByType = async (
             ? await extractQuiz(tabId, format)
             : type === 'flashcards'
             ? await extractFlashcards(tabId, format)
-            : await extractMindmap(tabId, format);
+            : type === 'mindmap'
+            ? await extractMindmap(tabId, format)
+            : await extractDatatable(tabId, format);
     if (result.success && result.payload) {
         return { success: true, payload: result.payload };
     }
@@ -47,5 +51,10 @@ export const extractByAnyType = async (tabId: number, format: ExportFormat): Pro
         return { success: true, payload: mindmapResult.payload };
     }
 
-    return { success: false, error: mindmapResult.error || flashcardResult.error || quizResult.error };
+    const datatableResult = await extractDatatable(tabId, format);
+    if (datatableResult.success && datatableResult.payload) {
+        return { success: true, payload: datatableResult.payload };
+    }
+
+    return { success: false, error: datatableResult.error || mindmapResult.error || flashcardResult.error || quizResult.error };
 };

@@ -1,5 +1,5 @@
 export type ExportFormat = 'PDF' | 'CSV' | 'PPTX' | 'JSON' | 'HTML' | 'Anki' | 'OPML' | 'JSONCanvas' | 'SVG' | 'Markdown';
-export type ContentType = 'quiz' | 'flashcards' | 'mindmap';
+export type ContentType = 'quiz' | 'flashcards' | 'mindmap' | 'datatable';
 export type ContentSource = 'notebooklm' | 'user';
 
 export interface QuizAnswerOption {
@@ -23,6 +23,10 @@ export interface MindmapNode {
     id?: string;
     title: string;
     children?: MindmapNode[];
+}
+
+export interface DataTableRow {
+    cells: string[];
 }
 
 export interface NormalizedExportPayload<TItems> {
@@ -148,6 +152,31 @@ export const validateMindmapItems = (items: unknown): ValidationResult => {
     };
 
     items.forEach((item, index) => validateNode(item, `mindmap.items[${index}]`));
+    return { valid: errors.length === 0, errors };
+};
+
+export const validateDataTableItems = (items: unknown): ValidationResult => {
+    const errors: string[] = [];
+    if (!Array.isArray(items)) {
+        return { valid: false, errors: ['datatable.items must be an array'] };
+    }
+
+    items.forEach((item, index) => {
+        if (!isRecord(item)) {
+            errors.push(`datatable.items[${index}] must be an object`);
+            return;
+        }
+        if (!Array.isArray(item.cells)) {
+            errors.push(`datatable.items[${index}].cells must be an array`);
+            return;
+        }
+        item.cells.forEach((cell, cellIndex) => {
+            if (typeof cell !== 'string') {
+                errors.push(`datatable.items[${index}].cells[${cellIndex}] must be a string`);
+            }
+        });
+    });
+
     return { valid: errors.length === 0, errors };
 };
 
