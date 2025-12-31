@@ -1,39 +1,500 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Payment complete</title>
-    <style>
-      body {
-        font-family: Arial, sans-serif;
-        margin: 40px;
-        color: #1a1a1a;
-        background: #f7f7f7;
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>NotebookLM ExportKit</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap"
+    rel="stylesheet" />
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f6f1e7;
+      --bg-deep: #efe4d6;
+      --ink: #171717;
+      --muted: #5b5b5b;
+      --accent: #d3542c;
+      --accent-dark: #b14320;
+      --teal: #1f6f78;
+      --card: #fff7ef;
+      --stroke: #e3d6c5;
+      --shadow: 0 20px 50px rgba(23, 23, 23, 0.12);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: 'IBM Plex Sans', sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(900px 500px at 10% -10%, #ffd2b9 0%, transparent 65%),
+        radial-gradient(700px 500px at 95% 10%, #cfe7e6 0%, transparent 55%),
+        linear-gradient(180deg, var(--bg) 0%, var(--bg-deep) 100%);
+      min-height: 100vh;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .page {
+      position: relative;
+      overflow: hidden;
+    }
+
+    .container {
+      width: min(1100px, 92vw);
+      margin: 0 auto;
+      padding: 64px 0 96px;
+    }
+
+    .nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 24px;
+      padding-bottom: 48px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-family: 'Space Grotesk', sans-serif;
+      font-weight: 700;
+      font-size: 18px;
+      letter-spacing: -0.02em;
+    }
+
+    .brand-dot {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent), #ff8f5a);
+      box-shadow: 0 0 0 6px rgba(211, 84, 44, 0.15);
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 20px;
+      font-size: 14px;
+      color: var(--muted);
+    }
+
+    .hero {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 48px;
+      align-items: center;
+    }
+
+    .hero h1 {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: clamp(32px, 4.4vw, 56px);
+      line-height: 1.05;
+      margin: 0 0 16px;
+    }
+
+    .hero p {
+      font-size: 18px;
+      color: var(--muted);
+      margin: 0 0 24px;
+    }
+
+    .cta-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 14px;
+      align-items: center;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 18px;
+      border-radius: 999px;
+      font-weight: 600;
+      font-size: 14px;
+      border: 1px solid transparent;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: #fff;
+      box-shadow: 0 14px 30px rgba(211, 84, 44, 0.3);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-1px);
+    }
+
+    .btn-secondary {
+      background: transparent;
+      border-color: var(--stroke);
+      color: var(--ink);
+    }
+
+    .badge-row {
+      margin-top: 20px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .badge {
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: rgba(31, 111, 120, 0.12);
+      color: var(--teal);
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.03em;
+    }
+
+    .demo {
+      background: var(--card);
+      border-radius: 24px;
+      padding: 28px;
+      border: 1px solid var(--stroke);
+      box-shadow: var(--shadow);
+    }
+
+    .demo-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 16px;
+    }
+
+    .demo-window {
+      border-radius: 16px;
+      background: #121212;
+      color: #f7f1ea;
+      padding: 20px;
+      font-family: 'IBM Plex Sans', sans-serif;
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    .demo-window span {
+      color: #ffcf99;
+    }
+
+    section {
+      margin-top: 88px;
+    }
+
+    .section-title {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 28px;
+      margin: 0 0 12px;
+    }
+
+    .section-subtitle {
+      color: var(--muted);
+      margin: 0 0 28px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 20px;
+    }
+
+    .card {
+      background: #fff;
+      border: 1px solid var(--stroke);
+      border-radius: 18px;
+      padding: 20px;
+      box-shadow: 0 10px 20px rgba(23, 23, 23, 0.06);
+    }
+
+    .card h3 {
+      margin: 0 0 10px;
+      font-size: 18px;
+      font-family: 'Space Grotesk', sans-serif;
+    }
+
+    .card p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .steps {
+      display: grid;
+      gap: 16px;
+    }
+
+    .step {
+      display: flex;
+      gap: 14px;
+      align-items: flex-start;
+      background: #fff;
+      border-radius: 16px;
+      padding: 16px 18px;
+      border: 1px solid var(--stroke);
+    }
+
+    .step span {
+      width: 34px;
+      height: 34px;
+      border-radius: 10px;
+      background: rgba(211, 84, 44, 0.15);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      color: var(--accent-dark);
+    }
+
+    .formats {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .format-chip {
+      padding: 8px 12px;
+      border-radius: 999px;
+      border: 1px solid var(--stroke);
+      background: #fff;
+      font-size: 13px;
+    }
+
+    .cta-banner {
+      margin-top: 96px;
+      padding: 36px;
+      border-radius: 26px;
+      background: linear-gradient(135deg, #ffe2cb, #cfe7e6);
+      display: flex;
+      flex-wrap: wrap;
+      gap: 24px;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .cta-banner h2 {
+      font-family: 'Space Grotesk', sans-serif;
+      margin: 0 0 8px;
+    }
+
+    footer {
+      margin-top: 72px;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: 16px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    @keyframes rise {
+      from {
+        opacity: 0;
+        transform: translateY(14px);
       }
-      .card {
-        background: #fff;
-        border-radius: 12px;
-        padding: 24px;
-        max-width: 520px;
-        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
       }
-      h1 {
-        font-size: 20px;
-        margin: 0 0 12px;
+    }
+
+    .animate {
+      animation: rise 0.8s ease forwards;
+    }
+
+    .delay-1 {
+      animation-delay: 0.1s;
+    }
+
+    .delay-2 {
+      animation-delay: 0.2s;
+    }
+
+    .delay-3 {
+      animation-delay: 0.3s;
+    }
+
+    @media (max-width: 720px) {
+      .nav-links {
+        display: none;
       }
-      p {
-        margin: 0 0 8px;
-        font-size: 14px;
-        line-height: 1.5;
+
+      .cta-banner {
+        padding: 28px;
       }
-    </style>
-  </head>
-  <body>
-    <div class="card">
-      <h1>Payment complete</h1>
-      <p>Your Plus subscription is active.</p>
-      <p>Return to the extension and reopen it to refresh your access.</p>
+
+      .demo {
+        padding: 20px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="page">
+    <div class="container">
+      <nav class="nav">
+        <div class="brand">
+          <span class="brand-dot" aria-hidden="true"></span>
+          NotebookLM ExportKit
+        </div>
+        <div class="nav-links">
+          <a href="#features">Features</a>
+          <a href="#how">How it works</a>
+          <a href="#formats">Formats</a>
+          <a href="#faq">FAQ</a>
+        </div>
+      </nav>
+
+      <section class="hero">
+        <div class="animate delay-1">
+          <h1>Export NotebookLM outputs into the formats you actually use.</h1>
+          <p>
+            Turn quizzes, flashcards, and mindmaps into clean files for studying,
+            sharing, or archiving in seconds.
+          </p>
+          <div class="cta-row">
+            <a class="btn btn-primary" href="#">
+              Add to Chrome
+            </a>
+            <a class="btn btn-secondary" href="#">
+              See sample exports
+            </a>
+          </div>
+          <div class="badge-row">
+            <span class="badge">No copy-paste</span>
+            <span class="badge">One-click export</span>
+            <span class="badge">Local processing</span>
+          </div>
+        </div>
+
+        <div class="demo animate delay-2">
+          <div class="demo-header">
+            <span>NotebookLM ExportKit</span>
+            <span>Mindmap → SVG</span>
+          </div>
+          <div class="demo-window">
+            Export ready:
+            <div><span>•</span> Notebook: AI Product Notes</div>
+            <div><span>•</span> Format: SVG, OPML, JSON</div>
+            <div><span>•</span> Output: crisp diagrams + outline</div>
+            <div style="margin-top: 12px;">
+              <span>✔</span> File saved to Downloads
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="features">
+        <h2 class="section-title">Built for real export workflows</h2>
+        <p class="section-subtitle">Everything you need to move NotebookLM content into your toolchain.</p>
+        <div class="grid">
+          <div class="card">
+            <h3>Multi-format output</h3>
+            <p>Export quizzes, flashcards, and mindmaps to CSV, JSON, HTML, Anki, OPML, SVG, and Markdown.</p>
+          </div>
+          <div class="card">
+            <h3>Structure preserved</h3>
+            <p>Headers, answers, and hierarchies are normalized so downstream tools ingest cleanly.</p>
+          </div>
+          <div class="card">
+            <h3>Fast capture</h3>
+            <p>Run exports directly in the browser without new tabs or copy/paste loops.</p>
+          </div>
+        </div>
+      </section>
+
+      <section id="how">
+        <h2 class="section-title">How it works</h2>
+        <p class="section-subtitle">Three steps from NotebookLM to your files.</p>
+        <div class="steps">
+          <div class="step">
+            <span>1</span>
+            <div>
+              <strong>Open NotebookLM</strong>
+              <p>Navigate to a quiz, flashcard set, or mindmap.</p>
+            </div>
+          </div>
+          <div class="step">
+            <span>2</span>
+            <div>
+              <strong>Pick a format</strong>
+              <p>Select CSV, Anki, Markdown, or whichever destination you need.</p>
+            </div>
+          </div>
+          <div class="step">
+            <span>3</span>
+            <div>
+              <strong>Download instantly</strong>
+              <p>Your file saves locally with clean filenames and timestamps.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="formats">
+        <h2 class="section-title">Formats you can ship today</h2>
+        <p class="section-subtitle">Export once, use everywhere.</p>
+        <div class="formats">
+          <span class="format-chip">CSV</span>
+          <span class="format-chip">JSON</span>
+          <span class="format-chip">HTML</span>
+          <span class="format-chip">Anki</span>
+          <span class="format-chip">OPML</span>
+          <span class="format-chip">SVG</span>
+          <span class="format-chip">Markdown</span>
+          <span class="format-chip">PDF</span>
+          <span class="format-chip">PPTX</span>
+        </div>
+      </section>
+
+      <section id="faq">
+        <h2 class="section-title">FAQ</h2>
+        <div class="grid">
+          <div class="card">
+            <h3>Is my data stored?</h3>
+            <p>Exports are generated in your browser. Files are saved locally to your device.</p>
+          </div>
+          <div class="card">
+            <h3>Which browsers are supported?</h3>
+            <p>Chrome is the primary target. Edge and Firefox builds are planned.</p>
+          </div>
+          <div class="card">
+            <h3>Does this work on any NotebookLM content?</h3>
+            <p>Supported today: quizzes, flashcards, and mindmaps. More types are on the way.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="cta-banner">
+        <div>
+          <h2>Start exporting in seconds.</h2>
+          <p>Install the extension and keep your NotebookLM outputs in sync with your workflow.</p>
+        </div>
+        <a class="btn btn-primary" href="#">Get the extension</a>
+      </section>
+
+      <footer>
+        <div>NotebookLM ExportKit</div>
+        <div>Support: notebooklm.exportkit@gmail.com</div>
+      </footer>
     </div>
-  </body>
+  </div>
+</body>
+
 </html>

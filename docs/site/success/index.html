@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Payment complete - NotebookLM ExportKit</title>
+  <!-- Preconnect for Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --color-bg: #f9fafb;
+      --color-card-bg: #ffffff;
+      --color-text-primary: #1f2937;
+      --color-text-secondary: #4b5563;
+      --color-success: #10b981;
+      --color-border: #e5e7eb;
+      --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --color-bg: #111827;
+        --color-card-bg: #1f2937;
+        --color-text-primary: #f9fafb;
+        --color-text-secondary: #9ca3af;
+        --color-success: #34d399;
+        --color-border: #374151;
+      }
+    }
+
+    body {
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-color: var(--color-bg);
+      color: var(--color-text-primary);
+      line-height: 1.5;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 480px;
+      padding: 20px;
+      box-sizing: border-box;
+    }
+
+    .card {
+      background: var(--color-card-bg);
+      border-radius: 16px;
+      padding: 40px 32px;
+      text-align: center;
+      box-shadow: var(--shadow-lg);
+      border: 1px solid var(--color-border);
+    }
+
+    .icon-circle {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 64px;
+      height: 64px;
+      background-color: rgba(16, 185, 129, 0.1);
+      border-radius: 50%;
+      margin-bottom: 24px;
+      color: var(--color-success);
+    }
+
+    .icon-circle svg {
+      width: 32px;
+      height: 32px;
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: 24px;
+      font-weight: 600;
+      letter-spacing: -0.025em;
+    }
+
+    .app-name {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--color-success);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 8px;
+      display: block;
+    }
+
+    p {
+      margin: 0;
+      color: var(--color-text-secondary);
+      font-size: 16px;
+    }
+
+    .instruction {
+      margin-top: 24px;
+      padding-top: 24px;
+      border-top: 1px solid var(--color-border);
+    }
+
+    .instruction p {
+      font-size: 14px;
+    }
+
+    .instruction strong {
+      color: var(--color-text-primary);
+      font-weight: 600;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <div class="card">
+      <div class="icon-circle">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+        </svg>
+      </div>
+
+      <span class="app-name">NotebookLM ExportKit</span>
+      <h1>Payment Successful!</h1>
+      <p>Your subscription is now active.</p>
+
+      <div class="instruction">
+        <p>You can now return to the extension.</p>
+        <p><strong>Enjoy using your advanced features!</strong></p>
+      </div>
+    </div>
+  </div>
+</body>
+
+</html>
