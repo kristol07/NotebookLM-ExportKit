@@ -273,25 +273,21 @@ export default function Dashboard({
     );
 
     return (
-        <div className="dashboard-container" style={{ padding: '20px', width: '300px', paddingBottom: '60px', position: 'relative', minHeight: '400px' }}>
-            {/* Header */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-                <h3 style={{ margin: 0 }}>Dashboard</h3>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+        <div className="exportkit-shell">
+            <div className="dashboard-container">
+                {/* Header */}
+                <div className="dashboard-header">
+                    <h3 className="dashboard-title">Dashboard</h3>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                     {isSignedIn ? (
                         <>
-                            <div style={{ fontSize: '12px', textAlign: 'right' }}>
-                                <div style={{ fontWeight: 'bold' }}>{isPlus ? 'Plus' : 'Free'}</div>
+                            <div className="plan-label">
+                                <div className="plan-value">{isPlus ? 'Plus' : 'Free'}</div>
                             </div>
                             <button
                                 onClick={handleSignOut}
                                 title="Sign Out"
-                                className="export-btn"
-                                style={{
-                                    padding: '4px 8px',
-                                    cursor: 'pointer',
-                                    fontSize: '11px',
-                                }}
+                                className="export-btn small"
                             >
                                 Sign Out
                             </button>
@@ -299,145 +295,93 @@ export default function Dashboard({
                     ) : (
                         <button
                             onClick={() => onRequestLogin?.()}
-                            className="export-btn"
-                            style={{
-                                padding: '6px 12px',
-                                cursor: 'pointer',
-                                fontSize: '12px',
-                                fontWeight: 500
-                            }}
+                            className="export-btn small"
                         >
                             Sign In
                         </button>
                     )}
-                </div>
-            </div>
-
-            {/* Manage Billing (Only for Subscribed users) */}
-            {isPlus && (
-                <div style={{ marginBottom: '16px', display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '8px' }}>
-                    {isCancelScheduled && (
-                        <span style={{ fontSize: '11px', color: '#B45309' }}>
-                            Ends {formattedPeriodEnd ?? 'soon'}
-                        </span>
-                    )}
-                    <button
-                        onClick={handleManageBilling}
-                        disabled={!!loadingAction}
-                        style={{
-                            background: 'none',
-                            border: 'none',
-                            textDecoration: 'underline',
-                            color: '#555',
-                            cursor: 'pointer',
-                            fontSize: '11px',
-                            padding: 0
-                        }}
-                    >
-                        Manage Subscription {loadingAction === 'billing' && <Spinner />}
-                    </button>
-                </div>
-            )}
-
-            {/* Actions Grid */}
-            <div className="actions" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                {EXPORT_SECTIONS.map((section) => (
-                    <div key={section.contentType}>
-                        <div style={{ fontSize: '12px', fontWeight: 600, color: '#444', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                            {section.title}
-                        </div>
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-                            {section.options.map((option) => (
-                                <button
-                                    key={`${section.contentType}-${option.format}`}
-                                    onClick={() => handleExport(option.format, section.contentType)}
-                                    disabled={!!loadingAction}
-                                    className="export-btn"
-                                    style={{ padding: '8px', cursor: 'pointer', fontSize: '13px' }}
-                                >
-                                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', justifyContent: 'center' }}>
-                                        {option.label ?? option.format}
-                                        {option.isPlus && <PlusIcon />}
-                                        {loadingAction === `${section.contentType}:${option.format}` && <Spinner />}
-                                    </span>
-                                </button>
-                            ))}
-                        </div>
                     </div>
-                ))}
+                </div>
 
-                {/* Upgrade Hook (if Free) */}
-                {isSignedIn && !isPlus && (
-                    <div style={{ marginTop: '5px', textAlign: 'center' }}>
-                        <div style={{ fontSize: '12px', color: '#555', marginBottom: '8px' }}>
-                            Free trial remaining:{' '}
-                            {trialRemaining === null
-                                ? 'Checking...'
-                                : trialRemaining === 0
-                                    ? 'No exports left'
-                                    : `${trialRemaining} ${trialRemaining === 1 ? 'export' : 'exports'}`}
-                        </div>
+                {/* Manage Billing (Only for Subscribed users) */}
+                {isPlus && (
+                    <div className="billing-row">
+                        {isCancelScheduled && (
+                            <span className="billing-badge">
+                                Ends {formattedPeriodEnd ?? 'soon'}
+                            </span>
+                        )}
                         <button
-                            onClick={handleUpgrade}
+                            onClick={handleManageBilling}
                             disabled={!!loadingAction}
-                            style={{
-                                background: 'linear-gradient(90deg, #4285f4, #34a853)',
-                                color: 'white',
-                                border: 'none',
-                                borderRadius: '6px',
-                                padding: '10px 20px',
-                                cursor: 'pointer',
-                                fontSize: '13px',
-                                fontWeight: 'bold',
-                                width: '100%',
-                            }}
+                            className="link-button"
                         >
-                            Upgrade to Unlock Advanced Features <PlusIcon /> {loadingAction === 'upgrade' && <Spinner />}
+                            Manage Subscription {loadingAction === 'billing' && <Spinner />}
                         </button>
                     </div>
                 )}
 
-                {/* Coming Soon */}
-                <div>
-                    <div style={{ fontSize: '12px', fontWeight: 600, color: '#888', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Coming soon</div>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '8px' }}>
-                        <div style={{ padding: '8px', fontSize: '12px', fontStyle: 'italic', color: '#999', border: '1px dashed #ddd', borderRadius: '4px', textAlign: 'center' }}>
+                {/* Actions Grid */}
+                <div className="actions">
+                    {EXPORT_SECTIONS.map((section) => (
+                        <div key={section.contentType} className="export-section">
+                            <div className="section-label">{section.title}</div>
+                            <div className="section-grid">
+                                {section.options.map((option) => (
+                                    <button
+                                        key={`${section.contentType}-${option.format}`}
+                                        onClick={() => handleExport(option.format, section.contentType)}
+                                        disabled={!!loadingAction}
+                                        className="export-btn"
+                                    >
+                                        <span className="button-content">
+                                            {option.label ?? option.format}
+                                            {option.isPlus && <PlusIcon />}
+                                            {loadingAction === `${section.contentType}:${option.format}` && <Spinner />}
+                                        </span>
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    ))}
+
+                    {/* Upgrade Hook (if Free) */}
+                    {isSignedIn && !isPlus && (
+                        <div className="upgrade-card">
+                            <div className="upgrade-note">
+                                Free trial remaining:{' '}
+                                {trialRemaining === null
+                                    ? 'Checking...'
+                                    : trialRemaining === 0
+                                        ? 'No exports left'
+                                        : `${trialRemaining} ${trialRemaining === 1 ? 'export' : 'exports'}`}
+                            </div>
+                            <button
+                                onClick={handleUpgrade}
+                                disabled={!!loadingAction}
+                                className="export-btn upgrade-btn"
+                            >
+                                Upgrade to Unlock Advanced Features <PlusIcon /> {loadingAction === 'upgrade' && <Spinner />}
+                            </button>
+                        </div>
+                    )}
+
+                    {/* Coming Soon */}
+                    <div className="coming-soon">
+                        <div className="section-label muted">Coming soon</div>
+                        <div className="coming-card">
                             Video & Audio Overviews to Transcript/Slides
                         </div>
                     </div>
                 </div>
-            </div>
 
-            {/* Toast Notification */}
-            {notice && (
-                <div
-                    style={{
-                        position: 'fixed',
-                        bottom: '20px',
-                        left: '50%',
-                        transform: 'translateX(-50%)',
-                        width: '85%',
-                        padding: '12px 16px',
-                        borderRadius: '8px',
-                        fontSize: '13px',
-                        textAlign: 'center',
-                        boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-                        zIndex: 1000,
-                        backgroundColor:
-                            notice.type === 'success' ? '#2e7d32' : notice.type === 'error' ? '#d32f2f' : '#333',
-                        color: '#fff',
-                        animation: 'fadeIn 0.3s ease-in-out'
-                    }}
-                >
-                    {notice.message}
-                </div>
-            )}
-            <style>{`
-                @keyframes fadeIn {
-                    from { opacity: 0; transform: translate(-50%, 10px); }
-                    to { opacity: 1; transform: translate(-50%, 0); }
-                }
-            `}</style>
+                {/* Toast Notification */}
+                {notice && (
+                    <div className={`toast ${notice.type}`}>
+                        {notice.message}
+                    </div>
+                )}
+            </div>
         </div>
     );
 }
