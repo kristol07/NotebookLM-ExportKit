@@ -10,7 +10,7 @@ export default defineConfig({
       'https://*.usercontent.goog/*'
     ],
     name: 'NotebookLM ExportKit',
-    description: 'Export NotebookLM quizzes, flashcards, and mindmaps to CSV, JSON, HTML, Anki, OPML, SVG, and Markdown, with more content types and formats coming.',
+    description: 'Export NotebookLM quizzes, flashcards, mindmaps, notes, and tables to multiple formats (varies by type).',
     icons: {
       16: 'icon/16.png',
       32: 'icon/32.png',

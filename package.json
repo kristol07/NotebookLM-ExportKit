@@ -1,8 +1,8 @@
 {
   "name": "notebooklm-exportkit",
-  "description": "NotebookLM ExportKit browser extension: export quizzes, flashcards, and mindmaps to CSV, JSON, HTML, Anki, OPML, SVG, and Markdown, with more content types and formats coming.",
+  "description": "Export NotebookLM quizzes, flashcards, mindmaps, notes, and tables to multiple formats (varies by type).",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
   "type": "module",
   "scripts": {
     "dev": "wxt",
