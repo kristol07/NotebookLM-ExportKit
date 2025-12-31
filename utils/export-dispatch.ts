@@ -10,7 +10,7 @@ export const supportedFormatsByType: Record<ContentType, ExportFormat[]> = {
     flashcards: ['CSV', 'JSON', 'HTML', 'Anki'],
     mindmap: ['OPML', 'JSONCanvas', 'SVG', 'Markdown'],
     datatable: ['CSV', 'Markdown'],
-    note: ['Word', 'Markdown']
+    note: ['Word', 'Markdown', 'PDF']
 };
 
 export const exportByType = (

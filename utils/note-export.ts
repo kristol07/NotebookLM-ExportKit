@@ -1,4 +1,6 @@
 import { downloadBlob, ExportFormat, ExportResult, NoteBlock, NoteInline } from './export-core';
+import { jsPDF } from 'jspdf';
+import html2canvas from 'html2canvas';
 import {
     AlignmentType,
     BorderStyle,
@@ -34,7 +36,19 @@ const escapeMarkdown = (value: string, forTable: boolean) => {
     return text;
 };
 
-const renderInlineHtml = (inline: NoteInline) => {
+const renderInlineHtml = (
+    inline: NoteInline,
+    references: Map<string, string>,
+    referenceOrder: string[]
+) => {
+    if (inline.citation) {
+        const key = inline.citation.id;
+        if (!references.has(key)) {
+            references.set(key, inline.citation.source);
+            referenceOrder.push(key);
+        }
+        return `<sup class="note-citation">[${escapeHtml(key)}]</sup>`;
+    }
     let content = escapeHtml(inline.text);
     if (inline.bold && inline.italic) {
         content = `<strong><em>${content}</em></strong>`;
@@ -76,8 +90,12 @@ const renderParagraphMarkdown = (inlines: NoteInline[], footnotes: Map<string, s
     return content.trim().length > 0 ? content.trim() : '';
 };
 
-const renderParagraphHtml = (inlines: NoteInline[]) => {
-    const content = inlines.map((inline) => renderInlineHtml(inline)).join('');
+const renderParagraphHtml = (
+    inlines: NoteInline[],
+    references: Map<string, string>,
+    referenceOrder: string[]
+) => {
+    const content = inlines.map((inline) => renderInlineHtml(inline, references, referenceOrder)).join('');
     return content.trim().length > 0 ? `<p>${content.trim()}</p>` : '';
 };
 
@@ -101,11 +119,14 @@ const renderTableMarkdown = (rows: NoteInline[][][], footnotes: Map<string, stri
     return [header, separator, ...body].join('\n');
 };
 
-const renderTableHtml = (rows: NoteInline[][][]) => {
+const renderTableHtml = (rows: NoteInline[][][], references: Map<string, string>, referenceOrder: string[]) => {
     const bodyRows = rows
         .map((row) => {
             const cells = row
-                .map((cell) => `<td>${cell.map((inline) => renderInlineHtml(inline)).join('').trim()}</td>`)
+                .map(
+                    (cell) =>
+                        `<td>${cell.map((inline) => renderInlineHtml(inline, references, referenceOrder)).join('').trim()}</td>`
+                )
                 .join('');
             return `<tr>${cells}</tr>`;
         })
@@ -143,6 +164,70 @@ const DOCX_TABLE_MARGINS = {
     bottom: 80,
     left: 120,
     right: 120
+};
+
+const PDF_PAGE_WIDTH_PX = 794;
+const PDF_PAGE_HEIGHT_PX = 1123;
+const PDF_MARGIN_PX = 48;
+
+const createPdfStyleElement = () => {
+    const style = document.createElement('style');
+    style.textContent = `
+        .note-export, .note-export * { box-sizing: border-box; }
+        .note-export { font-family: "Times New Roman", serif; font-size: 12pt; line-height: 1.6; color: #1a1a1a; }
+        .note-export h1 { font-size: 20pt; margin: 0 0 16pt; }
+        .note-export h2 { font-size: 14pt; margin: 18pt 0 10pt; }
+        .note-export p { margin: 0 0 10pt; }
+        .note-export table { border-collapse: collapse; width: 100%; margin: 12pt 0; }
+        .note-export td, .note-export th { border: 1px solid #999; padding: 6pt; vertical-align: top; }
+        .note-export pre { background: #f5f5f5; border: 1px solid #ddd; padding: 10pt; border-radius: 4pt; font-family: "Consolas", "Courier New", monospace; font-size: 10.5pt; white-space: pre-wrap; }
+        .note-export code { font-family: "Consolas", "Courier New", monospace; }
+        .note-export .note-citation { font-size: 9pt; vertical-align: super; }
+        .note-export .note-references { margin: 0; padding-left: 18pt; }
+        .note-export .note-references li { margin: 0 0 6pt; }
+        .note-block { padding-top: 0.1px; padding-bottom: 0.1px; }
+    `;
+    return style;
+};
+
+const collectReferences = (blocks: NoteBlock[]) => {
+    const references = new Map<string, string>();
+    const referenceOrder: string[] = [];
+    const collectInline = (inline: NoteInline) => {
+        if (!inline.citation) {
+            return;
+        }
+        const key = inline.citation.id;
+        if (!references.has(key)) {
+            references.set(key, inline.citation.source);
+            referenceOrder.push(key);
+        }
+    };
+
+    blocks.forEach((block) => {
+        if (block.type === 'paragraph') {
+            block.inlines.forEach(collectInline);
+            return;
+        }
+        if (block.type === 'table') {
+            block.rows.forEach((row) => row.forEach((cell) => cell.forEach(collectInline)));
+        }
+    });
+
+    return { references, referenceOrder };
+};
+
+const renderReferencesHtml = (references: Map<string, string>, referenceOrder: string[]) => {
+    if (referenceOrder.length === 0) {
+        return '';
+    }
+    const items = referenceOrder
+        .map((key) => {
+            const source = references.get(key) || '';
+            return `<li>[${escapeHtml(key)}] ${escapeHtml(source)}</li>`;
+        })
+        .join('');
+    return `<h2>References</h2><ol class="note-references">${items}</ol>`;
 };
 
 const buildDocxParagraph = (
@@ -219,19 +304,27 @@ const buildDocxCodeBlock = (text: string) => {
     });
 };
 
-const generateLegacyDocHtml = (title: string, blocks: NoteBlock[]) => {
+const buildNoteHtmlContent = (title: string, blocks: NoteBlock[]) => {
+    const references = new Map<string, string>();
+    const referenceOrder: string[] = [];
     const body = blocks
         .map((block) => {
             if (block.type === 'paragraph') {
-                return renderParagraphHtml(block.inlines);
+                return renderParagraphHtml(block.inlines, references, referenceOrder);
             }
             if (block.type === 'code') {
                 return renderCodeHtml(block.text);
             }
-            return renderTableHtml(block.rows);
+            return renderTableHtml(block.rows, references, referenceOrder);
         })
         .filter((line) => line.length > 0)
         .join('');
+    const referencesHtml = renderReferencesHtml(references, referenceOrder);
+    return `<h1 class="note-title">${escapeHtml(title)}</h1>${body}${referencesHtml}`;
+};
+
+const generateLegacyDocHtml = (title: string, blocks: NoteBlock[]) => {
+    const body = buildNoteHtmlContent(title, blocks);
     return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -241,15 +334,303 @@ const generateLegacyDocHtml = (title: string, blocks: NoteBlock[]) => {
     <style>
         body { font-family: "Times New Roman", serif; font-size: 12pt; line-height: 1.5; }
         h1 { font-size: 18pt; margin-bottom: 12pt; }
+        h2 { font-size: 14pt; margin: 16pt 0 8pt; }
         table { border-collapse: collapse; width: 100%; margin: 12pt 0; }
         td { border: 1px solid #333; padding: 6pt; vertical-align: top; }
+        pre { font-family: "Consolas", "Courier New", monospace; }
+        .note-citation { font-size: 9pt; vertical-align: super; }
+        .note-references { margin: 0; padding-left: 18pt; }
     </style>
 </head>
 <body>
-    <h1>${escapeHtml(title)}</h1>
     ${body}
 </body>
 </html>`;
+};
+
+type PdfRenderBlock =
+    | { type: 'paragraph'; inlines: NoteInline[] }
+    | { type: 'table'; rows: NoteInline[][][] }
+    | { type: 'code'; text: string }
+    | { type: 'html'; html: string };
+
+const renderBlockElement = (
+    block: PdfRenderBlock,
+    references: Map<string, string>,
+    referenceOrder: string[]
+) => {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'note-block';
+    if (block.type === 'paragraph') {
+        wrapper.innerHTML = renderParagraphHtml(block.inlines, references, referenceOrder);
+        return wrapper;
+    }
+    if (block.type === 'table') {
+        wrapper.innerHTML = renderTableHtml(block.rows, references, referenceOrder);
+        return wrapper;
+    }
+    if (block.type === 'code') {
+        wrapper.innerHTML = renderCodeHtml(block.text);
+        return wrapper;
+    }
+    wrapper.innerHTML = block.html;
+    return wrapper;
+};
+
+const createPdfMeasureContainer = () => {
+    const container = document.createElement('div');
+    container.style.position = 'fixed';
+    container.style.left = '-10000px';
+    container.style.top = '0';
+    container.style.width = `${PDF_PAGE_WIDTH_PX - PDF_MARGIN_PX * 2}px`;
+    const style = createPdfStyleElement();
+    const content = document.createElement('div');
+    content.className = 'note-export';
+    container.append(style, content);
+    document.body.appendChild(container);
+    return {
+        element: container,
+        content,
+        cleanup: () => {
+            container.remove();
+        }
+    };
+};
+
+const createPdfPageElement = (
+    blocks: PdfRenderBlock[],
+    references: Map<string, string>,
+    referenceOrder: string[]
+) => {
+    const container = document.createElement('div');
+    container.style.position = 'fixed';
+    container.style.left = '-10000px';
+    container.style.top = '0';
+    container.style.width = `${PDF_PAGE_WIDTH_PX}px`;
+    container.style.height = `${PDF_PAGE_HEIGHT_PX}px`;
+    container.style.background = '#ffffff';
+    container.style.padding = `${PDF_MARGIN_PX}px`;
+    const style = createPdfStyleElement();
+    const content = document.createElement('div');
+    content.className = 'note-export';
+    content.style.width = `${PDF_PAGE_WIDTH_PX - PDF_MARGIN_PX * 2}px`;
+    blocks.forEach((block) => {
+        content.appendChild(renderBlockElement(block, references, referenceOrder));
+    });
+    container.append(style, content);
+    document.body.appendChild(container);
+    return {
+        element: container,
+        cleanup: () => {
+            container.remove();
+        }
+    };
+};
+
+const paginatePdfBlocks = (
+    blocks: PdfRenderBlock[],
+    references: Map<string, string>,
+    referenceOrder: string[]
+) => {
+    const contentHeight = PDF_PAGE_HEIGHT_PX - PDF_MARGIN_PX * 2;
+    const pages: PdfRenderBlock[][] = [];
+    let current: PdfRenderBlock[] = [];
+    let currentHeight = 0;
+
+    const { element, content, cleanup } = createPdfMeasureContainer();
+    void element;
+
+    const measureBlockHeight = (block: PdfRenderBlock) => {
+        const node = renderBlockElement(block, references, referenceOrder);
+        content.appendChild(node);
+        const height = node.offsetHeight;
+        node.remove();
+        return height;
+    };
+
+    const commitPage = () => {
+        if (current.length > 0) {
+            pages.push(current);
+        }
+        current = [];
+        currentHeight = 0;
+    };
+
+    const tryAddBlock = (block: PdfRenderBlock, height: number) => {
+        if (currentHeight + height <= contentHeight || current.length === 0) {
+            current.push(block);
+            currentHeight += height;
+            return true;
+        }
+        return false;
+    };
+
+    const getTableChunkRowCount = (rows: NoteInline[][][], startIndex: number, maxHeight: number) => {
+        const header = rows[0];
+        const remaining = rows.length - startIndex;
+        let low = 1;
+        let high = remaining;
+        let best = 0;
+        while (low <= high) {
+            const mid = Math.floor((low + high) / 2);
+            const candidateRows = [header, ...rows.slice(startIndex, startIndex + mid)];
+            const height = measureBlockHeight({ type: 'table', rows: candidateRows });
+            if (height <= maxHeight) {
+                best = mid;
+                low = mid + 1;
+            } else {
+                high = mid - 1;
+            }
+        }
+        return best;
+    };
+
+    const getCodeChunkLineCount = (lines: string[], startIndex: number, maxHeight: number) => {
+        const remaining = lines.length - startIndex;
+        let low = 1;
+        let high = remaining;
+        let best = 0;
+        while (low <= high) {
+            const mid = Math.floor((low + high) / 2);
+            const candidate = lines.slice(startIndex, startIndex + mid).join('\n');
+            const height = measureBlockHeight({ type: 'code', text: candidate });
+            if (height <= maxHeight) {
+                best = mid;
+                low = mid + 1;
+            } else {
+                high = mid - 1;
+            }
+        }
+        return best;
+    };
+
+    blocks.forEach((block) => {
+        if (block.type === 'table') {
+            if (block.rows.length <= 1) {
+                const height = measureBlockHeight(block);
+                if (!tryAddBlock(block, height)) {
+                    commitPage();
+                    tryAddBlock(block, height);
+                }
+                return;
+            }
+            const header = block.rows[0];
+            let start = 1;
+            while (start < block.rows.length) {
+                let remainingHeight = contentHeight - currentHeight;
+                if (remainingHeight <= 0) {
+                    commitPage();
+                    remainingHeight = contentHeight;
+                }
+                let rowCount = getTableChunkRowCount(block.rows, start, remainingHeight);
+                if (rowCount === 0) {
+                    if (current.length > 0) {
+                        commitPage();
+                        rowCount = getTableChunkRowCount(block.rows, start, contentHeight);
+                    }
+                }
+                if (rowCount === 0) {
+                    rowCount = 1;
+                }
+                const chunk: PdfRenderBlock = { type: 'table', rows: [header, ...block.rows.slice(start, start + rowCount)] };
+                const height = measureBlockHeight(chunk);
+                if (!tryAddBlock(chunk, height)) {
+                    commitPage();
+                    tryAddBlock(chunk, height);
+                }
+                start += rowCount;
+            }
+            return;
+        }
+        if (block.type === 'code') {
+            const normalized = block.text.replace(/\r\n/g, '\n').replace(/\r/g, '\n').replace(/\n+$/, '');
+            const lines = normalized.length > 0 ? normalized.split('\n') : [''];
+            let start = 0;
+            while (start < lines.length) {
+                let remainingHeight = contentHeight - currentHeight;
+                if (remainingHeight <= 0) {
+                    commitPage();
+                    remainingHeight = contentHeight;
+                }
+                let lineCount = getCodeChunkLineCount(lines, start, remainingHeight);
+                if (lineCount === 0) {
+                    if (current.length > 0) {
+                        commitPage();
+                        lineCount = getCodeChunkLineCount(lines, start, contentHeight);
+                    }
+                }
+                if (lineCount === 0) {
+                    lineCount = 1;
+                }
+                const chunk: PdfRenderBlock = { type: 'code', text: lines.slice(start, start + lineCount).join('\n') };
+                const height = measureBlockHeight(chunk);
+                if (!tryAddBlock(chunk, height)) {
+                    commitPage();
+                    tryAddBlock(chunk, height);
+                }
+                start += lineCount;
+            }
+            return;
+        }
+        const height = measureBlockHeight(block);
+        if (!tryAddBlock(block, height)) {
+            commitPage();
+            tryAddBlock(block, height);
+        }
+    });
+
+    cleanup();
+
+    if (current.length > 0) {
+        pages.push(current);
+    }
+
+    return pages;
+};
+
+const exportNotePdf = async (title: string, blocks: NoteBlock[], tabTitle: string, timestamp: string) => {
+    const filename = `notebooklm_note_${tabTitle}_${timestamp}.pdf`;
+    const { references, referenceOrder } = collectReferences(blocks);
+    const pdfBlocks: PdfRenderBlock[] = [
+        { type: 'html', html: `<h1 class="note-title">${escapeHtml(title)}</h1>` },
+        ...blocks.map((block) => {
+            if (block.type === 'paragraph') {
+                return { type: 'paragraph', inlines: block.inlines } as PdfRenderBlock;
+            }
+            if (block.type === 'code') {
+                return { type: 'code', text: block.text } as PdfRenderBlock;
+            }
+            return { type: 'table', rows: block.rows } as PdfRenderBlock;
+        })
+    ];
+    const referencesHtml = renderReferencesHtml(references, referenceOrder);
+    if (referencesHtml) {
+        pdfBlocks.push({ type: 'html', html: referencesHtml });
+    }
+    const pages = paginatePdfBlocks(pdfBlocks, references, referenceOrder);
+    try {
+        const pdf = new jsPDF({ orientation: 'p', unit: 'pt', format: 'a4' });
+        for (let index = 0; index < pages.length; index += 1) {
+            const { element, cleanup } = createPdfPageElement(pages[index], references, referenceOrder);
+            const canvas = await html2canvas(element, {
+                scale: 2,
+                useCORS: true,
+                backgroundColor: '#ffffff'
+            });
+            const pageWidth = pdf.internal.pageSize.getWidth();
+            const pageHeight = pdf.internal.pageSize.getHeight();
+            const imageHeight = (canvas.height * pageWidth) / canvas.width;
+            if (index > 0) {
+                pdf.addPage();
+            }
+            const imgData = canvas.toDataURL('image/png');
+            pdf.addImage(imgData, 'PNG', 0, 0, pageWidth, Math.min(pageHeight, imageHeight));
+            cleanup();
+        }
+        pdf.save(filename);
+    } catch (err) {
+        console.error(err);
+    }
 };
 
 export const exportNote = (
@@ -284,6 +665,11 @@ export const exportNote = (
         const content = parts.join('\n');
         const filename = `notebooklm_note_${tabTitle}_${timestamp}.md`;
         downloadBlob(content, filename, 'text/markdown');
+        return { success: true, count: blocks.length };
+    }
+
+    if (format === 'PDF') {
+        void exportNotePdf(title, blocks, tabTitle, timestamp);
         return { success: true, count: blocks.length };
     }
 

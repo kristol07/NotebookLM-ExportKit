@@ -16,7 +16,7 @@ export const extractNote = async (tabId: number, format: ExportFormat): Promise<
             args: [format],
             func: (formatArg: ExportFormat) => {
                 try {
-                    if (formatArg !== 'Markdown' && formatArg !== 'Word') {
+                    if (formatArg !== 'Markdown' && formatArg !== 'Word' && formatArg !== 'PDF') {
                         return { success: false, error: 'unsupported_format', frameUrl: window.location.href };
                     }
 

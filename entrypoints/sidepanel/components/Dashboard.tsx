@@ -54,6 +54,7 @@ const EXPORT_SECTIONS: Array<{
             options: [
                 { format: 'Word', label: 'Word' },
                 { format: 'Markdown' },
+                { format: 'PDF' },
             ],
         },
         {
