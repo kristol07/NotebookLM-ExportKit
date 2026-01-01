@@ -1,0 +1,218 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Privacy Policy | NotebookLM ExportKit</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="./theme.css" />
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: var(--font-body);
+      color: var(--ink);
+      background:
+        radial-gradient(900px 500px at 10% -10%, #ffd2b9 0%, transparent 65%),
+        radial-gradient(700px 500px at 95% 10%, #cfe7e6 0%, transparent 55%),
+        linear-gradient(180deg, var(--bg) 0%, var(--bg-deep) 100%);
+      min-height: 100vh;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .page {
+      position: relative;
+      overflow: hidden;
+    }
+
+    .container {
+      width: min(900px, 92vw);
+      margin: 0 auto;
+      padding: var(--space-14) 0 var(--space-17);
+    }
+
+    .nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: var(--space-9);
+      padding-bottom: var(--space-10);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: var(--space-4);
+      font-family: var(--font-display);
+      font-weight: 700;
+      font-size: var(--size-lg);
+      letter-spacing: -0.02em;
+    }
+
+    .brand-dot {
+      width: var(--space-4);
+      height: var(--space-4);
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent), var(--accent-light));
+      box-shadow: 0 0 0 var(--space-1) rgba(211, 84, 44, 0.15);
+    }
+
+    .policy-card {
+      background: #fff;
+      border: 1px solid var(--stroke);
+      border-radius: var(--radius-2xl);
+      padding: var(--space-11);
+      box-shadow: var(--shadow);
+    }
+
+    h1 {
+      font-family: var(--font-display);
+      font-size: clamp(30px, 4vw, 46px);
+      margin: 0 0 var(--space-4);
+    }
+
+    h2 {
+      font-family: var(--font-display);
+      font-size: var(--size-2xl);
+      margin: var(--space-10) 0 var(--space-4);
+    }
+
+    p {
+      margin: 0 0 var(--space-6);
+      color: var(--muted);
+      line-height: 1.7;
+      font-size: var(--size-base);
+    }
+
+    ul {
+      margin: 0 0 var(--space-6);
+      padding-left: var(--space-9);
+      color: var(--muted);
+      line-height: 1.7;
+      font-size: var(--size-base);
+    }
+
+    .meta {
+      color: var(--muted);
+      font-size: var(--size-sm);
+      margin-bottom: var(--space-8);
+    }
+
+    footer {
+      margin-top: var(--space-12);
+      color: var(--muted);
+      font-size: var(--size-sm);
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-6);
+      justify-content: space-between;
+    }
+
+    @media (max-width: 720px) {
+      .policy-card {
+        padding: var(--space-9);
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="page">
+    <div class="container">
+      <nav class="nav">
+        <div class="brand">
+          <span class="brand-dot" aria-hidden="true"></span>
+          NotebookLM ExportKit
+        </div>
+        <a href="./index.html">Back to home</a>
+      </nav>
+
+      <div class="policy-card">
+        <h1>Privacy Policy</h1>
+        <div class="meta">Last updated: 2026-01-01</div>
+
+        <p>
+          NotebookLM ExportKit is a browser extension that helps you export NotebookLM content into
+          formats like CSV, JSON, Markdown, and more. This policy explains what data we collect,
+          how we use it, and your choices.
+        </p>
+
+        <h2>What we collect</h2>
+        <ul>
+          <li>Account data: your email address when you sign in with a one-time code.</li>
+          <li>Subscription data: plan status, subscription status, and billing period end for Plus access.</li>
+          <li>Trial usage: a counter of how many free trial exports you have used.</li>
+          <li>Support data: any information you send to us when you contact support.</li>
+          <li>Technical data: standard server logs (e.g., IP address) handled by our service providers.</li>
+        </ul>
+
+        <h2>What we do not collect</h2>
+        <ul>
+          <li>NotebookLM content is processed locally in your browser and is not uploaded to our servers.</li>
+          <li>We do not run advertising or analytics trackers in the extension.</li>
+        </ul>
+
+        <h2>How we use data</h2>
+        <ul>
+          <li>Authenticate you and keep you signed in.</li>
+          <li>Enable Plus features, manage trials, and show subscription status.</li>
+          <li>Provide billing support and resolve account issues.</li>
+          <li>Maintain security and prevent abuse.</li>
+        </ul>
+
+        <h2>Payments and third-party services</h2>
+        <p>
+          We use Supabase for authentication and subscription metadata storage. We use Creem to process
+          payments and manage subscriptions. Payment details (such as card numbers) are handled directly
+          by Creem and are not stored by us.
+        </p>
+
+        <h2>Data retention</h2>
+        <p>
+          We retain account and subscription data while your account is active. You can request deletion
+          by contacting support. Some records may be retained as required for legal or billing purposes.
+        </p>
+
+        <h2>Your choices</h2>
+        <ul>
+          <li>You can use the extension without signing in for free exports.</li>
+          <li>You can manage or cancel your subscription from the billing portal.</li>
+          <li>You can request account deletion via support.</li>
+        </ul>
+
+        <h2>Children's privacy</h2>
+        <p>
+          NotebookLM ExportKit is not directed to children under 13, and we do not knowingly collect
+          personal information from children.
+        </p>
+
+        <h2>Changes</h2>
+        <p>
+          We may update this policy from time to time. The latest version will always be posted on this page.
+        </p>
+
+        <h2>Contact</h2>
+        <p>
+          For questions about privacy, contact us at
+          <a href="mailto:notebooklm.exportkit@gmail.com">notebooklm.exportkit@gmail.com</a>.
+        </p>
+      </div>
+
+      <footer>
+        <div>NotebookLM ExportKit</div>
+        <div>Support: notebooklm.exportkit@gmail.com</div>
+      </footer>
+    </div>
+  </div>
+</body>
+
+</html>

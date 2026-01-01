@@ -7,19 +7,19 @@
   <title>NotebookLM ExportKit</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link rel="stylesheet" href="./theme.css" />
-    <style>
+  <link rel="stylesheet" href="./theme.css" />
+  <style>
     * {
       box-sizing: border-box;
     }
 
-      body {
-        margin: 0;
-        font-family: var(--font-body);
-        color: var(--ink);
-        background:
-          radial-gradient(900px 500px at 10% -10%, #ffd2b9 0%, transparent 65%),
-          radial-gradient(700px 500px at 95% 10%, #cfe7e6 0%, transparent 55%),
+    body {
+      margin: 0;
+      font-family: var(--font-body);
+      color: var(--ink);
+      background:
+        radial-gradient(900px 500px at 10% -10%, #ffd2b9 0%, transparent 65%),
+        radial-gradient(700px 500px at 95% 10%, #cfe7e6 0%, transparent 55%),
         linear-gradient(180deg, var(--bg) 0%, var(--bg-deep) 100%);
       min-height: 100vh;
     }
@@ -34,260 +34,298 @@
       overflow: hidden;
     }
 
-      .container {
-        width: min(1100px, 92vw);
-        margin: 0 auto;
-        padding: var(--space-14) 0 var(--space-17);
-      }
+    .container {
+      width: min(1100px, 92vw);
+      margin: 0 auto;
+      padding: var(--space-14) 0 var(--space-17);
+    }
 
-      .nav {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        gap: var(--space-9);
-        padding-bottom: var(--space-13);
-      }
+    .nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: var(--space-9);
+      padding-bottom: var(--space-13);
+    }
 
-      .brand {
-        display: flex;
-        align-items: center;
-        gap: var(--space-4);
-        font-family: var(--font-display);
-        font-weight: 700;
-        font-size: var(--size-lg);
-        letter-spacing: -0.02em;
-      }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: var(--space-4);
+      font-family: var(--font-display);
+      font-weight: 700;
+      font-size: var(--size-lg);
+      letter-spacing: -0.02em;
+    }
 
-      .brand-dot {
-        width: var(--space-4);
-        height: var(--space-4);
-        border-radius: 50%;
-        background: linear-gradient(135deg, var(--accent), var(--accent-light));
-        box-shadow: 0 0 0 var(--space-1) rgba(211, 84, 44, 0.15);
-      }
+    .brand-dot {
+      width: var(--space-4);
+      height: var(--space-4);
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent), var(--accent-light));
+      box-shadow: 0 0 0 var(--space-1) rgba(211, 84, 44, 0.15);
+    }
 
-      .nav-links {
-        display: flex;
-        gap: var(--space-8);
-        font-size: var(--size-md);
-        color: var(--muted);
-      }
+    .nav-links {
+      display: flex;
+      gap: var(--space-8);
+      font-size: var(--size-md);
+      color: var(--muted);
+    }
 
-      .hero {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-        gap: var(--space-13);
-        align-items: center;
-      }
+    .hero {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: var(--space-13);
+      align-items: center;
+    }
 
-      .hero h1 {
-        font-family: var(--font-display);
-        font-size: clamp(32px, 4.4vw, 56px);
-        line-height: 1.05;
-        margin: 0 0 var(--space-6);
-      }
+    .hero h1 {
+      font-family: var(--font-display);
+      font-size: clamp(32px, 4.4vw, 56px);
+      line-height: 1.05;
+      margin: 0 0 var(--space-6);
+    }
 
-      .hero p {
-        font-size: var(--size-lg);
-        color: var(--muted);
-        margin: 0 0 var(--space-9);
-      }
+    .hero p {
+      font-size: var(--size-lg);
+      color: var(--muted);
+      margin: 0 0 var(--space-9);
+    }
 
-      .cta-row {
-        display: flex;
-        flex-wrap: wrap;
-        gap: var(--space-5);
-        align-items: center;
-      }
+    .cta-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-5);
+      align-items: center;
+    }
 
-      .btn {
-        display: inline-flex;
-        align-items: center;
-        gap: var(--space-3);
-        padding: var(--space-4) var(--space-7);
-        border-radius: 999px;
-        font-weight: 600;
-        font-size: var(--size-md);
-        border: 1px solid transparent;
-        transition: transform 0.2s ease, box-shadow 0.2s ease;
-      }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-3);
+      padding: var(--space-4) var(--space-7);
+      border-radius: 999px;
+      font-weight: 600;
+      font-size: var(--size-md);
+      border: 1px solid transparent;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
 
-      .btn-primary {
-        background: var(--accent);
-        color: #fff;
-        box-shadow: 0 14px 30px rgba(211, 84, 44, 0.3);
-      }
+    .btn-primary {
+      background: var(--accent);
+      color: #fff;
+      box-shadow: 0 14px 30px rgba(211, 84, 44, 0.3);
+    }
 
     .btn-primary:hover {
       transform: translateY(-1px);
     }
 
-      .btn-secondary {
-        background: transparent;
-        border-color: var(--stroke);
-        color: var(--ink);
-      }
+    .btn-secondary {
+      background: transparent;
+      border-color: var(--stroke);
+      color: var(--ink);
+    }
 
-      .badge-row {
-        margin-top: var(--space-8);
-        display: flex;
-        flex-wrap: wrap;
-        gap: var(--space-3);
-      }
+    .badge-row {
+      margin-top: var(--space-8);
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-3);
+    }
 
-      .badge {
-        padding: var(--space-1) var(--space-3);
-        border-radius: 999px;
-        background: rgba(31, 111, 120, 0.12);
-        color: var(--teal);
-        font-size: var(--size-sm);
+    .badge {
+      padding: var(--space-1) var(--space-3);
+      border-radius: 999px;
+      background: rgba(31, 111, 120, 0.12);
+      color: var(--teal);
+      font-size: var(--size-sm);
       font-weight: 600;
       letter-spacing: 0.03em;
     }
 
-      .demo {
-        background: var(--card);
-        border-radius: var(--radius-2xl);
-        padding: var(--space-11);
-        border: 1px solid var(--stroke);
-        box-shadow: var(--shadow);
-      }
+    .demo {
+      background: var(--card);
+      border-radius: var(--radius-2xl);
+      padding: var(--space-11);
+      border: none;
+      box-shadow: var(--shadow);
+    }
 
-      .demo-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        font-size: var(--size-sm);
-        color: var(--muted);
-        margin-bottom: var(--space-6);
-      }
+    .demo-window {
+      border-radius: var(--radius-xl);
+      background: #121212;
+      color: #f7f1ea;
+      padding: var(--space-8);
+      font-family: var(--font-body);
+      font-size: var(--size-sm);
+      line-height: 1.6;
+    }
 
-      .demo-window {
-        border-radius: var(--radius-xl);
-        background: #121212;
-        color: #f7f1ea;
-        padding: var(--space-8);
-        font-family: var(--font-body);
-        font-size: var(--size-sm);
-        line-height: 1.6;
-      }
+    .demo-window span {
+      color: #ffcf99;
+    }
 
-      .demo-window span {
-        color: #ffcf99;
-      }
+    .demo-carousel {
+      padding: var(--space-6);
+    }
 
-      .demo-note {
-        margin-top: var(--space-4);
-      }
+    .carousel-track {
+      display: flex;
+      gap: var(--space-6);
+      overflow-x: auto;
+      scroll-snap-type: x mandatory;
+      scroll-behavior: smooth;
+      -webkit-overflow-scrolling: touch;
+    }
 
-      section {
-        margin-top: var(--space-16);
-      }
+    .carousel-slide {
+      flex: 0 0 100%;
+      scroll-snap-align: center;
+      margin: 0;
+      display: grid;
+      grid-template-rows: auto auto;
+      gap: var(--space-4);
+    }
 
-      .section-title {
-        font-family: var(--font-display);
-        font-size: var(--size-3xl);
-        margin: 0 0 var(--space-4);
-      }
+    .carousel-frame {
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      box-shadow: 0 16px 30px rgba(0, 0, 0, 0.35);
+      aspect-ratio: 16 / 9;
+    }
 
-      .section-subtitle {
-        color: var(--muted);
-        margin: 0 0 var(--space-11);
-      }
+    .carousel-image {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
 
-      .grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-        gap: var(--space-8);
-      }
+    .carousel-slide figcaption {
+      color: var(--muted);
+      font-size: var(--size-sm);
+      text-align: center;
+      margin: 0;
+    }
 
-      .card {
-        background: #fff;
-        border: 1px solid var(--stroke);
-        border-radius: var(--radius-xl);
-        padding: var(--space-8);
-        box-shadow: 0 10px 20px rgba(23, 23, 23, 0.06);
-      }
+    .carousel-hint {
+      margin-top: var(--space-4);
+      color: var(--muted);
+      font-size: var(--size-xs);
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
 
-      .card h3 {
-        margin: 0 0 var(--space-3);
-        font-size: var(--size-lg);
-        font-family: var(--font-display);
-      }
+    section {
+      margin-top: var(--space-16);
+    }
 
-      .card p {
-        margin: 0;
-        color: var(--muted);
-        font-size: var(--size-md);
-      }
+    .section-title {
+      font-family: var(--font-display);
+      font-size: var(--size-3xl);
+      margin: 0 0 var(--space-4);
+    }
 
-      .steps {
-        display: grid;
-        gap: var(--space-6);
-      }
+    .section-subtitle {
+      color: var(--muted);
+      margin: 0 0 var(--space-11);
+    }
 
-      .step {
-        display: flex;
-        gap: var(--space-5);
-        align-items: flex-start;
-        background: #fff;
-        border-radius: var(--radius-xl);
-        padding: var(--space-6) var(--space-7);
-        border: 1px solid var(--stroke);
-      }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: var(--space-8);
+    }
 
-      .step span {
-        width: 34px;
-        height: 34px;
-        border-radius: var(--radius-sm);
-        background: rgba(211, 84, 44, 0.15);
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
+    .card {
+      background: #fff;
+      border: 1px solid var(--stroke);
+      border-radius: var(--radius-xl);
+      padding: var(--space-8);
+      box-shadow: 0 10px 20px rgba(23, 23, 23, 0.06);
+    }
+
+    .card h3 {
+      margin: 0 0 var(--space-3);
+      font-size: var(--size-lg);
+      font-family: var(--font-display);
+    }
+
+    .card p {
+      margin: 0;
+      color: var(--muted);
+      font-size: var(--size-md);
+    }
+
+    .steps {
+      display: grid;
+      gap: var(--space-6);
+    }
+
+    .step {
+      display: flex;
+      gap: var(--space-5);
+      align-items: flex-start;
+      background: #fff;
+      border-radius: var(--radius-xl);
+      padding: var(--space-6) var(--space-7);
+      border: 1px solid var(--stroke);
+    }
+
+    .step span {
+      width: 34px;
+      height: 34px;
+      border-radius: var(--radius-sm);
+      background: rgba(211, 84, 44, 0.15);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
       font-weight: 700;
       color: var(--accent-dark);
     }
 
-      .formats {
-        display: flex;
-        flex-wrap: wrap;
-        gap: var(--space-3);
-      }
+    .formats {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-3);
+    }
 
-      .format-chip {
-        padding: var(--space-2) var(--space-4);
-        border-radius: 999px;
-        border: 1px solid var(--stroke);
-        background: #fff;
-        font-size: var(--size-sm);
-      }
+    .format-chip {
+      padding: var(--space-2) var(--space-4);
+      border-radius: 999px;
+      border: 1px solid var(--stroke);
+      background: #fff;
+      font-size: var(--size-sm);
+    }
 
-      .cta-banner {
-        margin-top: var(--space-17);
-        padding: var(--space-12);
-        border-radius: var(--radius-2xl);
-        background: linear-gradient(135deg, #ffe2cb, #cfe7e6);
-        display: flex;
-        flex-wrap: wrap;
-        gap: var(--space-9);
-        align-items: center;
-        justify-content: space-between;
-      }
+    .cta-banner {
+      margin-top: var(--space-17);
+      padding: var(--space-12);
+      border-radius: var(--radius-2xl);
+      background: linear-gradient(135deg, #ffe2cb, #cfe7e6);
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-9);
+      align-items: center;
+      justify-content: space-between;
+    }
 
-      .cta-banner h2 {
-        font-family: var(--font-display);
-        margin: 0 0 var(--space-2);
-      }
+    .cta-banner h2 {
+      font-family: var(--font-display);
+      margin: 0 0 var(--space-2);
+    }
 
-      footer {
-        margin-top: var(--space-15);
-        display: flex;
-        flex-wrap: wrap;
-        justify-content: space-between;
-        gap: var(--space-6);
-        color: var(--muted);
-        font-size: var(--size-sm);
-      }
+    footer {
+      margin-top: var(--space-15);
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: var(--space-6);
+      color: var(--muted);
+      font-size: var(--size-sm);
+    }
 
     @keyframes rise {
       from {
@@ -317,19 +355,19 @@
       animation-delay: 0.3s;
     }
 
-      @media (max-width: 720px) {
-        .nav-links {
-          display: none;
-        }
-
-        .cta-banner {
-          padding: var(--space-11);
-        }
-
-        .demo {
-          padding: var(--space-8);
-        }
+    @media (max-width: 720px) {
+      .nav-links {
+        display: none;
       }
+
+      .cta-banner {
+        padding: var(--space-11);
+      }
+
+      .demo {
+        padding: var(--space-8);
+      }
+    }
   </style>
 </head>
 
@@ -353,16 +391,14 @@
         <div class="animate delay-1">
           <h1>Export NotebookLM outputs into the formats you actually use.</h1>
           <p>
-            Turn quizzes, flashcards, and mindmaps into clean files for studying,
+            Turn quizzes, flashcards, mindmaps, notes, and data tables into clean files for studying,
             sharing, or archiving in seconds.
           </p>
           <div class="cta-row">
             <a class="btn btn-primary" href="#">
               Add to Chrome
             </a>
-            <a class="btn btn-secondary" href="#">
-              See sample exports
-            </a>
+
           </div>
           <div class="badge-row">
             <span class="badge">No copy-paste</span>
@@ -371,21 +407,196 @@
           </div>
         </div>
 
-        <div class="demo animate delay-2">
-          <div class="demo-header">
-            <span>NotebookLM ExportKit</span>
-            <span>Mindmap → SVG</span>
-          </div>
-          <div class="demo-window">
-            Export ready:
-            <div><span>•</span> Notebook: AI Product Notes</div>
-            <div><span>•</span> Format: SVG, OPML, FreeMind (.mm)</div>
-            <div><span>•</span> Output: crisp diagrams + outline</div>
-            <div class="demo-note">
-              <span>✔</span> File saved to Downloads
+        <div class="demo animate delay-2" id="samples">
+          <div class="demo-window demo-carousel">
+            <div class="carousel-wrapper">
+              <button class="carousel-btn prev" aria-label="Previous slide">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M15 18l-6-6 6-6" />
+                </svg>
+              </button>
+
+              <div class="carousel-track">
+                <figure class="carousel-slide">
+                  <div class="carousel-frame">
+                    <img class="carousel-image" src="./demo_note_to_pdf.png"
+                      alt="NotebookLM note exported to a polished PDF document." />
+                  </div>
+                  <figcaption>Note → PDF (clean reading layout)</figcaption>
+                </figure>
+                <figure class="carousel-slide">
+                  <div class="carousel-frame">
+                    <img class="carousel-image" src="./demo_quiz_to_anki.png"
+                      alt="NotebookLM quiz exported to Anki cards." />
+                  </div>
+                  <figcaption>Quiz → Anki (ready-to-review cards)</figcaption>
+                </figure>
+                <figure class="carousel-slide">
+                  <div class="carousel-frame">
+                    <img class="carousel-image" src="./demo_mindmap_to_obsidian.png"
+                      alt="NotebookLM mindmap exported to Obsidian canvas." />
+                  </div>
+                  <figcaption>Mindmap → Obsidian (JSONCanvas)</figcaption>
+                </figure>
+              </div>
+
+              <button class="carousel-btn next" aria-label="Next slide">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M9 18l6-6-6-6" />
+                </svg>
+              </button>
             </div>
+
+            <div class="carousel-dots"></div>
           </div>
         </div>
+        <style>
+          .carousel-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+          }
+
+          .carousel-track::-webkit-scrollbar {
+            display: none;
+          }
+
+          .carousel-track {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+            position: relative;
+          }
+
+          .carousel-btn {
+            position: absolute;
+            z-index: 10;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: grid;
+            place-items: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            backdrop-filter: blur(4px);
+          }
+
+          .carousel-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: scale(1.1);
+          }
+
+          .carousel-btn.prev {
+            left: var(--space-4);
+          }
+
+          .carousel-btn.next {
+            right: var(--space-4);
+          }
+
+          .carousel-image {
+            pointer-events: none;
+            /* prevent dragging image when swiping */
+          }
+
+          .carousel-dots {
+            display: flex;
+            justify-content: center;
+            gap: var(--space-3);
+            margin-top: var(--space-6);
+          }
+
+          .carousel-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            padding: 0;
+            cursor: pointer;
+            transition: all 0.3s ease;
+          }
+
+          .carousel-dot.active {
+            background: var(--accent);
+            transform: scale(1.2);
+          }
+
+          @media (max-width: 600px) {
+            .carousel-btn {
+              display: none;
+            }
+          }
+        </style>
+        <script>
+          document.addEventListener('DOMContentLoaded', () => {
+            const track = document.querySelector('.carousel-track');
+            if (!track) return;
+
+            const slides = Array.from(track.querySelectorAll('.carousel-slide'));
+            const nextBtn = document.querySelector('.carousel-btn.next');
+            const prevBtn = document.querySelector('.carousel-btn.prev');
+            const dotsContainer = document.querySelector('.carousel-dots');
+
+            if (!slides.length) return;
+
+            // Create dots
+            slides.forEach((_, index) => {
+              const dot = document.createElement('button');
+              dot.classList.add('carousel-dot');
+              if (index === 0) dot.classList.add('active');
+              dot.setAttribute('aria-label', `Go to slide ${index + 1}`);
+              dot.addEventListener('click', () => {
+                const targetSlide = slides[index];
+                track.scrollTo({
+                  left: targetSlide.offsetLeft,
+                  behavior: 'smooth'
+                });
+              });
+              dotsContainer.appendChild(dot);
+            });
+
+            const dots = Array.from(dotsContainer.children);
+
+            const updateDots = () => {
+              const trackCenter = track.scrollLeft + track.clientWidth / 2;
+              let closestIndex = 0;
+              let minDistance = Infinity;
+
+              slides.forEach((slide, index) => {
+                const slideCenter = slide.offsetLeft + slide.clientWidth / 2;
+                const distance = Math.abs(trackCenter - slideCenter);
+                if (distance < minDistance) {
+                  minDistance = distance;
+                  closestIndex = index;
+                }
+              });
+
+              dots.forEach(d => d.classList.remove('active'));
+              if (dots[closestIndex]) dots[closestIndex].classList.add('active');
+            }
+
+            track.addEventListener('scroll', () => {
+              window.requestAnimationFrame(updateDots);
+            });
+
+            if (nextBtn) {
+              nextBtn.addEventListener('click', () => {
+                const slideWidth = slides[0].clientWidth;
+                track.scrollBy({ left: slideWidth, behavior: 'smooth' });
+              });
+            }
+
+            if (prevBtn) {
+              prevBtn.addEventListener('click', () => {
+                const slideWidth = slides[0].clientWidth;
+                track.scrollBy({ left: -slideWidth, behavior: 'smooth' });
+              });
+            }
+          });
+        </script>
       </section>
 
       <section id="features">
@@ -394,7 +605,8 @@
         <div class="grid">
           <div class="card">
             <h3>Multi-format output</h3>
-            <p>Export quizzes, flashcards, and mindmaps to CSV, JSON, HTML, Anki, OPML, FreeMind (.mm), SVG, and Markdown.</p>
+            <p>Export quizzes, flashcards, mindmaps, notes, and data tables to CSV, JSON, HTML, Anki, Word, PDF, SVG,
+              Markdown, OPML, FreeMind (.mm), and JSONCanvas.</p>
           </div>
           <div class="card">
             <h3>Structure preserved</h3>
@@ -403,6 +615,10 @@
           <div class="card">
             <h3>Fast capture</h3>
             <p>Run exports directly in the browser without new tabs or copy/paste loops.</p>
+          </div>
+          <div class="card">
+            <h3>Plus-ready formats</h3>
+            <p>Unlock advanced mindmap and note exports with a Plus subscription when you need deeper workflows.</p>
           </div>
         </div>
       </section>
@@ -443,12 +659,13 @@
           <span class="format-chip">JSON</span>
           <span class="format-chip">HTML</span>
           <span class="format-chip">Anki</span>
+          <span class="format-chip">Word</span>
           <span class="format-chip">OPML</span>
           <span class="format-chip">FreeMind (.mm)</span>
+          <span class="format-chip">JSONCanvas</span>
           <span class="format-chip">SVG</span>
           <span class="format-chip">Markdown</span>
           <span class="format-chip">PDF</span>
-          <span class="format-chip">PPTX</span>
         </div>
       </section>
 
@@ -465,7 +682,7 @@
           </div>
           <div class="card">
             <h3>Does this work on any NotebookLM content?</h3>
-            <p>Supported today: quizzes, flashcards, and mindmaps. More types are on the way.</p>
+            <p>Supported today: quizzes, flashcards, mindmaps, notes, and data tables.</p>
           </div>
         </div>
       </section>
@@ -481,6 +698,7 @@
       <footer>
         <div>NotebookLM ExportKit</div>
         <div>Support: notebooklm.exportkit@gmail.com</div>
+        <div><a href="./privacy.html">Privacy Policy</a></div>
       </footer>
     </div>
   </div>
