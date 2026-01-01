@@ -259,6 +259,78 @@
       font-size: var(--size-md);
     }
 
+    .pricing-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: var(--space-8);
+    }
+
+    .pricing-card {
+      background: #fff;
+      border: 1px solid var(--stroke);
+      border-radius: var(--radius-xl);
+      padding: var(--space-8);
+      box-shadow: 0 14px 28px rgba(23, 23, 23, 0.08);
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-5);
+    }
+
+    .pricing-card.featured {
+      border-color: rgba(211, 84, 44, 0.3);
+      background: linear-gradient(180deg, #fff7f1 0%, #ffffff 55%);
+      box-shadow: 0 18px 34px rgba(211, 84, 44, 0.18);
+    }
+
+    .pricing-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: var(--space-4);
+    }
+
+    .pricing-title {
+      font-family: var(--font-display);
+      font-size: var(--size-lg);
+      margin: 0;
+    }
+
+    .pricing-tag {
+      padding: 2px 10px;
+      border-radius: 999px;
+      font-size: var(--size-xs);
+      font-weight: 600;
+      letter-spacing: 0.03em;
+      background: rgba(31, 111, 120, 0.12);
+      color: var(--teal);
+    }
+
+    .price {
+      font-size: clamp(28px, 3vw, 40px);
+      font-family: var(--font-display);
+      margin: 0;
+    }
+
+    .price span {
+      font-size: var(--size-sm);
+      color: var(--muted);
+      font-family: var(--font-body);
+    }
+
+    .pricing-list {
+      margin: 0;
+      padding-left: 18px;
+      color: var(--muted);
+      display: grid;
+      gap: var(--space-2);
+      font-size: var(--size-sm);
+    }
+
+    .pricing-note {
+      font-size: var(--size-xs);
+      color: var(--muted);
+    }
+
     .steps {
       display: grid;
       gap: var(--space-6);
@@ -402,6 +474,7 @@
           <a href="#features">Features</a>
           <a href="#how">How it works</a>
           <a href="#formats">Formats</a>
+          <a href="#pricing">Pricing</a>
           <a href="#faq">FAQ</a>
         </div>
       </nav>
@@ -688,12 +761,51 @@
         </div>
       </section>
 
+      <section id="pricing">
+        <h2 class="section-title">Pricing that grows with your workflow</h2>
+        <p class="section-subtitle">Start free, log in when you need advanced exports, then upgrade after your trials.</p>
+        <div class="pricing-grid">
+          <div class="pricing-card">
+            <div class="pricing-header">
+              <h3 class="pricing-title">Free</h3>
+              <span class="pricing-tag">No login</span>
+            </div>
+            <p class="price">$0 <span>/ forever</span></p>
+            <ul class="pricing-list">
+              <li>Core exports available immediately</li>
+              <li>Works without creating an account</li>
+              <li>Perfect for quick captures and sharing</li>
+            </ul>
+            <p class="pricing-note">Advanced formats unlock after login with trials.</p>
+          </div>
+          <div class="pricing-card featured">
+            <div class="pricing-header">
+              <h3 class="pricing-title">Plus</h3>
+              <span class="pricing-tag">Most popular</span>
+            </div>
+            <p class="price">$4.99 <span>/ month</span></p>
+            <ul class="pricing-list">
+              <li>Login to access advanced exports</li>
+              <li>Includes a limited number of trials after signup</li>
+              <li>Subscribe after trials to keep advanced exports</li>
+              <li>Checkout managed securely by creem.io</li>
+            </ul>
+            <a class="btn btn-primary" href="#">Subscribe in app</a>
+          </div>
+        </div>
+      </section>
+
       <section id="faq">
         <h2 class="section-title">FAQ</h2>
         <div class="grid">
           <div class="card">
             <h3>Is my data stored?</h3>
             <p>Exports are generated in your browser. Files are saved locally to your device.</p>
+          </div>
+          <div class="card">
+            <h3>How do trials and billing work?</h3>
+            <p>Advanced exports require login and include a limited number of trials. After trials are used, a
+              $4.99/month subscription keeps advanced exports available.</p>
           </div>
           <div class="card">
             <h3>Which browsers are supported?</h3>
