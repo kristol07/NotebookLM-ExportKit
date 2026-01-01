@@ -321,10 +321,20 @@
       margin-top: var(--space-15);
       display: flex;
       flex-wrap: wrap;
+      align-items: center;
       justify-content: space-between;
       gap: var(--space-6);
       color: var(--muted);
       font-size: var(--size-sm);
+    }
+
+    .footer-links {
+      display: flex;
+      gap: var(--space-6);
+    }
+
+    .footer-support {
+      margin-left: auto;
     }
 
     @keyframes rise {
@@ -356,6 +366,15 @@
     }
 
     @media (max-width: 720px) {
+      footer {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .footer-support {
+        margin-left: 0;
+      }
+
       .nav-links {
         display: none;
       }
@@ -697,8 +716,11 @@
 
       <footer>
         <div>NotebookLM ExportKit</div>
-        <div>Support: notebooklm.exportkit@gmail.com</div>
-        <div><a href="./privacy.html">Privacy Policy</a></div>
+        <div class="footer-links">
+          <a href="./privacy.html">Privacy Policy</a>
+          <a href="./terms/index.html">Terms of Service</a>
+        </div>
+        <div class="footer-support">Support: notebooklm.exportkit@gmail.com</div>
       </footer>
     </div>
   </div>
