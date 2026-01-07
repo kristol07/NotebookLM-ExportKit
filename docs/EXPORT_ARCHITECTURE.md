@@ -36,3 +36,13 @@ Planned direction:
 - Render HTML using the existing per-type HTML templates.
 
 This is intentionally deferred for now.
+
+## Manifest V3 Remote Code Note (jsPDF)
+
+Chrome Web Store scans bundles for remote code. jsPDF includes a hardcoded PDFObject CDN URL in its ESM bundle, which can get pulled into `.output/**/chunks/*.js` even if you never call the feature.
+
+We keep a pnpm patch to remove that URL:
+- Patch file: `patches/jspdf.patch`
+- Lockfile entry: `pnpm-lock.yaml` under `patchedDependencies`
+
+If you update jsPDF, re-run the patch process and confirm the CDN URL no longer appears in the build output.

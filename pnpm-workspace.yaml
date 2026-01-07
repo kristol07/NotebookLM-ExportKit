@@ -1,2 +1,5 @@
 onlyBuiltDependencies:
   - supabase
+
+patchedDependencies:
+  jspdf: patches/jspdf.patch
