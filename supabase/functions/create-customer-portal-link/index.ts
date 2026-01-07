@@ -44,7 +44,7 @@ Deno.serve(async (req) => {
     return new Response('Customer not found', { status: 404, headers: corsHeaders });
   }
 
-  const portalResponse = await fetch('https://test-api.creem.io/v1/customers/billing', {
+  const portalResponse = await fetch('https://api.creem.io/v1/customers/billing', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
