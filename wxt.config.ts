@@ -17,16 +17,16 @@ const replacePdfObjectCdn = () => ({
 // See https://wxt.dev/api/config.html
 export default defineConfig({
   modules: ['@wxt-dev/module-react'],
-  vite: {
+  vite: () => ({
     plugins: [replacePdfObjectCdn()],
-  },
+  }),
   manifest: {
     permissions: ['activeTab', 'scripting'],
     host_permissions: [
       'https://notebooklm.google.com/*',
       'https://*.usercontent.goog/*'
     ],
-    name: 'NotebookLM ExportKit',
+    name: 'NotebookLM ExportKit - export NotebookLM content to any format',
     description: 'Export NotebookLM quizzes, flashcards, mindmaps, notes, and tables to multiple formats (varies by type).',
     icons: {
       16: 'icon/16.png',

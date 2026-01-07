@@ -109,7 +109,7 @@ Deno.serve(async (req) => {
     }
 
     const requestId = crypto.randomUUID();
-    const checkoutResponse = await fetch('https://test-api.creem.io/v1/checkouts', {
+    const checkoutResponse = await fetch('https://api.creem.io/v1/checkouts', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
