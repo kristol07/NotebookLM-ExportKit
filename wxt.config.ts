@@ -20,29 +20,52 @@ export default defineConfig({
   vite: () => ({
     plugins: [replacePdfObjectCdn()],
   }),
-  manifest: {
-    permissions: ['activeTab', 'scripting'],
-    host_permissions: [
-      'https://notebooklm.google.com/*',
-      'https://*.usercontent.goog/*'
-    ],
-    name: 'NotebookLM ExportKit - export NotebookLM content to any format',
-    description: 'Export NotebookLM quizzes, flashcards, mindmaps, notes, and tables to multiple formats (varies by type).',
-    icons: {
-      16: 'icon/16.png',
-      32: 'icon/32.png',
-      48: 'icon/48.png',
-      96: 'icon/96.png',
-      128: 'icon/128.png',
-    },
-    action: {
-      default_icon: {
+  manifest: ({ browser }) => {
+    const baseManifest = {
+      permissions: ['activeTab', 'scripting'],
+      host_permissions: [
+        'https://notebooklm.google.com/*',
+        'https://*.usercontent.goog/*'
+      ],
+      name: 'NotebookLM ExportKit',
+      description: 'Export NotebookLM quizzes, flashcards, mindmaps, notes, and tables to multiple formats (varies by type).',
+      icons: {
         16: 'icon/16.png',
         32: 'icon/32.png',
         48: 'icon/48.png',
         96: 'icon/96.png',
         128: 'icon/128.png',
       },
-    },
+      action: {
+        default_icon: {
+          16: 'icon/16.png',
+          32: 'icon/32.png',
+          48: 'icon/48.png',
+          96: 'icon/96.png',
+          128: 'icon/128.png',
+        },
+      },
+    };
+
+    if (browser !== 'firefox') {
+      return baseManifest;
+    }
+
+    return {
+      ...baseManifest,
+      sidebar_action: {
+        default_panel: 'sidepanel.html',
+        default_icon: baseManifest.action.default_icon,
+        default_title: baseManifest.name,
+      },
+      browser_specific_settings: {
+        gecko: {
+          data_collection_permissions: {
+            required: ['none'],
+            optional: ['personallyIdentifyingInfo'],
+          },
+        },
+      },
+    };
   },
 });
