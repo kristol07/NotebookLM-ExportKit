@@ -36,27 +36,28 @@ Notes:
    - Enable “Google Drive API”.
 
 ## 5) Ensure OAuth Scope is Allowed
-The app requests the Drive scope:
+The app requests the Drive scope only when the user connects Google Drive:
 - `https://www.googleapis.com/auth/drive.file`
 
-This scope is set in the client during sign-in:
+This scope is set in the client during the Drive connect flow:
 - `utils/supabase-oauth.ts`
-- `entrypoints/sidepanel/components/Login.tsx`
 - `entrypoints/sidepanel/components/Dashboard.tsx`
+
+Basic Google sign-in does not request Drive access. Drive access is requested only when the
+user connects Drive (or selects Drive as the export destination).
 
 How to verify:
 - Google Cloud Console → APIs & Services → OAuth consent screen.
 - Make sure the consent screen is configured and the Drive scope is listed (add it if needed).
-- During sign-in, the Google consent screen should show Drive access (for files created/opened by the app).
+- During Drive connect, the Google consent screen should show Drive access (for files created/opened by the app).
 
 Note:
 - `drive.file` is a Sensitive scope and may require Google verification for public distribution.
 
 ## 6) Verify in the Extension
-1. Sign in with Google from the sidepanel login.
-2. Set “Export to: Google Drive”.
-3. Click “Connect Google Drive” if prompted.
-4. Export any format and confirm the file appears in:
+1. Set “Export to: Google Drive”.
+2. Click “Connect Google Drive” (this will prompt Google sign-in with Drive scope if needed).
+3. Export any format and confirm the file appears in:
    - `Google Drive / NotebookLM ExportKit / <filename>`
 
 ## Why the Sidepanel Flow Uses chrome.identity

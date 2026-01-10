@@ -82,6 +82,8 @@ const PLUS_EXPORTS = new Set(
 const EXPORT_TARGET_STORAGE_KEY = 'exportkitExportTarget';
 const DRIVE_CONNECTED_STORAGE_KEY = 'exportkitDriveConnected';
 const DRIVE_EXPORT_REQUIRES_PLUS = true;
+const EXTRACTION_ERROR_MESSAGE =
+    'Failed to extract content. Ensure you are on a NotebookLM page and the content is visible.';
 export default function Dashboard({
     session,
     onRequestLogin,
@@ -189,11 +191,11 @@ export default function Dashboard({
 
     const handleConnectDrive = async () => {
         if (!isSignedIn) {
-            showNotice('info', 'Continue with Google to connect Drive.');
+            showNotice('info', 'Continue with Google to connect Google Drive.');
         }
         setLoadingAction('drive-connect');
         try {
-            await signInWithGoogleOAuth(getGoogleDriveOAuthScopes());
+            await signInWithGoogleOAuth(getGoogleDriveOAuthScopes(), session?.user?.email);
             setDriveConnected(true);
             localStorage.setItem(DRIVE_CONNECTED_STORAGE_KEY, 'true');
         } catch (err) {
@@ -287,6 +289,15 @@ export default function Dashboard({
                 const response = await extractByType(contentType, tabs[0].id, format);
                 if (response && response.success && response.payload) {
                     const payload = response.payload;
+                    const contentLabel = payload.type === 'quiz'
+                        ? 'Quiz'
+                        : payload.type === 'flashcards'
+                            ? 'Flashcards'
+                            : payload.type === 'mindmap'
+                                ? 'Mindmap'
+                                : payload.type === 'note'
+                                    ? 'Note'
+                                    : 'Data table';
                     let result;
                     switch (payload.type) {
                         case 'quiz':
@@ -307,41 +318,37 @@ export default function Dashboard({
                     }
                     const delivered = await deliverExport(exportTarget, result, session);
                     if (delivered.success) {
-                        const label = payload.type === 'quiz'
-                            ? 'questions'
-                            : payload.type === 'flashcards'
-                                ? 'flashcards'
-                                : payload.type === 'mindmap'
-                                    ? 'nodes'
-                                    : payload.type === 'note'
-                                        ? 'blocks'
-                                        : 'rows';
                         const formatName = format === 'CSV' ? 'Excel' : format;
-                        const destinationLabel = exportTarget === 'drive' ? 'Google Drive' : formatName;
-                        showNotice('success', `Exported ${delivered.count} ${label} to ${destinationLabel}.`);
+                        const destinationLabel = exportTarget === 'drive' ? 'Google Drive' : 'Downloads';
+                        let trialMessage = '';
                         if (requiresPlus && !isPlus) {
                             const trialResult = await consumeTrial(true);
                             if (typeof trialResult.remaining === 'number') {
                                 const remainingText = trialResult.remaining === 1 ? '1 export' : `${trialResult.remaining} exports`;
-                                showNotice('info', `Trial used. ${remainingText} left.`);
                                 setTrialRemaining(trialResult.remaining);
+                                trialMessage = ` Trial used. ${remainingText} left.`;
                             }
                         }
+                        showNotice('success', `Exported ${contentLabel} to ${destinationLabel} as ${formatName}.${trialMessage}`);
                     } else {
-                        showNotice('error', delivered.error || 'Export failed.');
+                        const failureMessage = delivered.error
+                            || (exportTarget === 'drive'
+                                ? 'Export failed. Check your Drive connection and try again.'
+                                : 'Export failed.');
+                        showNotice('error', failureMessage);
                     }
                     return;
                 }
 
-                showNotice('error', `Failed to extract ${contentType} content. Ensure you are on a NotebookLM page and the content is visible.`);
+                showNotice('error', EXTRACTION_ERROR_MESSAGE);
                 return;
             }
 
             const response = await extractNotebookLmPayload(tabs[0].id, format);
             if (response && response.success) {
-                showNotice('info', 'Export initiated.');
+                showNotice('info', 'Export started. You will be prompted when it is ready.');
             } else {
-                showNotice('error', 'Failed to extract content. Ensure you are on a NotebookLM page and the content is visible.');
+                showNotice('error', EXTRACTION_ERROR_MESSAGE);
             }
         } catch (err) {
             console.error(err);

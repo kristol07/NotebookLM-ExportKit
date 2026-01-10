@@ -15,7 +15,7 @@ export const getGoogleDriveOAuthScopes = () => {
     return DEFAULT_GOOGLE_DRIVE_SCOPE;
 };
 
-export const signInWithGoogleOAuth = async (scopes?: string) => {
+export const signInWithGoogleOAuth = async (scopes?: string, loginHint?: string) => {
     const redirectTo = browser.identity.getRedirectURL(DEFAULT_REDIRECT_PATH);
     if (import.meta.env.DEV) {
         console.info('[auth] Google OAuth redirectTo:', redirectTo);
@@ -24,13 +24,16 @@ export const signInWithGoogleOAuth = async (scopes?: string) => {
     const options: {
         redirectTo: string;
         scopes?: string;
-        queryParams: { access_type: string; prompt: string };
+        queryParams: { access_type: string; prompt: string; login_hint?: string };
         skipBrowserRedirect: boolean;
     } = {
         redirectTo,
         queryParams: { access_type: 'offline', prompt: 'consent' },
         skipBrowserRedirect: true,
     };
+    if (loginHint) {
+        options.queryParams.login_hint = loginHint;
+    }
     if (scopes) {
         options.scopes = scopes;
     }

@@ -47,7 +47,7 @@ export default function Login({ onClose }: { onClose?: () => void }) {
         if (error) {
             showMessage('error', error.message);
         } else {
-            // Session updates automatically via onAuthStateChange in App.tsx
+            showMessage('success', 'Signed in! Returning to the dashboard.');
         }
         setLoading(false);
     };
