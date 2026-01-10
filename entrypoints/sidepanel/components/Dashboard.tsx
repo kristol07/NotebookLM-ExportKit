@@ -508,6 +508,7 @@ export default function Dashboard({
                     trialRemaining={trialRemaining}
                     loadingAction={loadingAction}
                     onClose={() => setShowAccountPanel(false)}
+                    onConnectDrive={handleConnectDrive}
                     onDisconnectDrive={handleDisconnectDrive}
                     onManageBilling={handleManageBilling}
                     onUpgrade={() => openUpgradeModal('general')}
