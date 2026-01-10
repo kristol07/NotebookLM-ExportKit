@@ -35,7 +35,7 @@ export default defineConfig({
       'https://www.googleapis.com/*'
     ],
     name: 'NotebookLM ExportKit - export NotebookLM content to any format',
-    description: 'Export NotebookLM quizzes, flashcards, mindmaps, notes, and tables to multiple formats (varies by type).',
+    description: 'Export NotebookLM quizzes, flashcards, mindmaps, notes, and tables to multiple formats, with Google Drive delivery.',
     icons: {
       16: 'icon/16.png',
       32: 'icon/32.png',

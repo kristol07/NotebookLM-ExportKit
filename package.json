@@ -1,8 +1,8 @@
 {
   "name": "notebooklm-exportkit",
-  "description": "Export NotebookLM quizzes, flashcards, mindmaps, notes, and tables to multiple formats (varies by type).",
+  "description": "Export NotebookLM quizzes, flashcards, mindmaps, notes, and tables to multiple formats, with Google Drive delivery.",
   "private": true,
-  "version": "1.1.1",
+  "version": "1.2.0",
   "type": "module",
   "scripts": {
     "dev": "wxt",
