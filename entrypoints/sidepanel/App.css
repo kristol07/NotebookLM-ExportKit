@@ -343,6 +343,46 @@
   color: var(--muted);
 }
 
+.upload-progress {
+  background: #fff;
+  border: 1px solid var(--stroke);
+  border-radius: var(--radius-lg);
+  padding: var(--space-3);
+  position: fixed;
+  bottom: var(--space-6);
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(240px, calc(100% - 32px));
+  box-shadow: 0 12px 24px rgba(23, 23, 23, 0.08);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  z-index: 900;
+}
+
+.upload-progress-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: var(--size-xs);
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.upload-progress-bar {
+  height: 8px;
+  background: rgba(31, 111, 120, 0.12);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.upload-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--teal), var(--accent-light));
+  width: 0%;
+  transition: width 0.2s ease;
+}
+
 .status-pill {
   font-size: var(--size-xxs);
   font-weight: 700;
@@ -554,6 +594,68 @@
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: var(--space-1);
+}
+
+.export-option {
+  position: relative;
+  width: 100%;
+}
+
+.export-option .export-btn {
+  width: 100%;
+}
+
+.pdf-quality-popover {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: #fff;
+  border: 1px solid var(--stroke);
+  border-radius: var(--radius-sm);
+  padding: var(--space-2);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.12);
+  z-index: 15;
+  min-width: 180px;
+}
+
+.pdf-quality-title {
+  font-size: var(--size-xxs);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  font-weight: 700;
+  margin-bottom: var(--space-1);
+}
+
+.pdf-quality-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.pdf-quality-btn {
+  border: 1px solid var(--stroke);
+  border-radius: var(--radius-sm);
+  background: #fff;
+  padding: 4px 8px;
+  font-size: var(--size-xxs);
+  font-weight: 600;
+  color: var(--muted);
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  flex: 1;
+}
+
+.pdf-quality-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 12px rgba(23, 23, 23, 0.12);
+}
+
+.pdf-quality-btn.active {
+  background: linear-gradient(90deg, var(--accent), var(--accent-light));
+  color: #fff;
+  border: none;
 }
 
 .coming-soon {

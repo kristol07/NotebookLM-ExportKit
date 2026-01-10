@@ -1,4 +1,4 @@
-import { ExportFormat, ExportResult, NoteBlock, NoteInline } from './export-core';
+import { ExportFormat, ExportOptions, ExportResult, NoteBlock, NoteInline, PdfQualityPreference } from './export-core';
 import { jsPDF } from 'jspdf';
 import html2canvas from 'html2canvas';
 import {
@@ -169,6 +169,10 @@ const DOCX_TABLE_MARGINS = {
 const PDF_PAGE_WIDTH_PX = 794;
 const PDF_PAGE_HEIGHT_PX = 1123;
 const PDF_MARGIN_PX = 48;
+const PDF_PRESETS: Record<PdfQualityPreference, { scale: number; format: 'PNG' | 'JPEG'; quality: number }> = {
+    size: { scale: 1.5, format: 'PNG', quality: 0.8 },
+    clarity: { scale: 3.5, format: 'PNG', quality: 0.95 }
+};
 
 const createPdfStyleElement = () => {
     const style = document.createElement('style');
@@ -588,8 +592,9 @@ const paginatePdfBlocks = (
     return pages;
 };
 
-const exportNotePdf = async (title: string, blocks: NoteBlock[]) => {
+const exportNotePdf = async (title: string, blocks: NoteBlock[], pdfQuality: PdfQualityPreference = 'size') => {
     const { references, referenceOrder } = collectReferences(blocks);
+    const preset = PDF_PRESETS[pdfQuality] || PDF_PRESETS.size;
     const pdfBlocks: PdfRenderBlock[] = [
         { type: 'html', html: `<h1 class="note-title">${escapeHtml(title)}</h1>` },
         ...blocks.map((block) => {
@@ -607,11 +612,11 @@ const exportNotePdf = async (title: string, blocks: NoteBlock[]) => {
         pdfBlocks.push({ type: 'html', html: referencesHtml });
     }
     const pages = paginatePdfBlocks(pdfBlocks, references, referenceOrder);
-    const pdf = new jsPDF({ orientation: 'p', unit: 'pt', format: 'a4' });
+    const pdf = new jsPDF({ orientation: 'p', unit: 'pt', format: 'a4', compress: true });
     for (let index = 0; index < pages.length; index += 1) {
         const { element, cleanup } = createPdfPageElement(pages[index], references, referenceOrder);
         const canvas = await html2canvas(element, {
-            scale: 2,
+            scale: preset.scale,
             useCORS: true,
             backgroundColor: '#ffffff'
         });
@@ -621,8 +626,10 @@ const exportNotePdf = async (title: string, blocks: NoteBlock[]) => {
         if (index > 0) {
             pdf.addPage();
         }
-        const imgData = canvas.toDataURL('image/png');
-        pdf.addImage(imgData, 'PNG', 0, 0, pageWidth, Math.min(pageHeight, imageHeight));
+        const imgData = preset.format === 'JPEG'
+            ? canvas.toDataURL('image/jpeg', preset.quality)
+            : canvas.toDataURL('image/png');
+        pdf.addImage(imgData, preset.format, 0, 0, pageWidth, Math.min(pageHeight, imageHeight));
         cleanup();
     }
     return pdf.output('blob');
@@ -633,7 +640,8 @@ export const exportNote = async (
     format: ExportFormat,
     tabTitle: string,
     timestamp: string,
-    noteTitle?: string
+    noteTitle?: string,
+    options?: ExportOptions
 ): Promise<ExportResult> => {
     const title = noteTitle?.trim() || tabTitle;
 
@@ -665,7 +673,7 @@ export const exportNote = async (
 
     if (format === 'PDF') {
         try {
-            const blob = await exportNotePdf(title, blocks);
+            const blob = await exportNotePdf(title, blocks, options?.pdfQuality);
             const filename = `notebooklm_note_${tabTitle}_${timestamp}.pdf`;
             return { success: true, count: blocks.length, filename, mimeType: 'application/pdf', blob };
         } catch (err) {

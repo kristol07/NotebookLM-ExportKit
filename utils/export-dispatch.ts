@@ -1,4 +1,14 @@
-import { ContentType, DataTableRow, ExportFormat, ExportResult, FlashcardItem, MindmapNode, NoteBlock, QuizItem } from './export-core';
+import {
+    ContentType,
+    DataTableRow,
+    ExportFormat,
+    ExportOptions,
+    ExportResult,
+    FlashcardItem,
+    MindmapNode,
+    NoteBlock,
+    QuizItem
+} from './export-core';
 import { exportDatatable } from './datatable-export';
 import { exportFlashcards } from './flashcard-export';
 import { exportMindmap } from './mindmap-export';
@@ -19,7 +29,8 @@ export const exportByType = async (
     format: ExportFormat,
     tabTitle: string,
     timestamp: string,
-    meta?: { svg?: string; title?: string }
+    meta?: { svg?: string; title?: string },
+    options?: ExportOptions
 ): Promise<ExportResult> => {
     const supported = supportedFormatsByType[type] || [];
     if (!supported.includes(format)) {
@@ -39,7 +50,7 @@ export const exportByType = async (
     }
 
     if (type === 'note') {
-        return exportNote(items as NoteBlock[], format, tabTitle, timestamp, meta?.title);
+        return exportNote(items as NoteBlock[], format, tabTitle, timestamp, meta?.title, options);
     }
 
     return exportDatatable(items as DataTableRow[], format, tabTitle, timestamp);

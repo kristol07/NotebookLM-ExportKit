@@ -14,6 +14,11 @@ export type ExportFormat =
 export type ExportTarget = 'download' | 'drive';
 export type ContentType = 'quiz' | 'flashcards' | 'mindmap' | 'datatable' | 'note';
 export type ContentSource = 'notebooklm' | 'user';
+export type PdfQualityPreference = 'size' | 'clarity';
+
+export interface ExportOptions {
+    pdfQuality?: PdfQualityPreference;
+}
 
 export interface QuizAnswerOption {
     text: string;

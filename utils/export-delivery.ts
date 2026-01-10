@@ -1,7 +1,12 @@
 import { downloadBlob, ExportResult, ExportTarget } from './export-core';
-import { uploadToDrive } from './google-drive';
+import { UploadProgressCallback, uploadToDrive } from './google-drive';
 
-export const deliverExport = async (target: ExportTarget, result: ExportResult, session: any) => {
+export const deliverExport = async (
+    target: ExportTarget,
+    result: ExportResult,
+    session: any,
+    onProgress?: UploadProgressCallback
+) => {
     if (!result.success) {
         return result;
     }
@@ -12,7 +17,7 @@ export const deliverExport = async (target: ExportTarget, result: ExportResult, 
     }
 
     if (target === 'drive') {
-        const driveResult = await uploadToDrive(session, result);
+        const driveResult = await uploadToDrive(session, result, onProgress);
         if (driveResult.success) {
             return result;
         }

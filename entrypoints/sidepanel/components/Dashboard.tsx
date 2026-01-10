@@ -3,7 +3,7 @@ import { supabase } from '../../../utils/supabase';
 import { browser } from 'wxt/browser';
 import { getGoogleDriveOAuthScopes } from '../../../utils/supabase-oauth';
 import { sanitizeFilename, getTimestamp } from '../../../utils/common';
-import { ContentType, ExportFormat, ExportTarget } from '../../../utils/export-core';
+import { ContentType, ExportFormat, ExportTarget, PdfQualityPreference } from '../../../utils/export-core';
 import { exportByType } from '../../../utils/export-dispatch';
 import { deliverExport } from '../../../utils/export-delivery';
 import { connectGoogleDrive, getDriveAccountEmail, getDriveAccessToken } from '../../../utils/google-drive-auth';
@@ -82,6 +82,7 @@ const PLUS_EXPORTS = new Set(
 );
 const EXPORT_TARGET_STORAGE_KEY = 'exportkitExportTarget';
 const DRIVE_CONNECTED_STORAGE_KEY = 'exportkitDriveConnected';
+const PDF_QUALITY_STORAGE_KEY = 'exportkitPdfQuality';
 const DRIVE_EXPORT_REQUIRES_PLUS = true;
 const EXTRACTION_ERROR_MESSAGE =
     'Failed to extract content. Ensure you are on a NotebookLM page and the content is visible.';
@@ -97,12 +98,14 @@ export default function Dashboard({
     const [trialRemaining, setTrialRemaining] = useState<number | null>(null);
     const [driveConnected, setDriveConnected] = useState(false);
     const [driveAccountEmail, setDriveAccountEmail] = useState<string | null>(null);
+    const [uploadProgress, setUploadProgress] = useState<{ percent: number } | null>(null);
     const [showAccountPanel, setShowAccountPanel] = useState(false);
     const [showUpgradeModal, setShowUpgradeModal] = useState(false);
     const [upgradeContext, setUpgradeContext] = useState<'drive' | 'format' | 'general' | null>(null);
     const noticeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const upgradeInFlightRef = useRef(false);
     const [exportTarget, setExportTarget] = useState<ExportTarget>('download');
+    const [pdfQuality, setPdfQuality] = useState<PdfQualityPreference>('size');
     const plan = getPlan(session);
     const isPlus = plan === 'plus' || plan === 'pro';
     const isSignedIn = Boolean(session?.user?.id);
@@ -148,6 +151,13 @@ export default function Dashboard({
         const stored = localStorage.getItem(EXPORT_TARGET_STORAGE_KEY);
         if (stored === 'download' || stored === 'drive') {
             setExportTarget(stored);
+        }
+    }, []);
+
+    useEffect(() => {
+        const stored = localStorage.getItem(PDF_QUALITY_STORAGE_KEY);
+        if (stored === 'size' || stored === 'clarity') {
+            setPdfQuality(stored);
         }
     }, []);
 
@@ -198,6 +208,11 @@ export default function Dashboard({
     const handleExportTargetChange = (value: ExportTarget) => {
         setExportTarget(value);
         localStorage.setItem(EXPORT_TARGET_STORAGE_KEY, value);
+    };
+
+    const handlePdfQualityChange = (value: PdfQualityPreference) => {
+        setPdfQuality(value);
+        localStorage.setItem(PDF_QUALITY_STORAGE_KEY, value);
     };
 
     const handleConnectDrive = async () => {
@@ -280,7 +295,11 @@ export default function Dashboard({
         }
     };
 
-    const handleExport = async (format: ExportFormat, contentType?: ContentType) => {
+    const handleExport = async (
+        format: ExportFormat,
+        contentType?: ContentType,
+        options?: { pdfQualityOverride?: PdfQualityPreference }
+    ) => {
         const actionId = contentType ? `${contentType}:${format}` : 'notebooklm-payload';
         setLoadingAction(actionId);
         try {
@@ -344,13 +363,31 @@ export default function Dashboard({
                             result = await exportByType('mindmap', payload.items, format, tabTitle, timestamp, payload.meta);
                             break;
                         case 'note':
-                            result = await exportByType('note', payload.items, format, tabTitle, timestamp, payload.meta);
+                            result = await exportByType(
+                                'note',
+                                payload.items,
+                                format,
+                                tabTitle,
+                                timestamp,
+                                payload.meta,
+                                { pdfQuality: options?.pdfQualityOverride ?? pdfQuality }
+                            );
                             break;
                         default:
                             result = await exportByType('datatable', payload.items, format, tabTitle, timestamp);
                             break;
                     }
-                    const delivered = await deliverExport(exportTarget, result, session);
+                    if (exportTarget === 'drive') {
+                        setUploadProgress({ percent: 0 });
+                    }
+                    const delivered = await deliverExport(
+                        exportTarget,
+                        result,
+                        session,
+                        exportTarget === 'drive'
+                            ? (progress) => setUploadProgress({ percent: progress.percent })
+                            : undefined
+                    );
                     if (delivered.success) {
                         const formatName = format === 'CSV' ? 'Excel' : format;
                         const destinationLabel = exportTarget === 'drive' ? 'Google Drive' : 'Downloads';
@@ -371,6 +408,7 @@ export default function Dashboard({
                                 : 'Export failed.');
                         showNotice('error', failureMessage);
                     }
+                    setUploadProgress(null);
                     return;
                 }
 
@@ -426,7 +464,25 @@ export default function Dashboard({
                     />
                 )}
 
-                <ExportActions sections={EXPORT_SECTIONS} loadingAction={loadingAction} onExport={handleExport} />
+                {uploadProgress && (
+                    <div className="upload-progress">
+                        <div className="upload-progress-meta">
+                            <span>Uploading to Drive</span>
+                            <span>{uploadProgress.percent}%</span>
+                        </div>
+                        <div className="upload-progress-bar">
+                            <div className="upload-progress-fill" style={{ width: `${uploadProgress.percent}%` }} />
+                        </div>
+                    </div>
+                )}
+
+                <ExportActions
+                    sections={EXPORT_SECTIONS}
+                    loadingAction={loadingAction}
+                    onExport={handleExport}
+                    pdfQuality={pdfQuality}
+                    onPdfQualityChange={handlePdfQualityChange}
+                />
 
                 {notice && <ToastNotice notice={notice} />}
             </div>

@@ -3,6 +3,9 @@ import { clearDriveAuth, getDriveAccessToken, getDriveAccountEmail } from './goo
 
 const DRIVE_FOLDER_NAME = 'NotebookLM ExportKit';
 const DRIVE_FOLDER_STORAGE_KEY = 'exportkitDriveFolderId';
+const RESUMABLE_UPLOAD_THRESHOLD_BYTES = 10 * 1024 * 1024;
+type UploadProgress = { loaded: number; total: number; percent: number };
+export type UploadProgressCallback = (progress: UploadProgress) => void;
 const getFolderStorageKey = (email?: string | null) => (
     email ? `${DRIVE_FOLDER_STORAGE_KEY}:${email}` : DRIVE_FOLDER_STORAGE_KEY
 );
@@ -35,6 +38,65 @@ const fetchDrive = async (accessToken: string, url: string, init?: RequestInit) 
         }
     });
     return response;
+};
+
+const buildProgress = (loaded: number, total: number) => {
+    const safeTotal = total > 0 ? total : 0;
+    const percent = safeTotal ? Math.min(100, Math.round((loaded / safeTotal) * 100)) : 0;
+    return { loaded, total: safeTotal, percent };
+};
+
+const parseXhrHeaders = (value: string) => {
+    const headers = new Headers();
+    const lines = value.trim().split(/[\r\n]+/);
+    lines.forEach((line) => {
+        const index = line.indexOf(':');
+        if (index === -1) {
+            return;
+        }
+        const key = line.slice(0, index).trim();
+        const headerValue = line.slice(index + 1).trim();
+        if (key) {
+            headers.append(key, headerValue);
+        }
+    });
+    return headers;
+};
+
+const xhrUpload = (
+    url: string,
+    method: 'POST' | 'PUT',
+    body: BodyInit,
+    headers: Record<string, string>,
+    onProgress?: UploadProgressCallback,
+    fallbackTotal?: number
+) => {
+    return new Promise<Response>((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open(method, url, true);
+        Object.entries(headers).forEach(([key, value]) => {
+            xhr.setRequestHeader(key, value);
+        });
+        xhr.upload.onprogress = (event) => {
+            if (!onProgress) {
+                return;
+            }
+            const total = event.total || fallbackTotal || 0;
+            onProgress(buildProgress(event.loaded, total));
+        };
+        xhr.onerror = () => reject(new Error('Upload failed due to a network error.'));
+        xhr.onabort = () => reject(new Error('Upload was aborted.'));
+        xhr.onload = () => {
+            const rawHeaders = xhr.getAllResponseHeaders();
+            const headers = parseXhrHeaders(rawHeaders);
+            resolve(new Response(xhr.responseText, {
+                status: xhr.status,
+                statusText: xhr.statusText,
+                headers
+            }));
+        };
+        xhr.send(body);
+    });
 };
 
 const findDriveFolder = async (accessToken: string) => {
@@ -90,7 +152,8 @@ const ensureDriveFolder = async (accessToken: string) => {
 const performUpload = async (
     accessToken: string,
     exportResult: ExportResult,
-    folderId: string
+    folderId: string,
+    onProgress?: UploadProgressCallback
 ) => {
     const metadata = {
         name: exportResult.filename,
@@ -101,17 +164,77 @@ const performUpload = async (
     form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
     form.append('file', file);
 
-    return fetchDrive(
-        accessToken,
+    return xhrUpload(
         'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name',
-        {
-            method: 'POST',
-            body: form
-        }
+        'POST',
+        form,
+        { Authorization: `Bearer ${accessToken}` },
+        onProgress,
+        exportResult.blob.size
     );
 };
 
-export const uploadToDrive = async (session: any, exportResult: ExportResult) => {
+const performResumableUpload = async (
+    accessToken: string,
+    exportResult: ExportResult,
+    folderId: string,
+    onProgress?: UploadProgressCallback
+) => {
+    const metadata = {
+        name: exportResult.filename,
+        parents: [folderId]
+    };
+    const startResponse = await fetchDrive(
+        accessToken,
+        'https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable&fields=id,name',
+        {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json; charset=UTF-8',
+                'X-Upload-Content-Type': exportResult.mimeType,
+                'X-Upload-Content-Length': String(exportResult.blob.size)
+            },
+            body: JSON.stringify(metadata)
+        }
+    );
+    if (!startResponse.ok) {
+        return startResponse;
+    }
+    const uploadUrl = startResponse.headers.get('Location');
+    if (!uploadUrl) {
+        return new Response('Missing resumable upload URL.', { status: 500 });
+    }
+    return xhrUpload(
+        uploadUrl,
+        'PUT',
+        exportResult.blob,
+        {
+            Authorization: `Bearer ${accessToken}`,
+            'Content-Type': exportResult.mimeType,
+            'Content-Length': String(exportResult.blob.size)
+        },
+        onProgress,
+        exportResult.blob.size
+    );
+};
+
+const performUploadWithMode = async (
+    accessToken: string,
+    exportResult: ExportResult,
+    folderId: string,
+    onProgress?: UploadProgressCallback
+) => {
+    if (exportResult.blob.size >= RESUMABLE_UPLOAD_THRESHOLD_BYTES) {
+        return performResumableUpload(accessToken, exportResult, folderId, onProgress);
+    }
+    return performUpload(accessToken, exportResult, folderId, onProgress);
+};
+
+export const uploadToDrive = async (
+    session: any,
+    exportResult: ExportResult,
+    onProgress?: UploadProgressCallback
+) => {
     if (!exportResult.success) {
         return exportResult;
     }
@@ -124,7 +247,13 @@ export const uploadToDrive = async (session: any, exportResult: ExportResult) =>
         return { success: false, error: 'Unable to access the Google Drive folder.' };
     }
 
-    let response = await performUpload(accessToken, exportResult, folderId);
+    let response: Response;
+    try {
+        response = await performUploadWithMode(accessToken, exportResult, folderId, onProgress);
+    } catch (error) {
+        console.error('Drive upload failed:', error);
+        return { success: false, error: 'Drive upload failed.' };
+    }
 
     if (response.status === 404) {
         clearStoredFolderId(getDriveAccountEmail());
@@ -132,7 +261,12 @@ export const uploadToDrive = async (session: any, exportResult: ExportResult) =>
         if (!refreshedFolderId) {
             return { success: false, error: 'Unable to access the Google Drive folder.' };
         }
-        response = await performUpload(accessToken, exportResult, refreshedFolderId);
+        try {
+            response = await performUploadWithMode(accessToken, exportResult, refreshedFolderId, onProgress);
+        } catch (error) {
+            console.error('Drive upload failed:', error);
+            return { success: false, error: 'Drive upload failed.' };
+        }
     }
 
     if (!response.ok) {

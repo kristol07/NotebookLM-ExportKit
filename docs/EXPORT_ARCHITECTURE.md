@@ -17,6 +17,11 @@ For Google OAuth/Drive setup, see `docs/GOOGLE_OAUTH_SETUP.md`.
 - Notes currently support Markdown, Word, and PDF exports; PDF uses HTML rendering for layout.
 - Exporters return `{ blob, filename, mimeType }` so delivery targets can decide whether to download or upload.
 
+### PDF export size controls
+- Note PDF rendering rasterizes each page via html2canvas in `utils/note-export.ts`.
+- Users can choose `Size first` vs `Clarity first` in the dashboard; the selection is stored in `localStorage` as `exportkitPdfQuality`.
+- The presets are defined in `PDF_PRESETS` (scale + image format); adjust those values to trade off size vs clarity.
+
 ## Extending for New Content Types (Normal Workflow)
 
 Treat **type-specific extractors and type-specific format support** as the default. Quiz and flashcards only share formats by coincidence. New content types should bring their own extractor and format list even if they overlap.
