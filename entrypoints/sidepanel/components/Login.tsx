@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { supabase } from '../../../utils/supabase';
-import { browser } from 'wxt/browser';
+import { getGoogleOAuthScopes, signInWithGoogleOAuth } from '../../../utils/supabase-oauth';
 
 export default function Login({ onClose }: { onClose?: () => void }) {
     const [email, setEmail] = useState('');
@@ -56,25 +56,7 @@ export default function Login({ onClose }: { onClose?: () => void }) {
         setGoogleLoading(true);
         setMessage(null);
         try {
-            const redirectTo = browser.runtime.getURL('sidepanel/index.html');
-            if (import.meta.env.DEV) {
-                console.info('[auth] Google OAuth redirectTo:', redirectTo);
-            }
-            const { data, error } = await supabase.auth.signInWithOAuth({
-                provider: 'google',
-                options: {
-                    redirectTo,
-                    scopes: 'https://www.googleapis.com/auth/drive.file',
-                    queryParams: { access_type: 'offline', prompt: 'consent' },
-                    skipBrowserRedirect: true
-                }
-            });
-            if (error) {
-                throw error;
-            }
-            if (data?.url) {
-                await browser.tabs.create({ url: data.url });
-            }
+            await signInWithGoogleOAuth(getGoogleOAuthScopes());
         } catch (err: any) {
             showMessage('error', err?.message || 'Unable to start Google sign-in.');
         } finally {

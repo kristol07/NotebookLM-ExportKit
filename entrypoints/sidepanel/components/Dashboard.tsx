@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { supabase } from '../../../utils/supabase';
 import { browser } from 'wxt/browser';
+import { getGoogleOAuthScopes, signInWithGoogleOAuth } from '../../../utils/supabase-oauth';
 import { sanitizeFilename, getTimestamp } from '../../../utils/common';
 import { ContentType, ExportFormat, ExportTarget } from '../../../utils/export-core';
 import { exportByType } from '../../../utils/export-dispatch';
@@ -80,8 +81,6 @@ const PLUS_EXPORTS = new Set(
 );
 const EXPORT_TARGET_STORAGE_KEY = 'exportkitExportTarget';
 const DRIVE_EXPORT_REQUIRES_PLUS = true;
-const GOOGLE_DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive.file';
-
 export default function Dashboard({
     session,
     onRequestLogin,
@@ -189,25 +188,7 @@ export default function Dashboard({
         }
         setLoadingAction('drive-connect');
         try {
-            const redirectTo = browser.runtime.getURL('sidepanel/index.html');
-            if (import.meta.env.DEV) {
-                console.info('[auth] Google OAuth redirectTo:', redirectTo);
-            }
-            const { data, error } = await supabase.auth.signInWithOAuth({
-                provider: 'google',
-                options: {
-                    redirectTo,
-                    scopes: GOOGLE_DRIVE_SCOPE,
-                    queryParams: { access_type: 'offline', prompt: 'consent' },
-                    skipBrowserRedirect: true
-                }
-            });
-            if (error) {
-                throw error;
-            }
-            if (data?.url) {
-                await browser.tabs.create({ url: data.url });
-            }
+            await signInWithGoogleOAuth(getGoogleOAuthScopes());
         } catch (err) {
             console.error(err);
             showNotice('error', 'Could not start Google sign-in. Please try again.');

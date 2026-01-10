@@ -10,5 +10,6 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_DEFAULT_
         autoRefreshToken: true,
         persistSession: true,
         detectSessionInUrl: true,
+        flowType: 'pkce',
     },
 });
