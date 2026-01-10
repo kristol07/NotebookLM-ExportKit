@@ -38,6 +38,8 @@ Use these tokens as the source of truth across UI and site.
 | `--card` | `#fff7ef` | Card background |
 | `--stroke` | `#e3d6c5` | Borders/dividers |
 | `--shadow` | `0 18px 40px rgba(23, 23, 23, 0.12)` | Card shadow |
+| `--disclosure-size` | `16px` | Expand/collapse indicator size |
+| `--disclosure-stroke` | `2px` | Expand/collapse indicator stroke |
 | `--radius-xs` | `8px` | Tight radius (chips) |
 | `--radius-sm` | `10px` | Inputs/small buttons |
 | `--radius-md` | `12px` | Buttons/default cards |

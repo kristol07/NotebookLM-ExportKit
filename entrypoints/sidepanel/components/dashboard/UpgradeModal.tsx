@@ -21,7 +21,7 @@ export const UpgradeModal = ({
   onManageBilling,
 }: UpgradeModalProps) => {
   return (
-    <div className="panel-overlay" role="dialog" aria-modal="true" onClick={onClose}>
+    <div className="panel-overlay modal-overlay" role="dialog" aria-modal="true" onClick={onClose}>
       <div className="modal-card" onClick={(event) => event.stopPropagation()}>
         <div className="modal-header">
           <div>
@@ -47,10 +47,6 @@ export const UpgradeModal = ({
             <div className="modal-benefit">
               <span className="status-pill success">Drive</span>
               Deliver exports directly to Google Drive.
-            </div>
-            <div className="modal-benefit">
-              <span className="status-pill success">Sync</span>
-              Keep exports organized and ready to share.
             </div>
           </div>
           {trialRemaining !== null && (

@@ -24,7 +24,7 @@ export const UpgradeBanner = ({ trialRemaining, onUpgrade }: UpgradeBannerProps)
         )}
       </div>
       <button onClick={onUpgrade} className="export-btn small primary">
-        See Plus <PlusIcon />
+        Upgrade
       </button>
     </div>
   );

@@ -278,6 +278,7 @@ export default function Dashboard({
     };
 
     const openUpgradeModal = (context: 'drive' | 'format' | 'general' = 'general') => {
+        setShowAccountPanel(false);
         setUpgradeContext(context);
         setShowUpgradeModal(true);
     };

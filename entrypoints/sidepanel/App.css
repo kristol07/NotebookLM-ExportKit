@@ -12,6 +12,8 @@
   --card: #fff7ef;
   --stroke: #e3d6c5;
   --shadow: 0 18px 40px rgba(23, 23, 23, 0.12);
+  --disclosure-size: 16px;
+  --disclosure-stroke: 2px;
   --radius-xs: 8px;
   --radius-sm: 10px;
   --radius-md: 12px;
@@ -68,7 +70,8 @@
 
 .dashboard-container,
 .login-container {
-  padding: var(--space-7) var(--space-6) var(--space-6);
+  --panel-pad-x: var(--space-6);
+  padding: var(--space-7) var(--panel-pad-x) var(--space-6);
   position: relative;
   width: 280px;
   min-height: 380px;
@@ -136,7 +139,7 @@
 .export-btn.ghost {
   position: absolute;
   top: var(--space-6);
-  left: var(--space-6);
+  left: var(--panel-pad-x, var(--space-6));
   background: #fff;
 }
 
@@ -263,15 +266,68 @@
   gap: var(--space-2);
 }
 
-.setup-step {
+.setup-header .section-label {
+  margin-bottom: 0;
+  line-height: 1;
+}
+
+.setup-header.is-toggleable {
+  cursor: pointer;
+}
+
+.setup-header-actions {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: var(--space-3);
+  gap: var(--space-2);
+}
+
+.setup-toggle {
+  width: var(--disclosure-size);
+  height: var(--disclosure-size);
+  border-radius: 50%;
+  border: 1px solid rgba(31, 111, 120, 0.35);
+  background: rgba(31, 111, 120, 0.12);
+  position: relative;
+  transition: transform 0.2s ease, background 0.2s ease, border-color 0.2s ease;
+}
+
+.setup-toggle::before,
+.setup-toggle::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 8px;
+  height: var(--disclosure-stroke);
+  background: var(--teal);
+  transform: translate(-50%, -50%);
+  border-radius: 999px;
+}
+
+.setup-toggle::after {
+  transform: translate(-50%, -50%) rotate(90deg);
+  transition: opacity 0.2s ease;
+}
+
+.setup-toggle.is-expanded::after {
+  opacity: 0;
+}
+
+.setup-step {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
   background: var(--card);
   border-radius: var(--radius-md);
   padding: var(--space-3);
   border: 1px solid var(--stroke);
+}
+
+.setup-step-main {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
 }
 
 .setup-actions {
@@ -413,6 +469,10 @@
   align-items: center;
   justify-content: center;
   z-index: 1200;
+}
+
+.panel-overlay.modal-overlay {
+  z-index: 1300;
 }
 
 .panel-card {
@@ -1000,6 +1060,7 @@
   .dashboard-container,
   .login-container {
     width: 320px;
+    --panel-pad-x: var(--space-8);
     padding: var(--space-8);
   }
 
@@ -1016,6 +1077,7 @@
   .dashboard-container,
   .login-container {
     width: 360px;
+    --panel-pad-x: var(--space-9);
     padding: var(--space-9);
   }
 

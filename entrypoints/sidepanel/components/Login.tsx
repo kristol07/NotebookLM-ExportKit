@@ -85,11 +85,10 @@ export default function Login({ onClose }: { onClose?: () => void }) {
                             NotebookLM ExportKit
                         </div>
                         <p className="login-subtitle">Sign in to unlock advanced exports and Drive delivery</p>
-                        <ul className="login-benefits">
+                        {/* <ul className="login-benefits">
                             <li>Advanced formats for study workflows</li>
                             <li>Google Drive delivery with any account</li>
-                            <li>One account for exports and subscription</li>
-                        </ul>
+                        </ul> */}
                     </div>
 
                     {message && (
