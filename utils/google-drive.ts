@@ -1,18 +1,29 @@
 import { ExportResult } from './export-core';
+import { clearDriveAuth, getDriveAccessToken, getDriveAccountEmail } from './google-drive-auth';
 
 const DRIVE_FOLDER_NAME = 'NotebookLM ExportKit';
 const DRIVE_FOLDER_STORAGE_KEY = 'exportkitDriveFolderId';
-const DRIVE_CONNECTED_STORAGE_KEY = 'exportkitDriveConnected';
-
-const getStoredFolderId = () => localStorage.getItem(DRIVE_FOLDER_STORAGE_KEY);
-const setStoredFolderId = (id: string) => localStorage.setItem(DRIVE_FOLDER_STORAGE_KEY, id);
-const clearDriveConnection = () => {
+const getFolderStorageKey = (email?: string | null) => (
+    email ? `${DRIVE_FOLDER_STORAGE_KEY}:${email}` : DRIVE_FOLDER_STORAGE_KEY
+);
+const getStoredFolderId = (email?: string | null) => localStorage.getItem(getFolderStorageKey(email));
+const setStoredFolderId = (id: string, email?: string | null) => {
+    localStorage.setItem(getFolderStorageKey(email), id);
+};
+const clearStoredFolderId = (email?: string | null) => {
+    if (email) {
+        localStorage.removeItem(getFolderStorageKey(email));
+    }
     localStorage.removeItem(DRIVE_FOLDER_STORAGE_KEY);
-    localStorage.removeItem(DRIVE_CONNECTED_STORAGE_KEY);
+};
+const clearDriveConnection = () => {
+    const email = getDriveAccountEmail();
+    clearStoredFolderId(email);
+    clearDriveAuth();
 };
 
-const getGoogleAccessToken = (session: any) => {
-    return session?.provider_token || null;
+export const resetDriveConnection = () => {
+    clearDriveConnection();
 };
 
 const fetchDrive = async (accessToken: string, url: string, init?: RequestInit) => {
@@ -59,35 +70,28 @@ const createDriveFolder = async (accessToken: string) => {
 };
 
 const ensureDriveFolder = async (accessToken: string) => {
-    const cachedId = getStoredFolderId();
+    const email = getDriveAccountEmail();
+    const cachedId = getStoredFolderId(email);
     if (cachedId) {
         return cachedId;
     }
     const existingId = await findDriveFolder(accessToken);
     if (existingId) {
-        setStoredFolderId(existingId);
+        setStoredFolderId(existingId, email);
         return existingId;
     }
     const createdId = await createDriveFolder(accessToken);
     if (createdId) {
-        setStoredFolderId(createdId);
+        setStoredFolderId(createdId, email);
     }
     return createdId;
 };
 
-export const uploadToDrive = async (session: any, exportResult: ExportResult) => {
-    if (!exportResult.success) {
-        return exportResult;
-    }
-    const accessToken = getGoogleAccessToken(session);
-    if (!accessToken) {
-        return { success: false, error: 'Connect Google Drive to continue.' };
-    }
-    const folderId = await ensureDriveFolder(accessToken);
-    if (!folderId) {
-        return { success: false, error: 'Unable to access the Google Drive folder.' };
-    }
-
+const performUpload = async (
+    accessToken: string,
+    exportResult: ExportResult,
+    folderId: string
+) => {
     const metadata = {
         name: exportResult.filename,
         parents: [folderId]
@@ -97,7 +101,7 @@ export const uploadToDrive = async (session: any, exportResult: ExportResult) =>
     form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
     form.append('file', file);
 
-    const response = await fetchDrive(
+    return fetchDrive(
         accessToken,
         'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name',
         {
@@ -105,6 +109,31 @@ export const uploadToDrive = async (session: any, exportResult: ExportResult) =>
             body: form
         }
     );
+};
+
+export const uploadToDrive = async (session: any, exportResult: ExportResult) => {
+    if (!exportResult.success) {
+        return exportResult;
+    }
+    const accessToken = getDriveAccessToken();
+    if (!accessToken) {
+        return { success: false, error: 'Connect Google Drive to continue.' };
+    }
+    const folderId = await ensureDriveFolder(accessToken);
+    if (!folderId) {
+        return { success: false, error: 'Unable to access the Google Drive folder.' };
+    }
+
+    let response = await performUpload(accessToken, exportResult, folderId);
+
+    if (response.status === 404) {
+        clearStoredFolderId(getDriveAccountEmail());
+        const refreshedFolderId = await ensureDriveFolder(accessToken);
+        if (!refreshedFolderId) {
+            return { success: false, error: 'Unable to access the Google Drive folder.' };
+        }
+        response = await performUpload(accessToken, exportResult, refreshedFolderId);
+    }
 
     if (!response.ok) {
         const detail = await response.text();

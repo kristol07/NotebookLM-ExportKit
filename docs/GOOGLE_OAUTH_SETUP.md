@@ -1,23 +1,31 @@
 # Google OAuth Setup (Supabase + Drive)
 
-This project uses Supabase Auth with Google OAuth to obtain a Google Drive access token (`provider_token`). That token is used to upload exports to Drive.
+This project uses Supabase Auth for app login and a separate Google OAuth flow for Drive delivery.
+Drive access tokens are stored locally in the extension and are not tied to the Supabase session.
 
-## 1) Create a Google OAuth Client
+## 1) Create a Google OAuth Client (Drive)
 1. Go to Google Cloud Console → APIs & Services → Credentials.
-2. Create an OAuth client (type: Web application).
-   - Supabase uses a web OAuth redirect flow (`/auth/v1/callback`), so the OAuth client must be Web, not the Chrome extension type.
-3. Add an Authorized redirect URI for Supabase:
-   - `https://<YOUR_SUPABASE_PROJECT>.supabase.co/auth/v1/callback`
-4. Copy the Client ID and Client Secret.
+2. Click “Create Credentials” → “OAuth client ID”.
+3. Choose application type:
+   - Recommended: Web application
+4. Set an authorized redirect URI for the extension:
+   - `https://<EXTENSION_ID>.chromiumapp.org/google-drive-oauth`
+5. Copy the Client ID.
 
-## 2) Enable Google Provider in Supabase
+## 2) Enable Google Provider in Supabase (login)
 1. In Supabase → Authentication → Providers → Google:
    - Enable Google provider.
-   - Paste the Client ID + Client Secret.
+   - Paste the Client ID + Client Secret from the Supabase login OAuth client.
 2. Save.
 
+## Client ID Quick Reference
+| Purpose | OAuth Client | Redirect URI | Where to configure |
+| --- | --- | --- | --- |
+| App login (Supabase) | Web application | `https://<YOUR_SUPABASE_PROJECT>.supabase.co/auth/v1/callback` | Supabase → Auth → Providers → Google |
+| Drive delivery (extension) | Web application | `https://<EXTENSION_ID>.chromiumapp.org/google-drive-oauth` | `VITE_GOOGLE_DRIVE_CLIENT_ID` or `wxt.config.ts` |
+
 ## 3) Add Extension Redirect URL in Supabase
-Supabase must allow the extension return URL so OAuth can complete.
+Supabase must allow the extension return URL so OAuth login can complete.
 
 1. In Supabase → Authentication → URL Configuration:
    - Add the extension callback URL to “Additional Redirect URLs”.
@@ -36,14 +44,14 @@ Notes:
    - Enable “Google Drive API”.
 
 ## 5) Ensure OAuth Scope is Allowed
-The app requests the Drive scope only when the user connects Google Drive:
+The extension requests the Drive scope only when the user connects Google Drive:
 - `https://www.googleapis.com/auth/drive.file`
 
-This scope is set in the client during the Drive connect flow:
-- `utils/supabase-oauth.ts`
+This scope is set during the Drive connect flow:
+- `utils/google-drive-auth.ts`
 - `entrypoints/sidepanel/components/Dashboard.tsx`
 
-Basic Google sign-in does not request Drive access. Drive access is requested only when the
+App login does not request Drive access. Drive access is requested only when the
 user connects Drive (or selects Drive as the export destination).
 
 How to verify:
@@ -54,7 +62,11 @@ How to verify:
 Note:
 - `drive.file` is a Sensitive scope and may require Google verification for public distribution.
 
-## 6) Verify in the Extension
+## 6) Configure the Client ID
+Set `VITE_GOOGLE_DRIVE_CLIENT_ID` (or update `manifest.oauth2.client_id` in `wxt.config.ts`)
+with the Drive OAuth client ID.
+
+## 7) Verify in the Extension
 1. Set “Export to: Google Drive”.
 2. Click “Connect Google Drive” (this will prompt Google sign-in with Drive scope if needed).
 3. Export any format and confirm the file appears in:
@@ -77,6 +89,5 @@ URL format is:
 This URL must be allow-listed in Supabase. The `identity` permission is required in the
 manifest.
 
-When the flow finishes, the sidepanel parses the returned URL and completes the Supabase
-session (PKCE or implicit). The Google access token you need for Drive uploads is stored
-on the session as `provider_token`.
+When the flow finishes, the sidepanel parses the returned URL and stores the Drive access
+token locally for uploads.

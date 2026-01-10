@@ -1,76 +1,77 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { supabase } from '../../../utils/supabase';
 import { browser } from 'wxt/browser';
-import { getGoogleDriveOAuthScopes, signInWithGoogleOAuth } from '../../../utils/supabase-oauth';
+import { getGoogleDriveOAuthScopes } from '../../../utils/supabase-oauth';
 import { sanitizeFilename, getTimestamp } from '../../../utils/common';
 import { ContentType, ExportFormat, ExportTarget } from '../../../utils/export-core';
 import { exportByType } from '../../../utils/export-dispatch';
 import { deliverExport } from '../../../utils/export-delivery';
+import { connectGoogleDrive, getDriveAccountEmail, getDriveAccessToken } from '../../../utils/google-drive-auth';
+import { resetDriveConnection } from '../../../utils/google-drive';
 
 import { extractByType } from '../../../utils/extractors';
 import { extractNotebookLmPayload } from '../../../utils/extractors/common';
 import { consumeTrial, createCheckoutSession, createCustomerPortalLink, getPlan } from '../../../utils/billing';
+import { AccountPanel } from './dashboard/AccountPanel';
+import { DashboardHeader } from './dashboard/DashboardHeader';
+import { DriveSetupCard } from './dashboard/DriveSetupCard';
+import { ExportActions, ExportSection } from './dashboard/ExportActions';
+import { ExportDestinationCard } from './dashboard/ExportDestinationCard';
+import { ToastNotice } from './dashboard/ToastNotice';
+import { UpgradeBanner } from './dashboard/UpgradeBanner';
+import { UpgradeModal } from './dashboard/UpgradeModal';
 
-const EXPORT_SECTIONS: Array<{
-    title: string;
-    contentType: ContentType;
-    options: Array<{
-        format: ExportFormat;
-        label?: string;
-        isPlus?: boolean;
-        apps?: string[];
-    }>;
-}> = [
-        {
-            title: 'Quiz Exports',
-            contentType: 'quiz',
-            options: [
-                { format: 'CSV', label: 'Excel' },
-                { format: 'JSON' },
-                { format: 'HTML' },
-                { format: 'Anki', isPlus: true },
-            ],
-        },
-        {
-            title: 'Flashcard Exports',
-            contentType: 'flashcards',
-            options: [
-                { format: 'CSV', label: 'Excel' },
-                { format: 'JSON' },
-                { format: 'HTML' },
-                { format: 'Anki', isPlus: true },
-            ],
-        },
-        {
-            title: 'Mindmap Exports',
-            contentType: 'mindmap',
-            options: [
-                { format: 'SVG' },
-                { format: 'HTML', label: 'HTML' },
-                { format: 'FreeMind', label: 'FreeMind' },
-                { format: 'Markdown', label: 'Markdown', isPlus: true, apps: ['Whimsical', 'Obsidian'] },
-                { format: 'JSONCanvas', label: 'JSONCanvas', isPlus: true, apps: ['Obsidian'] },
-                { format: 'OPML', label: 'OPML', isPlus: true, apps: ['XMind', 'MindMeister'] },
-            ],
-        },
-        {
-            title: 'Note Exports',
-            contentType: 'note',
-            options: [
-                { format: 'Word', label: 'Word', isPlus: true },
-                { format: 'Markdown', isPlus: true },
-                { format: 'PDF' },
-            ],
-        },
-        {
-            title: 'Data Table Exports',
-            contentType: 'datatable',
-            options: [
-                { format: 'CSV', label: 'Excel' },
-                { format: 'Markdown' },
-            ],
-        },
-    ];
+const EXPORT_SECTIONS: ExportSection[] = [
+    {
+        title: 'Quiz Exports',
+        contentType: 'quiz',
+        options: [
+            { format: 'CSV', label: 'Excel' },
+            { format: 'JSON' },
+            { format: 'HTML' },
+            { format: 'Anki', isPlus: true },
+        ],
+    },
+    {
+        title: 'Flashcard Exports',
+        contentType: 'flashcards',
+        options: [
+            { format: 'CSV', label: 'Excel' },
+            { format: 'JSON' },
+            { format: 'HTML' },
+            { format: 'Anki', isPlus: true },
+        ],
+    },
+    {
+        title: 'Mindmap Exports',
+        contentType: 'mindmap',
+        options: [
+            { format: 'SVG' },
+            { format: 'HTML', label: 'HTML' },
+            { format: 'FreeMind', label: 'FreeMind' },
+            { format: 'Markdown', label: 'Markdown', isPlus: true, apps: ['Whimsical', 'Obsidian'] },
+            { format: 'JSONCanvas', label: 'JSONCanvas', isPlus: true, apps: ['Obsidian'] },
+            { format: 'OPML', label: 'OPML', isPlus: true, apps: ['XMind', 'MindMeister'] },
+        ],
+    },
+    {
+        title: 'Note Exports',
+        contentType: 'note',
+        options: [
+            { format: 'Word', label: 'Word', isPlus: true },
+            { format: 'Markdown', isPlus: true },
+            { format: 'PDF' },
+        ],
+    },
+    {
+        title: 'Data Table Exports',
+        contentType: 'datatable',
+        options: [
+            { format: 'CSV', label: 'Excel' },
+            { format: 'Markdown' },
+        ],
+    },
+];
 
 const PLUS_EXPORTS = new Set(
     EXPORT_SECTIONS.flatMap((section) =>
@@ -95,6 +96,10 @@ export default function Dashboard({
     const [notice, setNotice] = useState<{ type: 'success' | 'error' | 'info'; message: string } | null>(null);
     const [trialRemaining, setTrialRemaining] = useState<number | null>(null);
     const [driveConnected, setDriveConnected] = useState(false);
+    const [driveAccountEmail, setDriveAccountEmail] = useState<string | null>(null);
+    const [showAccountPanel, setShowAccountPanel] = useState(false);
+    const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+    const [upgradeContext, setUpgradeContext] = useState<'drive' | 'format' | 'general' | null>(null);
     const noticeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const upgradeInFlightRef = useRef(false);
     const [exportTarget, setExportTarget] = useState<ExportTarget>('download');
@@ -132,6 +137,13 @@ export default function Dashboard({
         };
     }, []);
 
+    const refreshDriveState = () => {
+        const token = getDriveAccessToken();
+        setDriveConnected(Boolean(token));
+        setDriveAccountEmail(getDriveAccountEmail());
+        localStorage.setItem(DRIVE_CONNECTED_STORAGE_KEY, token ? 'true' : 'false');
+    };
+
     useEffect(() => {
         const stored = localStorage.getItem(EXPORT_TARGET_STORAGE_KEY);
         if (stored === 'download' || stored === 'drive') {
@@ -140,8 +152,7 @@ export default function Dashboard({
     }, []);
 
     useEffect(() => {
-        const stored = localStorage.getItem(DRIVE_CONNECTED_STORAGE_KEY);
-        setDriveConnected(stored === 'true');
+        refreshDriveState();
     }, []);
 
     useEffect(() => {
@@ -182,7 +193,7 @@ export default function Dashboard({
         return PLUS_EXPORTS.has(`${contentType}:${format}`);
     };
 
-    const hasDriveAccess = Boolean(session?.provider_token) && driveConnected;
+    const hasDriveAccess = Boolean(getDriveAccessToken()) && driveConnected;
 
     const handleExportTargetChange = (value: ExportTarget) => {
         setExportTarget(value);
@@ -191,25 +202,41 @@ export default function Dashboard({
 
     const handleConnectDrive = async () => {
         if (!isSignedIn) {
-            showNotice('info', 'Continue with Google to connect Google Drive.');
+            showNotice('info', 'Sign in to connect Google Drive.');
+            onRequestLogin?.();
+            return;
         }
         setLoadingAction('drive-connect');
         try {
-            await signInWithGoogleOAuth(getGoogleDriveOAuthScopes(), session?.user?.email);
+            const driveResult = await connectGoogleDrive(getGoogleDriveOAuthScopes());
             setDriveConnected(true);
+            setDriveAccountEmail(driveResult.email ?? null);
             localStorage.setItem(DRIVE_CONNECTED_STORAGE_KEY, 'true');
         } catch (err) {
             console.error(err);
-            showNotice('error', 'Could not start Google sign-in. Please try again.');
+            showNotice('error', 'Could not connect Google Drive. Please try again.');
         } finally {
             setLoadingAction(null);
         }
     };
 
-    const handleSignOut = async () => {
-        await supabase.auth.signOut();
+    const disconnectDrive = (options?: { silent?: boolean }) => {
+        resetDriveConnection();
         setDriveConnected(false);
+        setDriveAccountEmail(null);
         localStorage.removeItem(DRIVE_CONNECTED_STORAGE_KEY);
+        if (!options?.silent) {
+            showNotice('info', 'Google Drive disconnected.');
+        }
+    };
+
+    const handleDisconnectDrive = () => {
+        disconnectDrive();
+    };
+
+    const handleSignOut = async () => {
+        disconnectDrive({ silent: true });
+        await supabase.auth.signOut();
     };
 
     const handleUpgrade = async () => {
@@ -235,6 +262,11 @@ export default function Dashboard({
         }
     };
 
+    const openUpgradeModal = (context: 'drive' | 'format' | 'general' = 'general') => {
+        setUpgradeContext(context);
+        setShowUpgradeModal(true);
+    };
+
     const handleManageBilling = async () => {
         setLoadingAction('billing');
         try {
@@ -254,16 +286,17 @@ export default function Dashboard({
         try {
             const plusExport = isPlusExport(format, contentType);
             const requiresPlus = plusExport || (exportTarget === 'drive' && DRIVE_EXPORT_REQUIRES_PLUS);
-            if (requiresPlus) {
-                if (!isSignedIn) {
-                    showNotice('info', 'Sign in to unlock advanced exports.');
-                    onRequestLogin?.();
-                    return;
-                }
+                if (requiresPlus) {
+                    if (!isSignedIn) {
+                        showNotice('info', 'Sign in to unlock advanced exports.');
+                        onRequestLogin?.();
+                        return;
+                    }
                 if (!isPlus) {
                     const trialResult = await consumeTrial(false);
                     if (!trialResult.allowed) {
                         showNotice('error', 'Your free trials are used up. Upgrade to continue.');
+                        openUpgradeModal(exportTarget === 'drive' ? 'drive' : 'format');
                         return;
                     }
                     if (typeof trialResult.remaining === 'number') {
@@ -273,7 +306,8 @@ export default function Dashboard({
             }
 
             if (exportTarget === 'drive' && !hasDriveAccess) {
-                showNotice('info', 'Drive export requires Google sign-in. Connect Google Drive to continue.');
+                showNotice('info', 'Connect Google Drive to continue.');
+                refreshDriveState();
                 return;
             }
 
@@ -358,169 +392,71 @@ export default function Dashboard({
         }
     };
 
-    const PlusIcon = () => (
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="currentColor" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
-    );
-
-    const Spinner = () => (
-        <svg className="spinner" width="14" height="14" viewBox="0 0 50 50" style={{ animation: 'spin 1s linear infinite' }}>
-            <circle cx="25" cy="25" r="20" fill="none" stroke="currentColor" strokeWidth="6" strokeLinecap="round" strokeDasharray="80" strokeDashoffset="0"></circle>
-            <style>{`@keyframes spin { 100% { transform: rotate(360deg); } }`}</style>
-        </svg>
-    );
+    const handleRequestLogin = () => {
+        onRequestLogin?.();
+    };
 
     return (
         <div className="exportkit-shell">
             <div className="dashboard-container">
                 {/* Header */}
-                <div className="dashboard-header">
-                    <h3 className="dashboard-title">Dashboard</h3>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <div className="destination-toggle">
-                            <label className="destination-label">Export to</label>
-                            <select
-                                value={exportTarget}
-                                onChange={(event) => handleExportTargetChange(event.target.value as ExportTarget)}
-                                className="destination-select"
-                                aria-label="Export destination"
-                            >
-                                <option value="download">Download</option>
-                                <option value="drive">
-                                    {DRIVE_EXPORT_REQUIRES_PLUS ? 'Google Drive (Plus)' : 'Google Drive'}
-                                </option>
-                            </select>
-                        </div>
-                        {isSignedIn ? (
-                            <>
-                                <div className="plan-label">
-                                    <div className="plan-value">{isPlus ? 'Plus' : 'Free'}</div>
-                                </div>
-                                <button
-                                    onClick={handleSignOut}
-                                    title="Sign Out"
-                                    className="export-btn small"
-                                >
-                                    Sign Out
-                                </button>
-                            </>
-                        ) : (
-                            <button
-                                onClick={() => onRequestLogin?.()}
-                                className="export-btn small"
-                            >
-                                Sign In
-                            </button>
-                        )}
-                    </div>
-                </div>
+                <DashboardHeader
+                    isSignedIn={isSignedIn}
+                    onAccountClick={() => setShowAccountPanel(true)}
+                    onSignOut={handleSignOut}
+                    onSignIn={handleRequestLogin}
+                />
+
+                <ExportDestinationCard exportTarget={exportTarget} onChange={handleExportTargetChange} />
+
+                {!isPlus && (
+                    <UpgradeBanner trialRemaining={trialRemaining} onUpgrade={() => openUpgradeModal('general')} />
+                )}
+
                 {exportTarget === 'drive' && (
-                    <div className="billing-row">
-                        <span className={`billing-badge ${hasDriveAccess ? 'success' : ''}`}>
-                            {hasDriveAccess ? 'Drive connected' : 'Drive not connected'}
-                        </span>
-                        {!hasDriveAccess && (
-                            <button
-                                onClick={handleConnectDrive}
-                                disabled={!!loadingAction}
-                                className="link-button"
-                            >
-                                Connect Google Drive {loadingAction === 'drive-connect' && <Spinner />}
-                            </button>
-                        )}
-                    </div>
+                    <DriveSetupCard
+                        isSignedIn={isSignedIn}
+                        hasDriveAccess={hasDriveAccess}
+                        driveAccountEmail={driveAccountEmail}
+                        loadingAction={loadingAction}
+                        isPlus={isPlus}
+                        onRequestLogin={handleRequestLogin}
+                        onConnectDrive={handleConnectDrive}
+                        onUpgrade={() => openUpgradeModal('drive')}
+                    />
                 )}
 
-                {/* Manage Billing (Only for Subscribed users) */}
-                {isPlus && (
-                    <div className="billing-row">
-                        {isCancelScheduled && (
-                            <span className="billing-badge">
-                                Ends {formattedPeriodEnd ?? 'soon'}
-                            </span>
-                        )}
-                        <button
-                            onClick={handleManageBilling}
-                            disabled={!!loadingAction}
-                            className="link-button"
-                        >
-                            Manage Subscription {loadingAction === 'billing' && <Spinner />}
-                        </button>
-                    </div>
-                )}
+                <ExportActions sections={EXPORT_SECTIONS} loadingAction={loadingAction} onExport={handleExport} />
 
-                {/* Actions Grid */}
-                <div className="actions">
-                    {EXPORT_SECTIONS.map((section) => (
-                        <div key={section.contentType} className="export-section">
-                            <div className="section-label">{section.title}</div>
-                            <div className="section-grid">
-                                {section.options.map((option) => (
-                                    <button
-                                        key={`${section.contentType}-${option.format}`}
-                                        onClick={() => handleExport(option.format, section.contentType)}
-                                        disabled={!!loadingAction}
-                                        className={`export-btn${option.apps?.length ? ' has-tooltip' : ''}`}
-                                        aria-label={
-                                            option.apps?.length
-                                                ? `${option.label ?? option.format}. Supported by ${option.apps.join(', ')}`
-                                                : undefined
-                                        }
-                                    >
-                                        <span className="button-content">
-                                            {option.label ?? option.format}
-                                            {option.apps?.length ? (
-                                                <span className="tooltip-content">
-                                                    Supported by {option.apps.join(', ')}
-                                                </span>
-                                            ) : null}
-                                            {option.isPlus && <PlusIcon />}
-                                            {loadingAction === `${section.contentType}:${option.format}` && <Spinner />}
-                                        </span>
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
-                    ))}
-
-                    {/* Upgrade Hook (if Free) */}
-                    {isSignedIn && !isPlus && (
-                        <div className="upgrade-card">
-                            <div className="upgrade-note">
-                                Free trial remaining:{' '}
-                                {trialRemaining === null
-                                    ? 'Checking...'
-                                    : trialRemaining === 0
-                                        ? 'No exports left'
-                                        : `${trialRemaining} ${trialRemaining === 1 ? 'export' : 'exports'}`}
-                            </div>
-                            <button
-                                onClick={handleUpgrade}
-                                disabled={!!loadingAction}
-                                className="export-btn upgrade-btn"
-                            >
-                                Upgrade to Unlock Advanced Features <PlusIcon /> {loadingAction === 'upgrade' && <Spinner />}
-                            </button>
-                        </div>
-                    )}
-
-                    {/* Coming Soon */}
-                    <div className="coming-soon">
-                        <div className="section-label muted">Coming soon</div>
-                        <div className="coming-card">
-                            Video & Audio Overviews to Transcript/Slides
-                        </div>
-                    </div>
-                </div>
-
-                {/* Toast Notification */}
-                {notice && (
-                    <div className={`toast ${notice.type}`}>
-                        {notice.message}
-                    </div>
-                )}
+                {notice && <ToastNotice notice={notice} />}
             </div>
+            {showUpgradeModal && (
+                <UpgradeModal
+                    upgradeContext={upgradeContext}
+                    trialRemaining={trialRemaining}
+                    loadingAction={loadingAction}
+                    isPlus={isPlus}
+                    onClose={() => setShowUpgradeModal(false)}
+                    onUpgrade={handleUpgrade}
+                    onManageBilling={handleManageBilling}
+                />
+            )}
+            {showAccountPanel && (
+                <AccountPanel
+                    email={session?.user?.email ?? null}
+                    isPlus={isPlus}
+                    hasDriveAccess={hasDriveAccess}
+                    driveAccountEmail={driveAccountEmail}
+                    isCancelScheduled={isCancelScheduled}
+                    formattedPeriodEnd={formattedPeriodEnd}
+                    trialRemaining={trialRemaining}
+                    loadingAction={loadingAction}
+                    onClose={() => setShowAccountPanel(false)}
+                    onDisconnectDrive={handleDisconnectDrive}
+                    onManageBilling={handleManageBilling}
+                    onUpgrade={() => openUpgradeModal('general')}
+                />
+            )}
         </div>
     );
 }

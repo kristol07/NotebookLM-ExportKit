@@ -84,7 +84,12 @@ export default function Login({ onClose }: { onClose?: () => void }) {
                             <span className="brand-dot" aria-hidden="true"></span>
                             NotebookLM ExportKit
                         </div>
-                        <p className="login-subtitle">Sign in to unlock advanced exports</p>
+                        <p className="login-subtitle">Sign in to unlock advanced exports and Drive delivery</p>
+                        <ul className="login-benefits">
+                            <li>Advanced formats for study workflows</li>
+                            <li>Google Drive delivery with any account</li>
+                            <li>One account for exports and subscription</li>
+                        </ul>
                     </div>
 
                     {message && (
@@ -103,21 +108,29 @@ export default function Login({ onClose }: { onClose?: () => void }) {
                             >
                                 {googleLoading ? 'Opening Google...' : 'Continue with Google'}
                             </button>
-                            <input
-                                type="email"
-                                placeholder="Enter your email"
-                                value={email}
-                                onChange={(e) => setEmail(e.target.value)}
-                                required
-                                className="login-input"
-                            />
-                            <button
-                                type="submit"
-                                disabled={loading}
-                                className="export-btn primary"
-                            >
-                                {loading ? 'Sending...' : 'Send Login Code'}
-                            </button>
+                            <div className="login-divider">
+                                <span>or use email</span>
+                            </div>
+                            <div className="login-email">
+                                <label className="login-label" htmlFor="login-email">Email</label>
+                                <input
+                                    id="login-email"
+                                    type="email"
+                                    placeholder="Enter your email"
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
+                                    required
+                                    className="login-input"
+                                />
+                                <p className="login-helper">We’ll send a one-time code.</p>
+                                <button
+                                    type="submit"
+                                    disabled={loading}
+                                    className="export-btn primary"
+                                >
+                                    {loading ? 'Sending...' : 'Send Login Code'}
+                                </button>
+                            </div>
                         </form>
                     ) : (
                         <form onSubmit={handleVerifyOtp} className="login-form">
@@ -144,7 +157,7 @@ export default function Login({ onClose }: { onClose?: () => void }) {
                                 onClick={() => setStep('email')}
                                 className="link-button"
                             >
-                                Wrong email? Try again
+                                Use a different email
                             </button>
                         </form>
                     )}
