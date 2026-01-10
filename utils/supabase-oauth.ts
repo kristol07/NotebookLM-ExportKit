@@ -2,9 +2,9 @@ import { supabase } from './supabase';
 import { browser } from 'wxt/browser';
 
 const DEFAULT_REDIRECT_PATH = 'supabase-oauth';
-const DEFAULT_GOOGLE_SCOPES = 'https://www.googleapis.com/auth/drive.file';
+const DEFAULT_GOOGLE_DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive.file';
 
-export const getGoogleOAuthScopes = () => {
+export const getGoogleDriveOAuthScopes = () => {
     const manifest = browser.runtime.getManifest() as {
         oauth2?: { scopes?: string[] };
     };
@@ -12,23 +12,32 @@ export const getGoogleOAuthScopes = () => {
     if (Array.isArray(scopes) && scopes.length > 0) {
         return scopes.join(' ');
     }
-    return DEFAULT_GOOGLE_SCOPES;
+    return DEFAULT_GOOGLE_DRIVE_SCOPE;
 };
 
-export const signInWithGoogleOAuth = async (scopes: string) => {
+export const signInWithGoogleOAuth = async (scopes?: string) => {
     const redirectTo = browser.identity.getRedirectURL(DEFAULT_REDIRECT_PATH);
     if (import.meta.env.DEV) {
         console.info('[auth] Google OAuth redirectTo:', redirectTo);
     }
 
+    const options: {
+        redirectTo: string;
+        scopes?: string;
+        queryParams: { access_type: string; prompt: string };
+        skipBrowserRedirect: boolean;
+    } = {
+        redirectTo,
+        queryParams: { access_type: 'offline', prompt: 'consent' },
+        skipBrowserRedirect: true,
+    };
+    if (scopes) {
+        options.scopes = scopes;
+    }
+
     const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
-        options: {
-            redirectTo,
-            scopes,
-            queryParams: { access_type: 'offline', prompt: 'consent' },
-            skipBrowserRedirect: true,
-        },
+        options,
     });
 
     if (error) {

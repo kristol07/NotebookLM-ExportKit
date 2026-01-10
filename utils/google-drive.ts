@@ -2,9 +2,14 @@ import { ExportResult } from './export-core';
 
 const DRIVE_FOLDER_NAME = 'NotebookLM ExportKit';
 const DRIVE_FOLDER_STORAGE_KEY = 'exportkitDriveFolderId';
+const DRIVE_CONNECTED_STORAGE_KEY = 'exportkitDriveConnected';
 
 const getStoredFolderId = () => localStorage.getItem(DRIVE_FOLDER_STORAGE_KEY);
 const setStoredFolderId = (id: string) => localStorage.setItem(DRIVE_FOLDER_STORAGE_KEY, id);
+const clearDriveConnection = () => {
+    localStorage.removeItem(DRIVE_FOLDER_STORAGE_KEY);
+    localStorage.removeItem(DRIVE_CONNECTED_STORAGE_KEY);
+};
 
 const getGoogleAccessToken = (session: any) => {
     return session?.provider_token || null;
@@ -103,7 +108,12 @@ export const uploadToDrive = async (session: any, exportResult: ExportResult) =>
 
     if (!response.ok) {
         const detail = await response.text();
-        const message = response.status === 401 ? 'Google Drive access expired. Reconnect to continue.' : 'Drive upload failed.';
+        if (response.status === 401 || response.status === 403) {
+            clearDriveConnection();
+        }
+        const message = response.status === 401 || response.status === 403
+            ? 'Google Drive access expired or missing. Reconnect to continue.'
+            : 'Drive upload failed.';
         console.error('Drive upload failed:', detail);
         return { success: false, error: message };
     }

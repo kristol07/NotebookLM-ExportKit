@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { supabase } from '../../../utils/supabase';
 import { browser } from 'wxt/browser';
-import { getGoogleOAuthScopes, signInWithGoogleOAuth } from '../../../utils/supabase-oauth';
+import { getGoogleDriveOAuthScopes, signInWithGoogleOAuth } from '../../../utils/supabase-oauth';
 import { sanitizeFilename, getTimestamp } from '../../../utils/common';
 import { ContentType, ExportFormat, ExportTarget } from '../../../utils/export-core';
 import { exportByType } from '../../../utils/export-dispatch';
@@ -80,6 +80,7 @@ const PLUS_EXPORTS = new Set(
     )
 );
 const EXPORT_TARGET_STORAGE_KEY = 'exportkitExportTarget';
+const DRIVE_CONNECTED_STORAGE_KEY = 'exportkitDriveConnected';
 const DRIVE_EXPORT_REQUIRES_PLUS = true;
 export default function Dashboard({
     session,
@@ -91,6 +92,7 @@ export default function Dashboard({
     const [loadingAction, setLoadingAction] = useState<string | null>(null);
     const [notice, setNotice] = useState<{ type: 'success' | 'error' | 'info'; message: string } | null>(null);
     const [trialRemaining, setTrialRemaining] = useState<number | null>(null);
+    const [driveConnected, setDriveConnected] = useState(false);
     const noticeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const upgradeInFlightRef = useRef(false);
     const [exportTarget, setExportTarget] = useState<ExportTarget>('download');
@@ -136,6 +138,11 @@ export default function Dashboard({
     }, []);
 
     useEffect(() => {
+        const stored = localStorage.getItem(DRIVE_CONNECTED_STORAGE_KEY);
+        setDriveConnected(stored === 'true');
+    }, []);
+
+    useEffect(() => {
         let isActive = true;
         if (isSignedIn && !isPlus) {
             consumeTrial(false)
@@ -173,7 +180,7 @@ export default function Dashboard({
         return PLUS_EXPORTS.has(`${contentType}:${format}`);
     };
 
-    const hasDriveAccess = Boolean(session?.provider_token);
+    const hasDriveAccess = Boolean(session?.provider_token) && driveConnected;
 
     const handleExportTargetChange = (value: ExportTarget) => {
         setExportTarget(value);
@@ -182,13 +189,13 @@ export default function Dashboard({
 
     const handleConnectDrive = async () => {
         if (!isSignedIn) {
-            showNotice('info', 'Sign in with Google to connect Drive.');
-            onRequestLogin?.();
-            return;
+            showNotice('info', 'Continue with Google to connect Drive.');
         }
         setLoadingAction('drive-connect');
         try {
-            await signInWithGoogleOAuth(getGoogleOAuthScopes());
+            await signInWithGoogleOAuth(getGoogleDriveOAuthScopes());
+            setDriveConnected(true);
+            localStorage.setItem(DRIVE_CONNECTED_STORAGE_KEY, 'true');
         } catch (err) {
             console.error(err);
             showNotice('error', 'Could not start Google sign-in. Please try again.');
@@ -199,6 +206,8 @@ export default function Dashboard({
 
     const handleSignOut = async () => {
         await supabase.auth.signOut();
+        setDriveConnected(false);
+        localStorage.removeItem(DRIVE_CONNECTED_STORAGE_KEY);
     };
 
     const handleUpgrade = async () => {

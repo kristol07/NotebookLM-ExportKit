@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { supabase } from '../../../utils/supabase';
-import { getGoogleOAuthScopes, signInWithGoogleOAuth } from '../../../utils/supabase-oauth';
+import { signInWithGoogleOAuth } from '../../../utils/supabase-oauth';
 
 export default function Login({ onClose }: { onClose?: () => void }) {
     const [email, setEmail] = useState('');
@@ -56,7 +56,7 @@ export default function Login({ onClose }: { onClose?: () => void }) {
         setGoogleLoading(true);
         setMessage(null);
         try {
-            await signInWithGoogleOAuth(getGoogleOAuthScopes());
+            await signInWithGoogleOAuth();
         } catch (err: any) {
             showMessage('error', err?.message || 'Unable to start Google sign-in.');
         } finally {
