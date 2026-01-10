@@ -1,5 +1,5 @@
 import * as XLSX from 'xlsx';
-import { DataTableRow, downloadBlob, ExportFormat, ExportResult } from './export-core';
+import { DataTableRow, ExportFormat, ExportResult } from './export-core';
 
 const normalizeRows = (rows: DataTableRow[]) => {
     const normalized = rows.map((row) => row.cells.map((cell) => cell ?? ''));
@@ -37,8 +37,11 @@ export const exportDatatable = (
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, ws, 'Data Table');
         const filename = `notebooklm_datatable_${tabTitle}_${timestamp}.xlsx`;
-        XLSX.writeFile(wb, filename);
-        return { success: true, count: normalizedRows.length };
+        const buffer = XLSX.write(wb, { type: 'array', bookType: 'xlsx' });
+        const blob = new Blob([buffer], {
+            type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        });
+        return { success: true, count: normalizedRows.length, filename, mimeType: blob.type, blob };
     }
 
     if (format === 'Markdown') {
@@ -49,8 +52,8 @@ export const exportDatatable = (
         const toLine = (cells: string[]) => `| ${cells.join(' | ')} |`;
         const markdown = [toLine(header), toLine(separator), ...body.map(toLine)].join('\n');
         const filename = `notebooklm_datatable_${tabTitle}_${timestamp}.md`;
-        downloadBlob(markdown, filename, 'text/markdown');
-        return { success: true, count: normalizedRows.length };
+        const blob = new Blob([markdown], { type: 'text/markdown' });
+        return { success: true, count: normalizedRows.length, filename, mimeType: blob.type, blob };
     }
 
     return { success: false, error: 'Unsupported format' };

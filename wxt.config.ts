@@ -24,7 +24,8 @@ export default defineConfig({
     permissions: ['activeTab', 'scripting'],
     host_permissions: [
       'https://notebooklm.google.com/*',
-      'https://*.usercontent.goog/*'
+      'https://*.usercontent.goog/*',
+      'https://www.googleapis.com/*'
     ],
     name: 'NotebookLM ExportKit - export NotebookLM content to any format',
     description: 'Export NotebookLM quizzes, flashcards, mindmaps, notes, and tables to multiple formats (varies by type).',

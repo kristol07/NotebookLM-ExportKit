@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { supabase } from '../../../utils/supabase';
+import { browser } from 'wxt/browser';
 
 export default function Login({ onClose }: { onClose?: () => void }) {
     const [email, setEmail] = useState('');
@@ -7,6 +8,7 @@ export default function Login({ onClose }: { onClose?: () => void }) {
     const [loading, setLoading] = useState(false);
     const [step, setStep] = useState<'email' | 'otp'>('email');
     const [message, setMessage] = useState<{ type: 'error' | 'success', text: string } | null>(null);
+    const [googleLoading, setGoogleLoading] = useState(false);
 
     const showMessage = (type: 'error' | 'success', text: string) => {
         setMessage({ type, text });
@@ -50,6 +52,36 @@ export default function Login({ onClose }: { onClose?: () => void }) {
         setLoading(false);
     };
 
+    const handleGoogleLogin = async () => {
+        setGoogleLoading(true);
+        setMessage(null);
+        try {
+            const redirectTo = browser.runtime.getURL('sidepanel/index.html');
+            if (import.meta.env.DEV) {
+                console.info('[auth] Google OAuth redirectTo:', redirectTo);
+            }
+            const { data, error } = await supabase.auth.signInWithOAuth({
+                provider: 'google',
+                options: {
+                    redirectTo,
+                    scopes: 'https://www.googleapis.com/auth/drive.file',
+                    queryParams: { access_type: 'offline', prompt: 'consent' },
+                    skipBrowserRedirect: true
+                }
+            });
+            if (error) {
+                throw error;
+            }
+            if (data?.url) {
+                await browser.tabs.create({ url: data.url });
+            }
+        } catch (err: any) {
+            showMessage('error', err?.message || 'Unable to start Google sign-in.');
+        } finally {
+            setGoogleLoading(false);
+        }
+    };
+
     return (
         <div className="exportkit-shell">
             <div className="login-container">
@@ -81,6 +113,14 @@ export default function Login({ onClose }: { onClose?: () => void }) {
 
                     {step === 'email' ? (
                         <form onSubmit={handleSendOtp} className="login-form">
+                            <button
+                                type="button"
+                                onClick={handleGoogleLogin}
+                                disabled={googleLoading}
+                                className="export-btn primary"
+                            >
+                                {googleLoading ? 'Opening Google...' : 'Continue with Google'}
+                            </button>
                             <input
                                 type="email"
                                 placeholder="Enter your email"

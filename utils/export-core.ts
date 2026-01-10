@@ -11,6 +11,7 @@ export type ExportFormat =
     | 'SVG'
     | 'Markdown'
     | 'Word';
+export type ExportTarget = 'download' | 'drive';
 export type ContentType = 'quiz' | 'flashcards' | 'mindmap' | 'datatable' | 'note';
 export type ContentSource = 'notebooklm' | 'user';
 
@@ -84,7 +85,7 @@ export interface ValidationResult {
 }
 
 export type ExportResult =
-    | { success: true; count: number }
+    | { success: true; count: number; filename: string; mimeType: string; blob: Blob }
     | { success: false; error: string };
 
 const isRecord = (value: unknown): value is Record<string, unknown> => {

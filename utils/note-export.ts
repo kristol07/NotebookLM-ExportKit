@@ -1,4 +1,4 @@
-import { downloadBlob, ExportFormat, ExportResult, NoteBlock, NoteInline } from './export-core';
+import { ExportFormat, ExportResult, NoteBlock, NoteInline } from './export-core';
 import { jsPDF } from 'jspdf';
 import html2canvas from 'html2canvas';
 import {
@@ -588,8 +588,7 @@ const paginatePdfBlocks = (
     return pages;
 };
 
-const exportNotePdf = async (title: string, blocks: NoteBlock[], tabTitle: string, timestamp: string) => {
-    const filename = `notebooklm_note_${tabTitle}_${timestamp}.pdf`;
+const exportNotePdf = async (title: string, blocks: NoteBlock[]) => {
     const { references, referenceOrder } = collectReferences(blocks);
     const pdfBlocks: PdfRenderBlock[] = [
         { type: 'html', html: `<h1 class="note-title">${escapeHtml(title)}</h1>` },
@@ -608,38 +607,34 @@ const exportNotePdf = async (title: string, blocks: NoteBlock[], tabTitle: strin
         pdfBlocks.push({ type: 'html', html: referencesHtml });
     }
     const pages = paginatePdfBlocks(pdfBlocks, references, referenceOrder);
-    try {
-        const pdf = new jsPDF({ orientation: 'p', unit: 'pt', format: 'a4' });
-        for (let index = 0; index < pages.length; index += 1) {
-            const { element, cleanup } = createPdfPageElement(pages[index], references, referenceOrder);
-            const canvas = await html2canvas(element, {
-                scale: 2,
-                useCORS: true,
-                backgroundColor: '#ffffff'
-            });
-            const pageWidth = pdf.internal.pageSize.getWidth();
-            const pageHeight = pdf.internal.pageSize.getHeight();
-            const imageHeight = (canvas.height * pageWidth) / canvas.width;
-            if (index > 0) {
-                pdf.addPage();
-            }
-            const imgData = canvas.toDataURL('image/png');
-            pdf.addImage(imgData, 'PNG', 0, 0, pageWidth, Math.min(pageHeight, imageHeight));
-            cleanup();
+    const pdf = new jsPDF({ orientation: 'p', unit: 'pt', format: 'a4' });
+    for (let index = 0; index < pages.length; index += 1) {
+        const { element, cleanup } = createPdfPageElement(pages[index], references, referenceOrder);
+        const canvas = await html2canvas(element, {
+            scale: 2,
+            useCORS: true,
+            backgroundColor: '#ffffff'
+        });
+        const pageWidth = pdf.internal.pageSize.getWidth();
+        const pageHeight = pdf.internal.pageSize.getHeight();
+        const imageHeight = (canvas.height * pageWidth) / canvas.width;
+        if (index > 0) {
+            pdf.addPage();
         }
-        pdf.save(filename);
-    } catch (err) {
-        console.error(err);
+        const imgData = canvas.toDataURL('image/png');
+        pdf.addImage(imgData, 'PNG', 0, 0, pageWidth, Math.min(pageHeight, imageHeight));
+        cleanup();
     }
+    return pdf.output('blob');
 };
 
-export const exportNote = (
+export const exportNote = async (
     blocks: NoteBlock[],
     format: ExportFormat,
     tabTitle: string,
     timestamp: string,
     noteTitle?: string
-): ExportResult => {
+): Promise<ExportResult> => {
     const title = noteTitle?.trim() || tabTitle;
 
     if (format === 'Markdown') {
@@ -664,13 +659,19 @@ export const exportNote = (
         }
         const content = parts.join('\n');
         const filename = `notebooklm_note_${tabTitle}_${timestamp}.md`;
-        downloadBlob(content, filename, 'text/markdown');
-        return { success: true, count: blocks.length };
+        const blob = new Blob([content], { type: 'text/markdown' });
+        return { success: true, count: blocks.length, filename, mimeType: blob.type, blob };
     }
 
     if (format === 'PDF') {
-        void exportNotePdf(title, blocks, tabTitle, timestamp);
-        return { success: true, count: blocks.length };
+        try {
+            const blob = await exportNotePdf(title, blocks);
+            const filename = `notebooklm_note_${tabTitle}_${timestamp}.pdf`;
+            return { success: true, count: blocks.length, filename, mimeType: 'application/pdf', blob };
+        } catch (err) {
+            console.error(err);
+            return { success: false, error: 'Failed to build PDF export.' };
+        }
     }
 
     if (format === 'Word') {
@@ -728,12 +729,19 @@ export const exportNote = (
         });
 
         const filename = `notebooklm_note_${tabTitle}_${timestamp}.docx`;
-        void Packer.toBlob(doc)
-            .then((blob) => downloadBlob(blob, filename, 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'))
-            .catch((err) => {
-                console.error(err);
-            });
-        return { success: true, count: blocks.length };
+        try {
+            const blob = await Packer.toBlob(doc);
+            return {
+                success: true,
+                count: blocks.length,
+                filename,
+                mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                blob
+            };
+        } catch (err) {
+            console.error(err);
+            return { success: false, error: 'Failed to build Word export.' };
+        }
     }
 
     return { success: false, error: 'Unsupported format' };

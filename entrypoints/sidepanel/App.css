@@ -99,6 +99,35 @@
   color: var(--accent-dark);
 }
 
+.destination-toggle {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  align-items: flex-start;
+}
+
+.destination-label {
+  font-size: var(--size-xxs);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
+
+.destination-select {
+  font-size: var(--size-xs);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--stroke);
+  padding: 4px 8px;
+  background: #fff;
+  color: var(--ink);
+}
+
+.destination-select:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 var(--space-0) rgba(211, 84, 44, 0.15);
+}
+
 .export-btn {
   padding: var(--space-1) var(--space-3);
   cursor: pointer;
@@ -199,6 +228,11 @@
   background: rgba(211, 84, 44, 0.12);
   padding: var(--space-0) var(--space-1);
   border-radius: var(--radius-xs);
+}
+
+.billing-badge.success {
+  color: var(--teal);
+  background: rgba(31, 111, 120, 0.12);
 }
 
 .link-button {

@@ -13,14 +13,14 @@ export const supportedFormatsByType: Record<ContentType, ExportFormat[]> = {
     note: ['Word', 'Markdown', 'PDF']
 };
 
-export const exportByType = (
+export const exportByType = async (
     type: ContentType,
     items: QuizItem[] | FlashcardItem[] | MindmapNode[] | DataTableRow[] | NoteBlock[],
     format: ExportFormat,
     tabTitle: string,
     timestamp: string,
     meta?: { svg?: string; title?: string }
-): ExportResult => {
+): Promise<ExportResult> => {
     const supported = supportedFormatsByType[type] || [];
     if (!supported.includes(format)) {
         return { success: false, error: `Format ${format} is not supported for ${type}.` };

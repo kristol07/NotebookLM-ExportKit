@@ -1,6 +1,6 @@
 
 import * as XLSX from 'xlsx';
-import { downloadBlob, ExportFormat, ExportResult, QuizItem } from './export-core';
+import { ExportFormat, ExportResult, QuizItem } from './export-core';
 
 
 export const generateQuizHtml = (quizData: QuizItem[], title: string) => {
@@ -473,21 +473,24 @@ export const exportQuiz = (
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, ws, "Quiz");
         const filename = `notebooklm_quiz_${tabTitle}_${timestamp}.xlsx`;
-        XLSX.writeFile(wb, filename);
-        return { success: true, count: quizData.length };
+        const buffer = XLSX.write(wb, { type: 'array', bookType: 'xlsx' });
+        const blob = new Blob([buffer], {
+            type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        });
+        return { success: true, count: quizData.length, filename, mimeType: blob.type, blob };
     }
 
     if (format === 'JSON') {
         const filename = `notebooklm_quiz_${tabTitle}_${timestamp}.json`;
-        downloadBlob(JSON.stringify(quizData, null, 2), filename, 'application/json');
-        return { success: true, count: quizData.length };
+        const blob = new Blob([JSON.stringify(quizData, null, 2)], { type: 'application/json' });
+        return { success: true, count: quizData.length, filename, mimeType: blob.type, blob };
     }
 
     if (format === 'HTML') {
         const html = generateQuizHtml(quizData, tabTitle);
         const filename = `notebooklm_quiz_${tabTitle}_${timestamp}.html`;
-        downloadBlob(html, filename, 'text/html');
-        return { success: true, count: quizData.length };
+        const blob = new Blob([html], { type: 'text/html' });
+        return { success: true, count: quizData.length, filename, mimeType: blob.type, blob };
     }
 
     if (format === 'Anki') {
@@ -510,8 +513,8 @@ export const exportQuiz = (
 
         const content = rows.join('\n');
         const filename = `notebooklm_quiz_${tabTitle}_${timestamp}.txt`;
-        downloadBlob(content, filename, 'text/plain');
-        return { success: true, count: quizData.length };
+        const blob = new Blob([content], { type: 'text/plain' });
+        return { success: true, count: quizData.length, filename, mimeType: blob.type, blob };
     }
 
     return { success: false, error: 'Unsupported format' };

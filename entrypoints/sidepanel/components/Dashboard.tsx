@@ -2,8 +2,9 @@ import React, { useEffect, useRef, useState } from 'react';
 import { supabase } from '../../../utils/supabase';
 import { browser } from 'wxt/browser';
 import { sanitizeFilename, getTimestamp } from '../../../utils/common';
-import { ContentType, ExportFormat } from '../../../utils/export-core';
+import { ContentType, ExportFormat, ExportTarget } from '../../../utils/export-core';
 import { exportByType } from '../../../utils/export-dispatch';
+import { deliverExport } from '../../../utils/export-delivery';
 
 import { extractByType } from '../../../utils/extractors';
 import { extractNotebookLmPayload } from '../../../utils/extractors/common';
@@ -77,6 +78,9 @@ const PLUS_EXPORTS = new Set(
             .map((option) => `${section.contentType}:${option.format}`)
     )
 );
+const EXPORT_TARGET_STORAGE_KEY = 'exportkitExportTarget';
+const DRIVE_EXPORT_REQUIRES_PLUS = true;
+const GOOGLE_DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive.file';
 
 export default function Dashboard({
     session,
@@ -90,6 +94,7 @@ export default function Dashboard({
     const [trialRemaining, setTrialRemaining] = useState<number | null>(null);
     const noticeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const upgradeInFlightRef = useRef(false);
+    const [exportTarget, setExportTarget] = useState<ExportTarget>('download');
     const plan = getPlan(session);
     const isPlus = plan === 'plus' || plan === 'pro';
     const isSignedIn = Boolean(session?.user?.id);
@@ -122,6 +127,13 @@ export default function Dashboard({
                 clearTimeout(noticeTimerRef.current);
             }
         };
+    }, []);
+
+    useEffect(() => {
+        const stored = localStorage.getItem(EXPORT_TARGET_STORAGE_KEY);
+        if (stored === 'download' || stored === 'drive') {
+            setExportTarget(stored);
+        }
     }, []);
 
     useEffect(() => {
@@ -160,6 +172,48 @@ export default function Dashboard({
             return false;
         }
         return PLUS_EXPORTS.has(`${contentType}:${format}`);
+    };
+
+    const hasDriveAccess = Boolean(session?.provider_token);
+
+    const handleExportTargetChange = (value: ExportTarget) => {
+        setExportTarget(value);
+        localStorage.setItem(EXPORT_TARGET_STORAGE_KEY, value);
+    };
+
+    const handleConnectDrive = async () => {
+        if (!isSignedIn) {
+            showNotice('info', 'Sign in with Google to connect Drive.');
+            onRequestLogin?.();
+            return;
+        }
+        setLoadingAction('drive-connect');
+        try {
+            const redirectTo = browser.runtime.getURL('sidepanel/index.html');
+            if (import.meta.env.DEV) {
+                console.info('[auth] Google OAuth redirectTo:', redirectTo);
+            }
+            const { data, error } = await supabase.auth.signInWithOAuth({
+                provider: 'google',
+                options: {
+                    redirectTo,
+                    scopes: GOOGLE_DRIVE_SCOPE,
+                    queryParams: { access_type: 'offline', prompt: 'consent' },
+                    skipBrowserRedirect: true
+                }
+            });
+            if (error) {
+                throw error;
+            }
+            if (data?.url) {
+                await browser.tabs.create({ url: data.url });
+            }
+        } catch (err) {
+            console.error(err);
+            showNotice('error', 'Could not start Google sign-in. Please try again.');
+        } finally {
+            setLoadingAction(null);
+        }
     };
 
     const handleSignOut = async () => {
@@ -207,7 +261,8 @@ export default function Dashboard({
         setLoadingAction(actionId);
         try {
             const plusExport = isPlusExport(format, contentType);
-            if (plusExport) {
+            const requiresPlus = plusExport || (exportTarget === 'drive' && DRIVE_EXPORT_REQUIRES_PLUS);
+            if (requiresPlus) {
                 if (!isSignedIn) {
                     showNotice('info', 'Sign in to unlock advanced exports.');
                     onRequestLogin?.();
@@ -225,6 +280,11 @@ export default function Dashboard({
                 }
             }
 
+            if (exportTarget === 'drive' && !hasDriveAccess) {
+                showNotice('info', 'Drive export requires Google sign-in. Connect Google Drive to continue.');
+                return;
+            }
+
             const tabs = await browser.tabs.query({ active: true, currentWindow: true });
             if (tabs.length === 0 || !tabs[0].id) {
                 showNotice('error', 'No active tab found.');
@@ -240,22 +300,23 @@ export default function Dashboard({
                     let result;
                     switch (payload.type) {
                         case 'quiz':
-                            result = exportByType('quiz', payload.items, format, tabTitle, timestamp);
+                            result = await exportByType('quiz', payload.items, format, tabTitle, timestamp);
                             break;
                         case 'flashcards':
-                            result = exportByType('flashcards', payload.items, format, tabTitle, timestamp);
+                            result = await exportByType('flashcards', payload.items, format, tabTitle, timestamp);
                             break;
                         case 'mindmap':
-                            result = exportByType('mindmap', payload.items, format, tabTitle, timestamp, payload.meta);
+                            result = await exportByType('mindmap', payload.items, format, tabTitle, timestamp, payload.meta);
                             break;
                         case 'note':
-                            result = exportByType('note', payload.items, format, tabTitle, timestamp, payload.meta);
+                            result = await exportByType('note', payload.items, format, tabTitle, timestamp, payload.meta);
                             break;
                         default:
-                            result = exportByType('datatable', payload.items, format, tabTitle, timestamp);
+                            result = await exportByType('datatable', payload.items, format, tabTitle, timestamp);
                             break;
                     }
-                    if (result.success) {
+                    const delivered = await deliverExport(exportTarget, result, session);
+                    if (delivered.success) {
                         const label = payload.type === 'quiz'
                             ? 'questions'
                             : payload.type === 'flashcards'
@@ -266,8 +327,9 @@ export default function Dashboard({
                                         ? 'blocks'
                                         : 'rows';
                         const formatName = format === 'CSV' ? 'Excel' : format;
-                        showNotice('success', `Exported ${result.count} ${label} to ${formatName}.`);
-                        if (plusExport && !isPlus) {
+                        const destinationLabel = exportTarget === 'drive' ? 'Google Drive' : formatName;
+                        showNotice('success', `Exported ${delivered.count} ${label} to ${destinationLabel}.`);
+                        if (requiresPlus && !isPlus) {
                             const trialResult = await consumeTrial(true);
                             if (typeof trialResult.remaining === 'number') {
                                 const remainingText = trialResult.remaining === 1 ? '1 export' : `${trialResult.remaining} exports`;
@@ -276,7 +338,7 @@ export default function Dashboard({
                             }
                         }
                     } else {
-                        showNotice('error', result.error || 'Export failed.');
+                        showNotice('error', delivered.error || 'Export failed.');
                     }
                     return;
                 }
@@ -319,6 +381,20 @@ export default function Dashboard({
                 <div className="dashboard-header">
                     <h3 className="dashboard-title">Dashboard</h3>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <div className="destination-toggle">
+                            <label className="destination-label">Export to</label>
+                            <select
+                                value={exportTarget}
+                                onChange={(event) => handleExportTargetChange(event.target.value as ExportTarget)}
+                                className="destination-select"
+                                aria-label="Export destination"
+                            >
+                                <option value="download">Download</option>
+                                <option value="drive">
+                                    {DRIVE_EXPORT_REQUIRES_PLUS ? 'Google Drive (Plus)' : 'Google Drive'}
+                                </option>
+                            </select>
+                        </div>
                         {isSignedIn ? (
                             <>
                                 <div className="plan-label">
@@ -342,6 +418,22 @@ export default function Dashboard({
                         )}
                     </div>
                 </div>
+                {exportTarget === 'drive' && (
+                    <div className="billing-row">
+                        <span className={`billing-badge ${hasDriveAccess ? 'success' : ''}`}>
+                            {hasDriveAccess ? 'Drive connected' : 'Drive not connected'}
+                        </span>
+                        {!hasDriveAccess && (
+                            <button
+                                onClick={handleConnectDrive}
+                                disabled={!!loadingAction}
+                                className="link-button"
+                            >
+                                Connect Google Drive {loadingAction === 'drive-connect' && <Spinner />}
+                            </button>
+                        )}
+                    </div>
+                )}
 
                 {/* Manage Billing (Only for Subscribed users) */}
                 {isPlus && (

@@ -1,18 +1,21 @@
 # Export Architecture Notes
 
 This document summarizes the current export refactor and outlines how to extend it for new content types and formats. It also records the future plan for user-provided JSON inputs (not implemented).
+For Google OAuth/Drive setup, see `docs/GOOGLE_OAUTH_SETUP.md`.
 
 ## Current Structure
 
 ### Core
 - `utils/export-core.ts` owns shared types and validation.
 - `utils/export-dispatch.ts` routes by content type to the correct exporter and enforces per-type format support.
+- `utils/export-delivery.ts` handles delivery targets (download vs Google Drive) after exporters build blobs.
 
 ### Content-specific
 - `utils/quiz-export.ts`, `utils/flashcard-export.ts`, `utils/mindmap-export.ts`, `utils/datatable-export.ts`, and `utils/note-export.ts` implement per-type formats and keep HTML UIs distinct where needed.
 - `utils/extractors/` contains one extractor per content type (including notes) and a shared `data-app-data` extraction helper.
 - Note extraction details: see `docs/NOTE_EXTRACTION.md`.
 - Notes currently support Markdown, Word, and PDF exports; PDF uses HTML rendering for layout.
+- Exporters return `{ blob, filename, mimeType }` so delivery targets can decide whether to download or upload.
 
 ## Extending for New Content Types (Normal Workflow)
 
@@ -25,6 +28,8 @@ Recommended steps:
    - Define a per-type supported-format list (e.g., `supportedFormats: Record<ContentType, ExportFormat[]>`) and enforce it before dispatch.
 3. **Type-specific exporters**
    - Keep each content type in its own file with format-specific conversion logic (e.g., `exportSlidesToPptx`, `exportMindmapToOpml`, `exportMindmapToFreeMind`).
+4. **Delivery targets**
+   - Add new app exports (Drive, Notion, etc.) as delivery targets in `utils/export-delivery.ts` so exporters stay format-focused.
 
 This keeps the core small and makes it straightforward to add new export types without assuming shared formats or extraction logic.
 

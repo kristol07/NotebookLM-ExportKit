@@ -1,4 +1,4 @@
-import { downloadBlob, ExportFormat, ExportResult, MindmapNode } from './export-core';
+import { ExportFormat, ExportResult, MindmapNode } from './export-core';
 
 type JsonCanvasNode = {
     id: string;
@@ -1520,29 +1520,29 @@ export const exportMindmap = (
     if (format === 'OPML') {
         const content = generateOpml(mindmapData, tabTitle);
         const filename = `notebooklm_mindmap_${tabTitle}_${timestamp}.opml`;
-        downloadBlob(content, filename, 'text/xml');
-        return { success: true, count: mindmapData.length };
+        const blob = new Blob([content], { type: 'text/xml' });
+        return { success: true, count: mindmapData.length, filename, mimeType: blob.type, blob };
     }
 
     if (format === 'FreeMind') {
         const content = generateFreemind(mindmapData, tabTitle);
         const filename = `notebooklm_mindmap_${tabTitle}_${timestamp}.mm`;
-        downloadBlob(content, filename, 'text/xml');
-        return { success: true, count: mindmapData.length };
+        const blob = new Blob([content], { type: 'text/xml' });
+        return { success: true, count: mindmapData.length, filename, mimeType: blob.type, blob };
     }
 
     if (format === 'JSONCanvas') {
         const content = JSON.stringify(generateJsonCanvas(mindmapData), null, 2);
         const filename = `notebooklm_mindmap_${tabTitle}_${timestamp}.canvas`;
-        downloadBlob(content, filename, 'application/json');
-        return { success: true, count: mindmapData.length };
+        const blob = new Blob([content], { type: 'application/json' });
+        return { success: true, count: mindmapData.length, filename, mimeType: blob.type, blob };
     }
 
     if (format === 'Markdown') {
         const content = generateMarkdown(mindmapData, tabTitle);
         const filename = `notebooklm_mindmap_${tabTitle}_${timestamp}.md`;
-        downloadBlob(content, filename, 'text/markdown');
-        return { success: true, count: mindmapData.length };
+        const blob = new Blob([content], { type: 'text/markdown' });
+        return { success: true, count: mindmapData.length, filename, mimeType: blob.type, blob };
     }
 
     if (format === 'SVG') {
@@ -1555,15 +1555,15 @@ export const exportMindmap = (
         }
         const content = `<?xml version="1.0" encoding="UTF-8"?>\n${enhanced}`;
         const filename = `notebooklm_mindmap_${tabTitle}_${timestamp}.svg`;
-        downloadBlob(content, filename, 'image/svg+xml');
-        return { success: true, count: mindmapData.length };
+        const blob = new Blob([content], { type: 'image/svg+xml' });
+        return { success: true, count: mindmapData.length, filename, mimeType: blob.type, blob };
     }
 
     if (format === 'HTML') {
         const content = generateMindmapHtml(mindmapData, tabTitle);
         const filename = `notebooklm_mindmap_${tabTitle}_${timestamp}.html`;
-        downloadBlob(content, filename, 'text/html');
-        return { success: true, count: mindmapData.length };
+        const blob = new Blob([content], { type: 'text/html' });
+        return { success: true, count: mindmapData.length, filename, mimeType: blob.type, blob };
     }
 
     return { success: false, error: 'Unsupported format' };

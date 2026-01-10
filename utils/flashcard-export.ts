@@ -1,5 +1,5 @@
 import * as XLSX from 'xlsx';
-import { ExportFormat, ExportResult, FlashcardItem, downloadBlob } from './export-core';
+import { ExportFormat, ExportResult, FlashcardItem } from './export-core';
 
 
 export const generateFlashcardsHtml = (flashcardsData: FlashcardItem[], title: string) => {
@@ -392,21 +392,26 @@ export const exportFlashcards = (
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, ws, "Flashcards");
         const filename = `notebooklm_flashcards_${tabTitle}_${timestamp}.xlsx`;
-        XLSX.writeFile(wb, filename);
-        return { success: true, count: flashcardsData.length };
+        const buffer = XLSX.write(wb, { type: 'array', bookType: 'xlsx' });
+        const blob = new Blob([buffer], {
+            type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        });
+        return { success: true, count: flashcardsData.length, filename, mimeType: blob.type, blob };
     }
 
     if (format === 'JSON') {
         const filename = `notebooklm_flashcards_${tabTitle}_${timestamp}.json`;
-        downloadBlob(JSON.stringify({ flashcards: flashcardsData }, null, 2), filename, 'application/json');
-        return { success: true, count: flashcardsData.length };
+        const blob = new Blob([JSON.stringify({ flashcards: flashcardsData }, null, 2)], {
+            type: 'application/json'
+        });
+        return { success: true, count: flashcardsData.length, filename, mimeType: blob.type, blob };
     }
 
     if (format === 'HTML') {
         const html = generateFlashcardsHtml(flashcardsData, tabTitle);
         const filename = `notebooklm_flashcards_${tabTitle}_${timestamp}.html`;
-        downloadBlob(html, filename, 'text/html');
-        return { success: true, count: flashcardsData.length };
+        const blob = new Blob([html], { type: 'text/html' });
+        return { success: true, count: flashcardsData.length, filename, mimeType: blob.type, blob };
     }
 
     if (format === 'Anki') {
@@ -449,8 +454,8 @@ export const exportFlashcards = (
 
         const content = rows.join('\n');
         const filename = `notebooklm_flashcards_${tabTitle}_${timestamp}.txt`;
-        downloadBlob(content, filename, 'text/plain');
-        return { success: true, count: flashcardsData.length };
+        const blob = new Blob([content], { type: 'text/plain' });
+        return { success: true, count: flashcardsData.length, filename, mimeType: blob.type, blob };
     }
 
     return { success: false, error: 'Unsupported format' };
