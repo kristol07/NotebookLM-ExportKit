@@ -3,6 +3,7 @@ import { PlusIcon, Spinner } from './Icons';
 
 type AccountPanelProps = {
   email: string | null;
+  authProviderLabel: string | null;
   isPlus: boolean;
   hasDriveAccess: boolean;
   driveAccountEmail: string | null;
@@ -19,6 +20,7 @@ type AccountPanelProps = {
 
 export const AccountPanel = ({
   email,
+  authProviderLabel,
   isPlus,
   hasDriveAccess,
   driveAccountEmail,
@@ -80,6 +82,14 @@ export const AccountPanel = ({
             )}
           </div>
         </div>
+        {authProviderLabel && (
+          <div className="panel-info-card">
+            <div className="panel-info-text">
+              <span className="panel-info-label">Sign-in method</span>
+              <span className="panel-info-value">{authProviderLabel}</span>
+            </div>
+          </div>
+        )}
         <div className="panel-destinations">
           <div className="panel-actions-title">Destinations</div>
           <div className="panel-destination-list">

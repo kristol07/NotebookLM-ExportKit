@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { supabase } from '../../../utils/supabase';
-import { signInWithGoogleOAuth } from '../../../utils/supabase-oauth';
+import { signInWithGithubOAuth, signInWithGoogleOAuth } from '../../../utils/supabase-oauth';
 
 export default function Login({ onClose }: { onClose?: () => void }) {
     const [email, setEmail] = useState('');
@@ -9,6 +9,7 @@ export default function Login({ onClose }: { onClose?: () => void }) {
     const [step, setStep] = useState<'email' | 'otp'>('email');
     const [message, setMessage] = useState<{ type: 'error' | 'success', text: string } | null>(null);
     const [googleLoading, setGoogleLoading] = useState(false);
+    const [githubLoading, setGithubLoading] = useState(false);
 
     const showMessage = (type: 'error' | 'success', text: string) => {
         setMessage({ type, text });
@@ -64,6 +65,18 @@ export default function Login({ onClose }: { onClose?: () => void }) {
         }
     };
 
+    const handleGithubLogin = async () => {
+        setGithubLoading(true);
+        setMessage(null);
+        try {
+            await signInWithGithubOAuth();
+        } catch (err: any) {
+            showMessage('error', err?.message || 'Unable to start GitHub sign-in.');
+        } finally {
+            setGithubLoading(false);
+        }
+    };
+
     return (
         <div className="exportkit-shell">
             <div className="login-container">
@@ -106,6 +119,14 @@ export default function Login({ onClose }: { onClose?: () => void }) {
                                 className="export-btn primary"
                             >
                                 {googleLoading ? 'Opening Google...' : 'Continue with Google'}
+                            </button>
+                            <button
+                                type="button"
+                                onClick={handleGithubLogin}
+                                disabled={githubLoading}
+                                className="export-btn"
+                            >
+                                {githubLoading ? 'Opening GitHub...' : 'Continue with GitHub'}
                             </button>
                             <div className="login-divider">
                                 <span>or use email</span>

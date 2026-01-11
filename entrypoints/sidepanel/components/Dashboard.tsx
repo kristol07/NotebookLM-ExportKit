@@ -103,6 +103,29 @@ const PDF_QUALITY_STORAGE_KEY = 'exportkitPdfQuality';
 const DRIVE_EXPORT_REQUIRES_PLUS = true;
 const EXTRACTION_ERROR_MESSAGE =
     'Failed to extract content. Ensure you are on a NotebookLM page and the content is visible.';
+
+const getAuthProviderLabel = (session: any) => {
+    const providerFromApp = session?.user?.app_metadata?.provider;
+    const providerFromIdentity = session?.user?.identities?.[0]?.provider;
+    const providersList = session?.user?.app_metadata?.providers;
+    const provider =
+        providerFromApp ||
+        providerFromIdentity ||
+        (Array.isArray(providersList) ? providersList[0] : null);
+    if (!provider) {
+        return null;
+    }
+    switch (provider) {
+        case 'google':
+            return 'Google';
+        case 'github':
+            return 'GitHub';
+        case 'email':
+            return 'Email';
+        default:
+            return `${provider.slice(0, 1).toUpperCase()}${provider.slice(1)}`;
+    }
+};
 export default function Dashboard({
     session,
     onRequestLogin,
@@ -132,6 +155,7 @@ export default function Dashboard({
     const isCancelScheduled = Boolean(
         subscriptionCancelAtPeriodEnd || subscriptionStatus === 'scheduled_cancel'
     );
+    const authProviderLabel = getAuthProviderLabel(session);
 
     const formatPeriodEnd = (value?: string | null) => {
         if (!value) {
@@ -536,6 +560,7 @@ export default function Dashboard({
             {showAccountPanel && (
                 <AccountPanel
                     email={session?.user?.email ?? null}
+                    authProviderLabel={authProviderLabel}
                     isPlus={isPlus}
                     hasDriveAccess={hasDriveAccess}
                     driveAccountEmail={driveAccountEmail}
