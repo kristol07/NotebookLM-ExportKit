@@ -1,10 +1,11 @@
-import { ContentType, ExportFormat, NormalizedExportPayload, QuizItem, FlashcardItem, MindmapNode, DataTableRow, NoteBlock, ChatMessage } from '../export-core';
+import { ContentType, ExportFormat, NormalizedExportPayload, QuizItem, FlashcardItem, MindmapNode, DataTableRow, NoteBlock, ChatMessage, SourceItem } from '../export-core';
 import { extractQuiz } from './quiz';
 import { extractFlashcards } from './flashcards';
 import { extractMindmap } from './mindmap';
 import { extractDatatable } from './datatable';
 import { extractNote } from './note';
 import { extractChat } from './chat';
+import { extractSource } from './source';
 
 type ExtractPayload =
     | NormalizedExportPayload<QuizItem>
@@ -12,7 +13,8 @@ type ExtractPayload =
     | NormalizedExportPayload<MindmapNode>
     | NormalizedExportPayload<DataTableRow>
     | NormalizedExportPayload<NoteBlock>
-    | NormalizedExportPayload<ChatMessage>;
+    | NormalizedExportPayload<ChatMessage>
+    | NormalizedExportPayload<SourceItem>;
 
 export type AnyExtractResult = {
     success: boolean;
@@ -36,6 +38,8 @@ export const extractByType = async (
             ? await extractNote(tabId, format)
             : type === 'chat'
             ? await extractChat(tabId, format)
+            : type === 'source'
+            ? await extractSource(tabId, format)
             : await extractDatatable(tabId, format);
     if (result.success && result.payload) {
         return { success: true, payload: result.payload };
@@ -69,6 +73,11 @@ export const extractByAnyType = async (tabId: number, format: ExportFormat): Pro
         return { success: true, payload: chatResult.payload };
     }
 
+    const sourceResult = await extractSource(tabId, format);
+    if (sourceResult.success && sourceResult.payload) {
+        return { success: true, payload: sourceResult.payload };
+    }
+
     const datatableResult = await extractDatatable(tabId, format);
     if (datatableResult.success && datatableResult.payload) {
         return { success: true, payload: datatableResult.payload };
@@ -78,6 +87,7 @@ export const extractByAnyType = async (tabId: number, format: ExportFormat): Pro
         success: false,
         error:
             chatResult.error ||
+            sourceResult.error ||
             noteResult.error ||
             datatableResult.error ||
             mindmapResult.error ||

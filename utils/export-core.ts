@@ -12,7 +12,7 @@ export type ExportFormat =
     | 'Markdown'
     | 'Word';
 export type ExportTarget = 'download' | 'drive';
-export type ContentType = 'quiz' | 'flashcards' | 'mindmap' | 'datatable' | 'note' | 'chat';
+export type ContentType = 'quiz' | 'flashcards' | 'mindmap' | 'datatable' | 'note' | 'chat' | 'source';
 export type ContentSource = 'notebooklm' | 'user';
 export type PdfQualityPreference = 'size' | 'clarity';
 
@@ -45,6 +45,10 @@ export interface MindmapNode {
 
 export interface DataTableRow {
     cells: string[];
+}
+
+export interface SourceItem {
+    title: string;
 }
 
 export interface NoteInline {
@@ -256,6 +260,25 @@ export const validateDataTableItems = (items: unknown): ValidationResult => {
                 errors.push(`datatable.items[${index}].cells[${cellIndex}] must be a string`);
             }
         });
+    });
+
+    return { valid: errors.length === 0, errors };
+};
+
+export const validateSourceItems = (items: unknown): ValidationResult => {
+    const errors: string[] = [];
+    if (!Array.isArray(items)) {
+        return { valid: false, errors: ['source.items must be an array'] };
+    }
+
+    items.forEach((item, index) => {
+        if (!isRecord(item)) {
+            errors.push(`source.items[${index}] must be an object`);
+            return;
+        }
+        if (!isNonEmptyString(item.title)) {
+            errors.push(`source.items[${index}].title must be a non-empty string`);
+        }
     });
 
     return { valid: errors.length === 0, errors };

@@ -81,6 +81,13 @@ const EXPORT_SECTIONS: ExportSection[] = [
             { format: 'Markdown' },
         ],
     },
+    {
+        title: 'Source Exports',
+        contentType: 'source',
+        options: [
+            { format: 'Markdown', label: 'Markdown' },
+        ],
+    },
 ];
 
 const PLUS_EXPORTS = new Set(
@@ -363,7 +370,9 @@ export default function Dashboard({
                                     ? 'Note'
                                     : payload.type === 'chat'
                                         ? 'Chat'
-                                        : 'Data table';
+                                        : payload.type === 'source'
+                                            ? 'Sources'
+                                            : 'Data table';
                     let result;
                     switch (payload.type) {
                         case 'quiz':
@@ -396,6 +405,9 @@ export default function Dashboard({
                                 undefined,
                                 { pdfQuality: options?.pdfQualityOverride ?? pdfQuality }
                             );
+                            break;
+                        case 'source':
+                            result = await exportByType('source', payload.items, format, tabTitle, timestamp);
                             break;
                         default:
                             result = await exportByType('datatable', payload.items, format, tabTitle, timestamp);
