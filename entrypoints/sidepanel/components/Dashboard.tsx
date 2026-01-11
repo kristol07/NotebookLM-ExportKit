@@ -58,9 +58,19 @@ const EXPORT_SECTIONS: ExportSection[] = [
         title: 'Note Exports',
         contentType: 'note',
         options: [
+            { format: 'PDF' },
             { format: 'Word', label: 'Word', isPlus: true },
             { format: 'Markdown', isPlus: true },
+        ],
+    },
+    {
+        title: 'Chat Exports',
+        contentType: 'chat',
+        options: [
             { format: 'PDF' },
+            { format: 'JSON' },
+            { format: 'Word', label: 'Word', isPlus: true },
+            { format: 'Markdown', isPlus: true },
         ],
     },
     {
@@ -351,7 +361,9 @@ export default function Dashboard({
                                 ? 'Mindmap'
                                 : payload.type === 'note'
                                     ? 'Note'
-                                    : 'Data table';
+                                    : payload.type === 'chat'
+                                        ? 'Chat'
+                                        : 'Data table';
                     let result;
                     switch (payload.type) {
                         case 'quiz':
@@ -371,6 +383,17 @@ export default function Dashboard({
                                 tabTitle,
                                 timestamp,
                                 payload.meta,
+                                { pdfQuality: options?.pdfQualityOverride ?? pdfQuality }
+                            );
+                            break;
+                        case 'chat':
+                            result = await exportByType(
+                                'chat',
+                                payload.items,
+                                format,
+                                tabTitle,
+                                timestamp,
+                                undefined,
                                 { pdfQuality: options?.pdfQualityOverride ?? pdfQuality }
                             );
                             break;

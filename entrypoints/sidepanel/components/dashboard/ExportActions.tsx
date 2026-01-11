@@ -34,11 +34,11 @@ export const ExportActions = ({
   pdfQuality,
   onPdfQualityChange
 }: ExportActionsProps) => {
-  const [showPdfQuality, setShowPdfQuality] = useState(false);
+  const [activePdfQualityKey, setActivePdfQualityKey] = useState<string | null>(null);
   const pdfQualityRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
-    if (!showPdfQuality) {
+    if (!activePdfQualityKey) {
       return;
     }
     const handleOutsideClick = (event: MouseEvent) => {
@@ -47,21 +47,21 @@ export const ExportActions = ({
         return;
       }
       if (pdfQualityRef.current && !pdfQualityRef.current.contains(target)) {
-        setShowPdfQuality(false);
+        setActivePdfQualityKey(null);
       }
     };
     document.addEventListener('mousedown', handleOutsideClick);
     return () => {
       document.removeEventListener('mousedown', handleOutsideClick);
     };
-  }, [showPdfQuality]);
+  }, [activePdfQualityKey]);
   const handlePdfChoice = (value: PdfQualityPreference, contentType: ContentType) => {
     onPdfQualityChange(value);
     onExport('PDF', contentType, { pdfQualityOverride: value });
-    setShowPdfQuality(false);
+    setActivePdfQualityKey(null);
   };
   const handleExportClick = (format: ExportFormat, contentType: ContentType) => {
-    setShowPdfQuality(false);
+    setActivePdfQualityKey(null);
     onExport(format, contentType);
   };
   return (
@@ -71,15 +71,24 @@ export const ExportActions = ({
           <div className="section-label">{section.title}</div>
           <div className="section-grid">
             {section.options.map((option) => (
-              section.contentType === 'note' && option.format === 'PDF' ? (
-                <div key={`${section.contentType}-${option.format}`} className="export-option" ref={pdfQualityRef}>
+              (section.contentType === 'note' || section.contentType === 'chat') && option.format === 'PDF' ? (
+                <div
+                  key={`${section.contentType}-${option.format}`}
+                  className="export-option"
+                  ref={
+                    activePdfQualityKey === `${section.contentType}-${option.format}`
+                      ? pdfQualityRef
+                      : null
+                  }
+                >
                   <button
                     type="button"
                     onClick={() => {
-                      if (showPdfQuality) {
+                      const key = `${section.contentType}-${option.format}`;
+                      if (activePdfQualityKey === key) {
                         handleExportClick(option.format, section.contentType);
                       } else {
-                        setShowPdfQuality(true);
+                        setActivePdfQualityKey(key);
                       }
                     }}
                     disabled={!!loadingAction}
@@ -99,7 +108,7 @@ export const ExportActions = ({
                       {loadingAction === `${section.contentType}:${option.format}` && <Spinner />}
                     </span>
                   </button>
-                  {showPdfQuality && (
+                  {activePdfQualityKey === `${section.contentType}-${option.format}` && (
                     <div className="pdf-quality-popover">
                       <div className="pdf-quality-title">PDF quality</div>
                       <div className="pdf-quality-actions">

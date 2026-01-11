@@ -1,28 +1,41 @@
 import { browser } from 'wxt/browser';
-import { ExportFormat, NormalizedExportPayload, NoteBlock, validateNoteBlocks } from '../export-core';
+import {
+    ChatMessage,
+    ChatMessageChunk,
+    ExportFormat,
+    NormalizedExportPayload,
+    validateChatMessages
+} from '../export-core';
 import { RawExtractResult } from './common';
 
 export interface TypeExtractResult {
     success: boolean;
-    payload?: NormalizedExportPayload<NoteBlock>;
+    payload?: NormalizedExportPayload<ChatMessage>;
     error?: string;
     raw?: RawExtractResult;
 }
 
-export const extractNote = async (tabId: number, format: ExportFormat): Promise<TypeExtractResult> => {
+export const extractChat = async (tabId: number, format: ExportFormat): Promise<TypeExtractResult> => {
     try {
         const results = await browser.scripting.executeScript({
             target: { tabId, allFrames: true },
             args: [format],
             func: (formatArg: ExportFormat) => {
                 try {
-                    if (formatArg !== 'Markdown' && formatArg !== 'Word' && formatArg !== 'PDF') {
+                    if (formatArg !== 'JSON' && formatArg !== 'PDF' && formatArg !== 'Word' && formatArg !== 'Markdown') {
                         return { success: false, error: 'unsupported_format', frameUrl: window.location.href };
                     }
 
-                    const normalizeWhitespace = (value: string) => value.replace(/\s+/g, ' ');
+                    const chatRoot = document.querySelector('chat-panel') || document.querySelector('labs-tailwind-root');
+                    if (!chatRoot) {
+                        return { success: false, error: 'chat_not_found', frameUrl: window.location.href };
+                    }
 
-                    const trimInlines = (inlines: { text: string; bold?: boolean; italic?: boolean; citation?: { id: string; source: string } }[]) => {
+                    const normalizeWhitespace = (value: string) => value.replace(/\s+/g, ' ').trim();
+
+                    const trimInlines = (
+                        inlines: { text: string; bold?: boolean; italic?: boolean; citation?: { id: string; source: string } }[]
+                    ) => {
                         if (inlines.length === 0) return inlines;
                         inlines[0].text = inlines[0].text.replace(/^\s+/, '');
                         if (inlines.length > 0) {
@@ -106,67 +119,112 @@ export const extractNote = async (tabId: number, format: ExportFormat): Promise<
                         return rawText.replace(/\r\n/g, '\n').replace(/\r/g, '\n').replace(/\n+$/, '');
                     };
 
-                    const root =
-                        document.querySelector('note-editor') ||
-                        document.querySelector('labs-tailwind-doc-viewer');
+                    const inlineToText = (inline: { text: string; citation?: { id: string } }) =>
+                        inline.citation ? `[${inline.citation.id}]` : inline.text;
 
-                    if (!root) {
-                        return { success: false, error: 'note_not_found', frameUrl: window.location.href };
-                    }
-
-                    const titleInput = root.querySelector('input[aria-label="note title editable"]') as
-                        | HTMLInputElement
-                        | null;
-                    const title = titleInput?.value?.trim() || '';
-
-                    const elements = Array.from(root.querySelectorAll('div.paragraph, table, pre'));
-                    const blocks: NoteBlock[] = [];
-
-                    for (const element of elements) {
-                        if (element.tagName === 'TABLE') {
-                            const rows = Array.from(element.querySelectorAll('tr'))
-                                .map((row) => {
-                                    const cells = Array.from(row.querySelectorAll('th, td')).map((cell) => collectInlines(cell));
-                                    return cells;
-                                })
-                                .filter((row) => row.some((cell) => cell.length > 0));
-                            if (rows.length > 0) {
-                                blocks.push({ type: 'table', rows });
-                            }
-                            continue;
+                    const blockToText = (block: ChatMessageChunk) => {
+                        if (block.type === 'paragraph') {
+                            return block.inlines.map(inlineToText).join('');
                         }
+                        if (block.type === 'code') {
+                            return block.text;
+                        }
+                        return block.rows
+                            .map((row) => row.map((cell) => cell.map(inlineToText).join('')).join(' | '))
+                            .join('\n');
+                    };
 
-                        if (element.tagName === 'PRE') {
+                    const isAssistantMessage = (message: Element) =>
+                        Boolean(
+                            message.querySelector(
+                                '.to-user-container, .to-user-message-card-content, .to-user-message-inner-content'
+                            )
+                        );
+
+                    const parseMessage = (message: Element): ChatMessage | null => {
+                        const contentRoot =
+                            message.querySelector('.message-text-content') ||
+                            message.querySelector('mat-card-content') ||
+                            message;
+
+                        const elements = Array.from(
+                            contentRoot.querySelectorAll('div.paragraph, table, pre, p')
+                        );
+                        const chunks: ChatMessageChunk[] = [];
+
+                        for (const element of elements) {
+                            if (element.tagName === 'TABLE') {
+                                const rows = Array.from(element.querySelectorAll('tr'))
+                                    .map((row) => {
+                                        const cells = Array.from(row.querySelectorAll('th, td')).map((cell) =>
+                                            collectInlines(cell)
+                                        );
+                                        return cells;
+                                    })
+                                    .filter((row) => row.some((cell) => cell.length > 0));
+                                if (rows.length > 0) {
+                                    chunks.push({ type: 'table', rows });
+                                }
+                                continue;
+                            }
+
+                            if (element.tagName === 'PRE') {
+                                if (element.closest('table')) {
+                                    continue;
+                                }
+                                const text = collectCodeText(element);
+                                if (text.length > 0) {
+                                    chunks.push({ type: 'code', text });
+                                }
+                                continue;
+                            }
+
                             if (element.closest('table')) {
                                 continue;
                             }
-                            const text = collectCodeText(element);
-                            if (text.length > 0) {
-                                blocks.push({ type: 'code', text });
+
+                            if (element.tagName === 'P' && element.closest('div.paragraph')) {
+                                continue;
                             }
-                            continue;
+
+                            const inlines = collectInlines(element);
+                            if (inlines.length > 0) {
+                                chunks.push({ type: 'paragraph', inlines });
+                            }
                         }
 
-                        if (element.closest('table')) {
-                            continue;
+                        if (chunks.length === 0) {
+                            const fallbackText = normalizeWhitespace(contentRoot.textContent || '');
+                            if (fallbackText.length > 0) {
+                                chunks.push({ type: 'paragraph', inlines: [{ text: fallbackText }] });
+                            }
                         }
 
-                        const inlines = collectInlines(element);
-                        if (inlines.length > 0) {
-                            blocks.push({ type: 'paragraph', inlines });
+                        if (chunks.length === 0) {
+                            return null;
                         }
-                    }
 
-                    if (blocks.length === 0) {
-                        return { success: false, error: 'note_not_found', frameUrl: window.location.href };
+                        const content = chunks.map((chunk) => blockToText(chunk)).filter(Boolean).join('\n\n');
+                        return {
+                            role: isAssistantMessage(message) ? 'assistant' : 'user',
+                            content,
+                            chunks
+                        };
+                    };
+
+                    const messages = Array.from(document.querySelectorAll('chat-message'))
+                        .map((message) => parseMessage(message))
+                        .filter((message): message is ChatMessage => Boolean(message));
+
+                    if (messages.length === 0) {
+                        return { success: false, error: 'chat_not_found', frameUrl: window.location.href };
                     }
 
                     return {
                         success: true,
                         data: {
-                            note: {
-                                title,
-                                blocks
+                            chat: {
+                                messages
                             }
                         },
                         frameUrl: window.location.href
@@ -180,16 +238,16 @@ export const extractNote = async (tabId: number, format: ExportFormat): Promise<
         const success = results.find((result) => result.result?.success);
         if (success?.result?.success) {
             const raw: RawExtractResult = success.result;
-            if (!raw.data?.note || !Array.isArray(raw.data.note.blocks)) {
-                return { success: false, error: 'note_not_found', raw };
+            const messages = raw.data?.chat?.messages;
+            if (!Array.isArray(messages)) {
+                return { success: false, error: 'chat_not_found', raw };
             }
 
-            const items = raw.data.note.blocks as NoteBlock[];
-            const validation = validateNoteBlocks(items);
+            const validation = validateChatMessages(messages);
             if (!validation.valid) {
                 return {
                     success: false,
-                    error: `Invalid note data: ${validation.errors.join('; ')}`,
+                    error: `Invalid chat data: ${validation.errors.join('; ')}`,
                     raw
                 };
             }
@@ -197,12 +255,9 @@ export const extractNote = async (tabId: number, format: ExportFormat): Promise<
             return {
                 success: true,
                 payload: {
-                    type: 'note',
-                    items,
-                    source: 'notebooklm',
-                    meta: {
-                        title: typeof raw.data.note.title === 'string' ? raw.data.note.title : undefined
-                    }
+                    type: 'chat',
+                    items: messages,
+                    source: 'notebooklm'
                 },
                 raw
             };

@@ -189,6 +189,7 @@ const createPdfStyleElement = () => {
         .note-export .note-citation { font-size: 9pt; vertical-align: super; }
         .note-export .note-references { margin: 0; padding-left: 18pt; }
         .note-export .note-references li { margin: 0 0 6pt; }
+        .note-export .note-reference-item { margin: 0 0 6pt; padding-left: 18pt; text-indent: -18pt; }
         .note-block { padding-top: 0.1px; padding-bottom: 0.1px; }
     `;
     return style;
@@ -234,6 +235,21 @@ const renderReferencesHtml = (references: Map<string, string>, referenceOrder: s
     return `<h2>References</h2><ol class="note-references">${items}</ol>`;
 };
 
+const buildReferenceBlocks = (references: Map<string, string>, referenceOrder: string[]): PdfRenderBlock[] => {
+    if (referenceOrder.length === 0) {
+        return [];
+    }
+    return [
+        { type: 'html', html: '<h2>References</h2>' },
+        ...referenceOrder.map((key) => {
+            const source = references.get(key) || '';
+            return {
+                type: 'html',
+                html: `<div class="note-reference-item">[${escapeHtml(key)}] ${escapeHtml(source)}</div>`
+            } as PdfRenderBlock;
+        })
+    ];
+};
 const buildDocxParagraph = (
     inlines: NoteInline[],
     references: Map<string, string>,
@@ -607,9 +623,9 @@ const exportNotePdf = async (title: string, blocks: NoteBlock[], pdfQuality: Pdf
             return { type: 'table', rows: block.rows } as PdfRenderBlock;
         })
     ];
-    const referencesHtml = renderReferencesHtml(references, referenceOrder);
-    if (referencesHtml) {
-        pdfBlocks.push({ type: 'html', html: referencesHtml });
+    const referenceBlocks = buildReferenceBlocks(references, referenceOrder);
+    if (referenceBlocks.length > 0) {
+        pdfBlocks.push(...referenceBlocks);
     }
     const pages = paginatePdfBlocks(pdfBlocks, references, referenceOrder);
     const pdf = new jsPDF({ orientation: 'p', unit: 'pt', format: 'a4', compress: true });

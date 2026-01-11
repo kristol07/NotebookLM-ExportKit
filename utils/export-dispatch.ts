@@ -5,6 +5,7 @@ import {
     ExportOptions,
     ExportResult,
     FlashcardItem,
+    ChatMessage,
     MindmapNode,
     NoteBlock,
     QuizItem
@@ -14,18 +15,20 @@ import { exportFlashcards } from './flashcard-export';
 import { exportMindmap } from './mindmap-export';
 import { exportNote } from './note-export';
 import { exportQuiz } from './quiz-export';
+import { exportChat } from './chat-export';
 
 export const supportedFormatsByType: Record<ContentType, ExportFormat[]> = {
     quiz: ['CSV', 'JSON', 'HTML', 'Anki'],
     flashcards: ['CSV', 'JSON', 'HTML', 'Anki'],
     mindmap: ['HTML', 'OPML', 'FreeMind', 'JSONCanvas', 'SVG', 'Markdown'],
     datatable: ['CSV', 'Markdown'],
-    note: ['Word', 'Markdown', 'PDF']
+    note: ['Word', 'Markdown', 'PDF'],
+    chat: ['PDF', 'Word', 'JSON', 'Markdown']
 };
 
 export const exportByType = async (
     type: ContentType,
-    items: QuizItem[] | FlashcardItem[] | MindmapNode[] | DataTableRow[] | NoteBlock[],
+    items: QuizItem[] | FlashcardItem[] | MindmapNode[] | DataTableRow[] | NoteBlock[] | ChatMessage[],
     format: ExportFormat,
     tabTitle: string,
     timestamp: string,
@@ -51,6 +54,10 @@ export const exportByType = async (
 
     if (type === 'note') {
         return exportNote(items as NoteBlock[], format, tabTitle, timestamp, meta?.title, options);
+    }
+
+    if (type === 'chat') {
+        return exportChat(items as ChatMessage[], format, tabTitle, timestamp, options);
     }
 
     return exportDatatable(items as DataTableRow[], format, tabTitle, timestamp);

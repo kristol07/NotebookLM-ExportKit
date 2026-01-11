@@ -12,7 +12,7 @@ export type ExportFormat =
     | 'Markdown'
     | 'Word';
 export type ExportTarget = 'download' | 'drive';
-export type ContentType = 'quiz' | 'flashcards' | 'mindmap' | 'datatable' | 'note';
+export type ContentType = 'quiz' | 'flashcards' | 'mindmap' | 'datatable' | 'note' | 'chat';
 export type ContentSource = 'notebooklm' | 'user';
 export type PdfQualityPreference = 'size' | 'clarity';
 
@@ -73,6 +73,41 @@ export interface NoteCodeBlock {
 }
 
 export type NoteBlock = NoteParagraphBlock | NoteTableBlock | NoteCodeBlock;
+
+export type ChatRole = 'user' | 'assistant';
+
+export interface ChatInline {
+    text: string;
+    bold?: boolean;
+    italic?: boolean;
+    citation?: {
+        id: string;
+        source: string;
+    };
+}
+
+export interface ChatParagraphChunk {
+    type: 'paragraph';
+    inlines: ChatInline[];
+}
+
+export interface ChatTableChunk {
+    type: 'table';
+    rows: ChatInline[][][];
+}
+
+export interface ChatCodeChunk {
+    type: 'code';
+    text: string;
+}
+
+export type ChatMessageChunk = ChatParagraphChunk | ChatTableChunk | ChatCodeChunk;
+
+export interface ChatMessage {
+    role: ChatRole;
+    content: string;
+    chunks: ChatMessageChunk[];
+}
 
 export interface NormalizedExportPayload<TItems> {
     type: ContentType;
@@ -314,6 +349,112 @@ export const validateNoteBlocks = (items: unknown): ValidationResult => {
             return;
         }
         validateTable(item, `note.items[${index}]`);
+    });
+
+    return { valid: errors.length === 0, errors };
+};
+
+export const validateChatMessages = (items: unknown): ValidationResult => {
+    const errors: string[] = [];
+    if (!Array.isArray(items)) {
+        return { valid: false, errors: ['chat.items must be an array'] };
+    }
+
+    const validateInline = (inline: unknown, path: string) => {
+        if (!isRecord(inline)) {
+            errors.push(`${path} must be an object`);
+            return;
+        }
+        if (typeof inline.text !== 'string') {
+            errors.push(`${path}.text must be a string`);
+        }
+        if (inline.bold !== undefined && typeof inline.bold !== 'boolean') {
+            errors.push(`${path}.bold must be a boolean`);
+        }
+        if (inline.italic !== undefined && typeof inline.italic !== 'boolean') {
+            errors.push(`${path}.italic must be a boolean`);
+        }
+        if (inline.citation !== undefined) {
+            if (!isRecord(inline.citation)) {
+                errors.push(`${path}.citation must be an object`);
+            } else {
+                if (typeof inline.citation.id !== 'string') {
+                    errors.push(`${path}.citation.id must be a string`);
+                }
+                if (typeof inline.citation.source !== 'string') {
+                    errors.push(`${path}.citation.source must be a string`);
+                }
+            }
+        }
+    };
+
+    const validateChunk = (chunk: unknown, path: string) => {
+        if (!isRecord(chunk)) {
+            errors.push(`${path} must be an object`);
+            return;
+        }
+        if (chunk.type !== 'paragraph' && chunk.type !== 'table' && chunk.type !== 'code') {
+            errors.push(`${path}.type must be paragraph, table, or code`);
+            return;
+        }
+        if (chunk.type === 'paragraph') {
+            if (!Array.isArray(chunk.inlines)) {
+                errors.push(`${path}.inlines must be an array`);
+                return;
+            }
+            (chunk.inlines as unknown[]).forEach((inline, index) =>
+                validateInline(inline, `${path}.inlines[${index}]`)
+            );
+            return;
+        }
+        if (chunk.type === 'code') {
+            if (typeof chunk.text !== 'string') {
+                errors.push(`${path}.text must be a string`);
+            }
+            return;
+        }
+        if (!Array.isArray(chunk.rows)) {
+            errors.push(`${path}.rows must be an array`);
+            return;
+        }
+        (chunk.rows as unknown[]).forEach((row, rowIndex) => {
+            if (!Array.isArray(row)) {
+                errors.push(`${path}.rows[${rowIndex}] must be an array`);
+                return;
+            }
+            (row as unknown[]).forEach((cell, cellIndex) => {
+                if (!Array.isArray(cell)) {
+                    errors.push(`${path}.rows[${rowIndex}][${cellIndex}] must be an array`);
+                    return;
+                }
+                (cell as unknown[]).forEach((inline, inlineIndex) =>
+                    validateInline(
+                        inline,
+                        `${path}.rows[${rowIndex}][${cellIndex}][${inlineIndex}]`
+                    )
+                );
+            });
+        });
+    };
+
+    items.forEach((item, index) => {
+        if (!isRecord(item)) {
+            errors.push(`chat.items[${index}] must be an object`);
+            return;
+        }
+        if (item.role !== 'user' && item.role !== 'assistant') {
+            errors.push(`chat.items[${index}].role must be user or assistant`);
+        }
+        if (typeof item.content !== 'string') {
+            errors.push(`chat.items[${index}].content must be a string`);
+        }
+        if (!Array.isArray(item.chunks)) {
+            errors.push(`chat.items[${index}].chunks must be an array`);
+            return;
+        }
+        (item.chunks as unknown[]).forEach((chunk, chunkIndex) =>
+            validateChunk(chunk, `chat.items[${index}].chunks[${chunkIndex}]`)
+        );
     });
 
     return { valid: errors.length === 0, errors };

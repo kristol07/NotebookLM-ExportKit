@@ -1,16 +1,18 @@
-import { ContentType, ExportFormat, NormalizedExportPayload, QuizItem, FlashcardItem, MindmapNode, DataTableRow, NoteBlock } from '../export-core';
+import { ContentType, ExportFormat, NormalizedExportPayload, QuizItem, FlashcardItem, MindmapNode, DataTableRow, NoteBlock, ChatMessage } from '../export-core';
 import { extractQuiz } from './quiz';
 import { extractFlashcards } from './flashcards';
 import { extractMindmap } from './mindmap';
 import { extractDatatable } from './datatable';
 import { extractNote } from './note';
+import { extractChat } from './chat';
 
 type ExtractPayload =
     | NormalizedExportPayload<QuizItem>
     | NormalizedExportPayload<FlashcardItem>
     | NormalizedExportPayload<MindmapNode>
     | NormalizedExportPayload<DataTableRow>
-    | NormalizedExportPayload<NoteBlock>;
+    | NormalizedExportPayload<NoteBlock>
+    | NormalizedExportPayload<ChatMessage>;
 
 export type AnyExtractResult = {
     success: boolean;
@@ -32,6 +34,8 @@ export const extractByType = async (
             ? await extractMindmap(tabId, format)
             : type === 'note'
             ? await extractNote(tabId, format)
+            : type === 'chat'
+            ? await extractChat(tabId, format)
             : await extractDatatable(tabId, format);
     if (result.success && result.payload) {
         return { success: true, payload: result.payload };
@@ -60,10 +64,24 @@ export const extractByAnyType = async (tabId: number, format: ExportFormat): Pro
         return { success: true, payload: noteResult.payload };
     }
 
+    const chatResult = await extractChat(tabId, format);
+    if (chatResult.success && chatResult.payload) {
+        return { success: true, payload: chatResult.payload };
+    }
+
     const datatableResult = await extractDatatable(tabId, format);
     if (datatableResult.success && datatableResult.payload) {
         return { success: true, payload: datatableResult.payload };
     }
 
-    return { success: false, error: noteResult.error || datatableResult.error || mindmapResult.error || flashcardResult.error || quizResult.error };
+    return {
+        success: false,
+        error:
+            chatResult.error ||
+            noteResult.error ||
+            datatableResult.error ||
+            mindmapResult.error ||
+            flashcardResult.error ||
+            quizResult.error
+    };
 };

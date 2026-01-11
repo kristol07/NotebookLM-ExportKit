@@ -1,0 +1,11 @@
+user message xpath
+
+/html/body/labs-tailwind-root/div/notebook/mat-tab-group/div/mat-tab-body[2]/div/div/chat-panel/div[1]/div[3]/chat-message[1]/div/mat-card/mat-card-content/div/div/p
+
+
+---
+
+
+assistant message chunk xpath:
+
+/html/body/labs-tailwind-root/div/notebook/mat-tab-group/div/mat-tab-body[2]/div/div/chat-panel/div[1]/div[3]/chat-message[2]/div/mat-card/mat-card-content/div/div/labs-tailwind-structural-element-view-v2[1]/div/span/text()
