@@ -10,10 +10,14 @@ type AccountPanelProps = {
   formattedPeriodEnd: string | null;
   trialRemaining: number | null;
   loadingAction: string | null;
+  appPassActive: boolean;
+  appPassMessage: string | null;
   onClose: () => void;
   onConnectDrive: () => void;
   onDisconnectDrive: () => void;
   onManageBilling: () => void;
+  onManageAppPass: () => void;
+  onActivateAppPass: () => void;
   onUpgrade: () => void;
 };
 
@@ -26,10 +30,14 @@ export const AccountPanel = ({
   formattedPeriodEnd,
   trialRemaining,
   loadingAction,
+  appPassActive,
+  appPassMessage,
   onClose,
   onConnectDrive,
   onDisconnectDrive,
   onManageBilling,
+  onManageAppPass,
+  onActivateAppPass,
   onUpgrade,
 }: AccountPanelProps) => {
   return (
@@ -66,7 +74,9 @@ export const AccountPanel = ({
           <p className="panel-summary-note">
             {isPlus
               ? 'Your subscription unlocks advanced export formats and Google Drive delivery.'
-              : 'Upgrade to unlock advanced export formats and Google Drive delivery.'}
+              : appPassActive
+                ? 'You are on the free plan. App Pass access is managed below.'
+                : 'Upgrade to unlock advanced export formats and Google Drive delivery.'}
           </p>
           <div className="panel-summary-actions">
             {isPlus ? (
@@ -75,10 +85,27 @@ export const AccountPanel = ({
               </button>
             ) : (
               <button onClick={onUpgrade} disabled={!!loadingAction} className="export-btn small primary">
-                Upgrade to Plus <PlusIcon /> {loadingAction === 'upgrade' && <Spinner />}
+                Upgrade to Plus {loadingAction === 'upgrade' && <Spinner />}
               </button>
             )}
           </div>
+        </div>
+        <div className="panel-info-card app-pass-card">
+          <div className="app-pass-header">
+            <span className="panel-summary-label">App Pass</span>
+            {appPassActive && <span className="status-pill success">Active</span>}
+          </div>
+          <p className="app-pass-note">Use your App Pass bundle to unlock Plus features.</p>
+          <button
+            onClick={appPassActive ? onManageAppPass : onActivateAppPass}
+            disabled={!!loadingAction}
+            className="export-btn small primary"
+          >
+            {appPassActive ? 'Manage App Pass' : 'Activate App Pass'}{' '}
+            {loadingAction === 'app-pass-manage' && <Spinner />}
+            {loadingAction === 'app-pass-activate' && <Spinner />}
+          </button>
+          {appPassMessage && !appPassActive && <span className="panel-info-label">{appPassMessage}</span>}
         </div>
         <div className="panel-destinations">
           <div className="panel-actions-title">Destinations</div>

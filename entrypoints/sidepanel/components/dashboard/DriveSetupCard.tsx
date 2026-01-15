@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Spinner } from './Icons';
 
 type DriveSetupCardProps = {
@@ -6,10 +6,12 @@ type DriveSetupCardProps = {
   hasDriveAccess: boolean;
   driveAccountEmail: string | null;
   loadingAction: string | null;
-  isPlus: boolean;
+  hasPremiumAccess: boolean;
+  appPassActive: boolean;
   onRequestLogin: () => void;
   onConnectDrive: () => void;
   onUpgrade: () => void;
+  onActivateAppPass: () => void;
 };
 
 export const DriveSetupCard = ({
@@ -17,18 +19,47 @@ export const DriveSetupCard = ({
   hasDriveAccess,
   driveAccountEmail,
   loadingAction,
-  isPlus,
+  hasPremiumAccess,
+  appPassActive,
   onRequestLogin,
   onConnectDrive,
   onUpgrade,
+  onActivateAppPass,
 }: DriveSetupCardProps) => {
   const [isExpanded, setIsExpanded] = useState(!hasDriveAccess);
+  const [showUnlockOptions, setShowUnlockOptions] = useState(false);
+  const unlockOptionsRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     if (!hasDriveAccess) {
       setIsExpanded(true);
     }
   }, [hasDriveAccess]);
+
+  useEffect(() => {
+    if (hasPremiumAccess) {
+      setShowUnlockOptions(false);
+    }
+  }, [hasPremiumAccess]);
+
+  useEffect(() => {
+    if (!showUnlockOptions) {
+      return;
+    }
+    const handleOutsideClick = (event: MouseEvent) => {
+      const target = event.target;
+      if (!(target instanceof Node)) {
+        return;
+      }
+      if (unlockOptionsRef.current && !unlockOptionsRef.current.contains(target)) {
+        setShowUnlockOptions(false);
+      }
+    };
+    document.addEventListener('mousedown', handleOutsideClick);
+    return () => {
+      document.removeEventListener('mousedown', handleOutsideClick);
+    };
+  }, [showUnlockOptions]);
 
   const handleToggle = () => {
     if (hasDriveAccess) {
@@ -45,6 +76,16 @@ export const DriveSetupCard = ({
       event.preventDefault();
       setIsExpanded((prev) => !prev);
     }
+  };
+
+  const handleUpgradeClick = () => {
+    setShowUnlockOptions(false);
+    onUpgrade();
+  };
+
+  const handleActivateAppPass = () => {
+    setShowUnlockOptions(false);
+    onActivateAppPass();
   };
 
   return (
@@ -102,16 +143,49 @@ export const DriveSetupCard = ({
           </div>
           <div className="setup-step">
             <div className="setup-step-main">
-              <div className="setup-title">3. Upgrade to Plus</div>
-              {isPlus ? (
+              <div className="setup-title">3. Unlock Plus features</div>
+              {hasPremiumAccess ? (
                 <span className="status-pill success">Unlocked</span>
               ) : (
-                <button onClick={onUpgrade} className="export-btn small">
-                  Upgrade
-                </button>
+                <div className="setup-actions">
+                  <div className="setup-action-popover" ref={unlockOptionsRef}>
+                    <button
+                      onClick={() => setShowUnlockOptions((prev) => !prev)}
+                      className="export-btn small primary"
+                      disabled={!!loadingAction}
+                      type="button"
+                    >
+                      Unlock
+                    </button>
+                    {showUnlockOptions && (
+                      <div className="unlock-options-popover">
+                        <button
+                          onClick={handleUpgradeClick}
+                          className="export-btn small primary"
+                          disabled={!!loadingAction}
+                          type="button"
+                        >
+                          Upgrade to Plus {loadingAction === 'upgrade' && <Spinner />}
+                        </button>
+                        <button
+                          onClick={handleActivateAppPass}
+                          className="export-btn small"
+                          disabled={!!loadingAction}
+                          type="button"
+                        >
+                          Activate App Pass {loadingAction === 'app-pass-activate' && <Spinner />}
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
               )}
             </div>
-            <p className="setup-note">Drive delivery is available on Plus.</p>
+            <p className="setup-note">
+              {appPassActive
+                ? 'Drive delivery is unlocked with App Pass.'
+                : 'Drive delivery is available on Plus or with App Pass.'}
+            </p>
           </div>
         </>
       )}

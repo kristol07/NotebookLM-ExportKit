@@ -17,6 +17,7 @@
     "postinstall": "wxt prepare"
   },
   "dependencies": {
+    "@chrome-stats/app-pass-sdk": "^2.0.0",
     "@supabase/supabase-js": "^2.89.0",
     "docx": "8.5.0",
     "html2canvas": "^1.4.1",

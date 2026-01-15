@@ -32,7 +32,8 @@ export default defineConfig({
     host_permissions: [
       'https://notebooklm.google.com/*',
       'https://*.usercontent.goog/*',
-      'https://www.googleapis.com/*'
+      'https://www.googleapis.com/*',
+      'https://joinapppass.com/*'
     ],
     name: 'NotebookLM ExportKit - export NotebookLM content to any format',
     description: 'Export NotebookLM chats, quizzes, flashcards, mindmaps, notes, and tables to multiple formats, with Google Drive delivery.',

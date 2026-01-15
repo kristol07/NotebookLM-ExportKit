@@ -229,10 +229,8 @@
 }
 
 .upgrade-banner {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-3);
+  display: grid;
+  gap: var(--space-2);
   background: #fff;
   border-radius: var(--radius-lg);
   border: 1px solid var(--stroke);
@@ -240,6 +238,34 @@
   margin-bottom: var(--space-4);
   box-shadow: 0 12px 24px rgba(23, 23, 23, 0.08);
 }
+
+.upgrade-banner-block {
+  display: flex;
+  gap: var(--space-3);
+  background: var(--card);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--stroke);
+  padding: var(--space-3);
+}
+
+.upgrade-banner-block.plus-block {
+  align-items: center;
+  justify-content: space-between;
+}
+
+.upgrade-banner-block.app-pass-block {
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.upgrade-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--space-1);
+}
+
 
 .upgrade-note {
   font-size: var(--size-xs);
@@ -334,6 +360,30 @@
   display: flex;
   align-items: center;
   gap: var(--space-1);
+}
+
+.setup-action-popover {
+  position: relative;
+}
+
+.unlock-options-popover {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  background: #fff;
+  border: 1px solid var(--stroke);
+  border-radius: var(--radius-sm);
+  padding: var(--space-2);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.12);
+  z-index: 15;
+  min-width: 160px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.unlock-options-popover .export-btn {
+  width: 100%;
 }
 
 .drive-account-card {
@@ -728,6 +778,30 @@
   border-radius: var(--radius-md);
   border: 1px solid var(--stroke);
   padding: var(--space-3);
+}
+
+.app-pass-card {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-1);
+}
+
+.app-pass-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-1);
+  width: 100%;
+}
+
+.app-pass-note {
+  margin: 0;
+  font-size: var(--size-xs);
+  color: var(--muted);
+}
+
+.app-pass-card .export-btn {
+  width: 100%;
 }
 
 .panel-info-text {

@@ -138,7 +138,7 @@
 
       <div class="policy-card">
         <h1>Privacy Policy</h1>
-        <div class="meta">Last updated: 2026-01-09</div>
+        <div class="meta">Last updated: 2026-01-15</div>
 
         <p>
           NotebookLM ExportKit is a browser extension that helps you export NotebookLM content into
@@ -152,6 +152,7 @@
           <li>Google sign-in data: basic Google profile info and email when you sign in with Google.</li>
           <li>Google OAuth tokens: access tokens used to upload files to your Google Drive when enabled.</li>
           <li>Subscription data: plan status, subscription status, and billing period end for Plus access.</li>
+          <li>App Pass data: extension identifier, App Pass status, and (if provided by App Pass) account email or token.</li>
           <li>Trial usage: a counter of how many free trial exports you have used.</li>
           <li>Support data: any information you send to us when you contact support.</li>
           <li>Technical data: standard server logs (e.g., IP address) handled by our service providers.</li>
@@ -178,7 +179,9 @@
         <p>
           We use Supabase for authentication and subscription metadata storage. We use Creem to process
           payments and manage subscriptions. We use Google APIs to upload exports to your Google Drive when
-          enabled. Payment details (such as card numbers) are handled directly by Creem and are not stored by us.
+          enabled. We use App Pass to verify bundle access when you activate App Pass in the extension. App Pass
+          receives your extension identifier and uses cookies to check status. Payment details (such as card numbers)
+          are handled directly by Creem and are not stored by us.
         </p>
 
         <h2>Data retention</h2>
@@ -192,6 +195,7 @@
           <li>You can use the extension without signing in for free exports.</li>
           <li>You can choose Download or Google Drive as the export destination.</li>
           <li>You can disconnect Google Drive by signing out of Google in the app or revoking access in your Google account.</li>
+          <li>You can activate or manage App Pass from the extension or your App Pass account page.</li>
           <li>You can manage or cancel your subscription from the billing portal.</li>
           <li>You can request account deletion via support.</li>
         </ul>

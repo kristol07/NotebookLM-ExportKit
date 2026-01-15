@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { supabase } from '../../../utils/supabase';
 import { browser } from 'wxt/browser';
+import { useAppPass } from '../hooks/useAppPass';
 import { getGoogleDriveOAuthScopes } from '../../../utils/supabase-oauth';
 import { sanitizeFilename, getTimestamp } from '../../../utils/common';
 import { ContentType, ExportFormat, ExportTarget, PdfQualityPreference } from '../../../utils/export-core';
@@ -123,8 +124,19 @@ export default function Dashboard({
     const upgradeInFlightRef = useRef(false);
     const [exportTarget, setExportTarget] = useState<ExportTarget>('download');
     const [pdfQuality, setPdfQuality] = useState<PdfQualityPreference>('size');
+    const {
+        status: appPassStatus,
+        message: appPassMessage,
+        isChecking: isAppPassChecking,
+        isActivating: isAppPassActivating,
+        checkStatus,
+        activate,
+        manage,
+    } = useAppPass();
     const plan = getPlan(session);
     const isPlus = plan === 'plus' || plan === 'pro';
+    const isAppPassActive = appPassStatus === 'active';
+    const hasPremiumAccess = isPlus || isAppPassActive;
     const isSignedIn = Boolean(session?.user?.id);
     const subscriptionStatus = session?.user?.app_metadata?.subscription_status;
     const subscriptionCancelAtPeriodEnd = session?.user?.app_metadata?.subscription_cancel_at_period_end;
@@ -157,6 +169,13 @@ export default function Dashboard({
         };
     }, []);
 
+    const refreshAppPassStatus = async (options?: { silent?: boolean }) => {
+        const result = await checkStatus();
+        if (result.status === 'error' && !options?.silent) {
+            showNotice('error', 'Could not verify App Pass status. Please try again.');
+        }
+    };
+
     const refreshDriveState = () => {
         const token = getDriveAccessToken();
         setDriveConnected(Boolean(token));
@@ -184,7 +203,7 @@ export default function Dashboard({
 
     useEffect(() => {
         let isActive = true;
-        if (isSignedIn && !isPlus) {
+        if (isSignedIn && !hasPremiumAccess) {
             consumeTrial(false)
                 .then((trialResult) => {
                     if (!isActive) {
@@ -203,7 +222,7 @@ export default function Dashboard({
         return () => {
             isActive = false;
         };
-    }, [isSignedIn, isPlus]);
+    }, [isSignedIn, hasPremiumAccess]);
 
     const showNotice = (type: 'success' | 'error' | 'info', message: string) => {
         setNotice({ type, message });
@@ -294,6 +313,39 @@ export default function Dashboard({
         }
     };
 
+    const handleActivateAppPass = async () => {
+        if (isAppPassActivating) {
+            return;
+        }
+        setLoadingAction('app-pass-activate');
+        try {
+            const response = await activate();
+            if (response?.status === 'ok') {
+                showNotice('success', 'App Pass activated.');
+            } else if (response?.message) {
+                showNotice('info', response.message);
+            }
+            await refreshAppPassStatus({ silent: true });
+        } catch (err) {
+            console.error(err);
+            showNotice('error', 'Could not activate App Pass. Please try again.');
+        } finally {
+            setLoadingAction(null);
+        }
+    };
+
+    const handleManageAppPass = async () => {
+        setLoadingAction('app-pass-manage');
+        try {
+            await manage();
+        } catch (err) {
+            console.error(err);
+            showNotice('error', 'Could not open App Pass settings. Please try again.');
+        } finally {
+            setLoadingAction(null);
+        }
+    };
+
     const openUpgradeModal = (context: 'drive' | 'format' | 'general' = 'general') => {
         setShowAccountPanel(false);
         setUpgradeContext(context);
@@ -323,13 +375,13 @@ export default function Dashboard({
         try {
             const plusExport = isPlusExport(format, contentType);
             const requiresPlus = plusExport || (exportTarget === 'drive' && DRIVE_EXPORT_REQUIRES_PLUS);
-                if (requiresPlus) {
-                    if (!isSignedIn) {
-                        showNotice('info', 'Sign in to unlock advanced exports.');
-                        onRequestLogin?.();
-                        return;
-                    }
-                if (!isPlus) {
+            if (requiresPlus) {
+                if (!isSignedIn && !isAppPassActive) {
+                    showNotice('info', 'Sign in or activate App Pass to unlock advanced exports.');
+                    onRequestLogin?.();
+                    return;
+                }
+                if (!hasPremiumAccess && isSignedIn) {
                     const trialResult = await consumeTrial(false);
                     if (!trialResult.allowed) {
                         showNotice('error', 'Your free trials are used up. Upgrade to continue.');
@@ -428,7 +480,7 @@ export default function Dashboard({
                         const formatName = format === 'CSV' ? 'Excel' : format;
                         const destinationLabel = exportTarget === 'drive' ? 'Google Drive' : 'Downloads';
                         let trialMessage = '';
-                        if (requiresPlus && !isPlus) {
+                        if (requiresPlus && !hasPremiumAccess && isSignedIn) {
                             const trialResult = await consumeTrial(true);
                             if (typeof trialResult.remaining === 'number') {
                                 const remainingText = trialResult.remaining === 1 ? '1 export' : `${trialResult.remaining} exports`;
@@ -483,8 +535,15 @@ export default function Dashboard({
 
                 <ExportDestinationCard exportTarget={exportTarget} onChange={handleExportTargetChange} />
 
-                {!isPlus && (
-                    <UpgradeBanner trialRemaining={trialRemaining} onUpgrade={() => openUpgradeModal('general')} />
+                {!hasPremiumAccess && (
+                    <UpgradeBanner
+                        trialRemaining={trialRemaining}
+                        onUpgrade={() => openUpgradeModal('general')}
+                        appPassActive={isAppPassActive}
+                        onActivateAppPass={handleActivateAppPass}
+                        onManageAppPass={handleManageAppPass}
+                        appPassLoading={isAppPassActivating || loadingAction === 'app-pass-activate'}
+                    />
                 )}
 
                 {exportTarget === 'drive' && (
@@ -493,10 +552,12 @@ export default function Dashboard({
                         hasDriveAccess={hasDriveAccess}
                         driveAccountEmail={driveAccountEmail}
                         loadingAction={loadingAction}
-                        isPlus={isPlus}
+                        hasPremiumAccess={hasPremiumAccess}
+                        appPassActive={isAppPassActive}
                         onRequestLogin={handleRequestLogin}
                         onConnectDrive={handleConnectDrive}
                         onUpgrade={() => openUpgradeModal('drive')}
+                        onActivateAppPass={handleActivateAppPass}
                     />
                 )}
 
@@ -543,10 +604,14 @@ export default function Dashboard({
                     formattedPeriodEnd={formattedPeriodEnd}
                     trialRemaining={trialRemaining}
                     loadingAction={loadingAction}
+                    appPassActive={isAppPassActive}
+                    appPassMessage={appPassMessage}
                     onClose={() => setShowAccountPanel(false)}
                     onConnectDrive={handleConnectDrive}
                     onDisconnectDrive={handleDisconnectDrive}
                     onManageBilling={handleManageBilling}
+                    onManageAppPass={handleManageAppPass}
+                    onActivateAppPass={handleActivateAppPass}
                     onUpgrade={() => openUpgradeModal('general')}
                 />
             )}
