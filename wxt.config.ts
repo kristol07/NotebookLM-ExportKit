@@ -36,7 +36,7 @@ export default defineConfig({
       'https://api.notion.com/*'
     ],
     name: 'NotebookLM ExportKit - export NotebookLM content to any format',
-    description: 'Export NotebookLM chats, quizzes, flashcards, mindmaps, notes, and tables to multiple formats, with Google Drive and Notion delivery.',
+    description: 'Export NotebookLM chats, quizzes, flashcards, mindmaps, notes, reports, and tables to multiple formats, with Google Drive and Notion delivery.',
     icons: {
       16: 'icon/16.png',
       32: 'icon/32.png',

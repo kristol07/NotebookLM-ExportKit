@@ -41,7 +41,7 @@ We use the Notion 2025-09-03 API model where **databases** are containers and **
 - Name: Notebook title
 - Properties:
   - `Name` (title)
-  - `Type` (select: Quiz, Flashcards, Mindmap, Note, Chat, Data table, Sources)
+  - `Type` (select: Quiz, Flashcards, Mindmap, Note, Report, Chat, Data table, Sources)
   - `Format` (select: CSV, JSON, HTML, Markdown)
   - `Source` (rich_text)
   - `Exported` (date)
@@ -91,6 +91,7 @@ Notion exports are stored as native blocks. Only text-based formats are supporte
 | Flashcards | CSV, JSON, HTML |
 | Mindmap | HTML, Markdown |
 | Note | Markdown |
+| Report | Markdown |
 | Chat | Markdown, JSON |
 | Data table | CSV, Markdown |
 | Sources | Markdown |

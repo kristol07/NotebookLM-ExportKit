@@ -36,6 +36,7 @@ const CONTENT_TYPE_LABELS: Record<ContentType, string> = {
   mindmap: 'Mindmap',
   datatable: 'Data table',
   note: 'Note',
+  report: 'Report',
   chat: 'Chat',
   source: 'Sources',
 };
@@ -46,6 +47,7 @@ export const NOTION_SUPPORTED_FORMATS_BY_TYPE: Record<ContentType, ExportFormat[
   mindmap: ['HTML', 'Markdown'],
   datatable: ['CSV', 'Markdown'],
   note: ['Markdown'],
+  report: ['Markdown'],
   chat: ['Markdown', 'JSON'],
   source: ['Markdown'],
 };
@@ -195,13 +197,17 @@ const buildParagraphBlock = (richText: any[], children?: any[]) => ({
   },
 });
 
-const buildHeadingBlock = (level: 2 | 3, text: string, color?: string) => ({
-  object: 'block',
-  type: level === 2 ? 'heading_2' : 'heading_3',
-  [level === 2 ? 'heading_2' : 'heading_3']: {
-    rich_text: buildTextRichText(text, color ? { color } : undefined),
-  },
-});
+const buildHeadingBlock = (level: 1 | 2 | 3, text: string, color?: string) => {
+  const safeLevel = level === 1 ? 1 : level === 2 ? 2 : 3;
+  const type = safeLevel === 1 ? 'heading_1' : safeLevel === 2 ? 'heading_2' : 'heading_3';
+  return {
+    object: 'block',
+    type,
+    [type]: {
+      rich_text: buildTextRichText(text, color ? { color } : undefined),
+    },
+  };
+};
 
 const buildToggleBlock = (text: string, children?: any[]) => ({
   object: 'block',
@@ -476,11 +482,18 @@ const buildDataTableBlocks = (items: DataTableRow[]) => {
   return blocks;
 };
 
-const buildNoteBlocks = (items: NoteBlock[]) => {
-  const blocks: any[] = [buildHeadingBlock(2, 'Note')];
+const buildNoteBlocks = (items: NoteBlock[], label = 'Note') => {
+  const blocks: any[] = [buildHeadingBlock(2, label)];
   items.forEach((block) => {
     if (block.type === 'paragraph') {
       blocks.push(buildParagraphBlock(buildInlineRichText(block.inlines)));
+      return;
+    }
+    if (block.type === 'heading') {
+      const text = block.inlines.map((inline) => inline.text).join('').trim();
+      if (text) {
+        blocks.push(buildHeadingBlock(block.level, text));
+      }
       return;
     }
     if (block.type === 'code') {
@@ -557,9 +570,9 @@ const collectCitationsFromInlines = (inlines: Array<NoteInline | ChatInline>) =>
 
 const collectCitations = (contentType: ContentType, items: any[]) => {
   const citations: Array<{ id?: string; source?: string }> = [];
-  if (contentType === 'note') {
+  if (contentType === 'note' || contentType === 'report') {
     (items as NoteBlock[]).forEach((block) => {
-      if (block.type === 'paragraph') {
+      if (block.type === 'paragraph' || block.type === 'heading') {
         citations.push(...collectCitationsFromInlines(block.inlines));
       }
     });
@@ -740,6 +753,7 @@ const createDatabase = async (accessToken: string, parentPageId: string) => {
                 { name: 'Flashcards' },
                 { name: 'Mindmap' },
                 { name: 'Note' },
+                { name: 'Report' },
                 { name: 'Chat' },
                 { name: 'Data table' },
                 { name: 'Sources' },
@@ -1054,7 +1068,7 @@ const buildNotionTitle = (
   fallback: string,
   context?: NotionExportContext
 ) => {
-  if (context?.contentType === 'note' && context?.meta?.title?.trim()) {
+  if ((context?.contentType === 'note' || context?.contentType === 'report') && context?.meta?.title?.trim()) {
     return context.meta.title.trim();
   }
   if (exportResult.success) {
@@ -1123,7 +1137,10 @@ export const uploadToNotion = async (
         blocks = buildDataTableBlocks(items as DataTableRow[]);
         break;
       case 'note':
-        blocks = buildNoteBlocks(items as NoteBlock[]);
+        blocks = buildNoteBlocks(items as NoteBlock[], 'Note');
+        break;
+      case 'report':
+        blocks = buildNoteBlocks(items as NoteBlock[], 'Report');
         break;
       case 'chat':
         blocks = buildChatBlocks(items as ChatMessage[]);

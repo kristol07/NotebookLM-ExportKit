@@ -4,6 +4,7 @@ import { extractFlashcards } from './flashcards';
 import { extractMindmap } from './mindmap';
 import { extractDatatable } from './datatable';
 import { extractNote } from './note';
+import { extractReport } from './report';
 import { extractChat } from './chat';
 import { extractSource } from './source';
 
@@ -36,6 +37,8 @@ export const extractByType = async (
             ? await extractMindmap(tabId, format)
             : type === 'note'
             ? await extractNote(tabId, format)
+            : type === 'report'
+            ? await extractReport(tabId, format)
             : type === 'chat'
             ? await extractChat(tabId, format)
             : type === 'source'
@@ -63,6 +66,11 @@ export const extractByAnyType = async (tabId: number, format: ExportFormat): Pro
         return { success: true, payload: mindmapResult.payload };
     }
 
+    const reportResult = await extractReport(tabId, format);
+    if (reportResult.success && reportResult.payload) {
+        return { success: true, payload: reportResult.payload };
+    }
+
     const noteResult = await extractNote(tabId, format);
     if (noteResult.success && noteResult.payload) {
         return { success: true, payload: noteResult.payload };
@@ -87,6 +95,7 @@ export const extractByAnyType = async (tabId: number, format: ExportFormat): Pro
         success: false,
         error:
             chatResult.error ||
+            reportResult.error ||
             sourceResult.error ||
             noteResult.error ||
             datatableResult.error ||

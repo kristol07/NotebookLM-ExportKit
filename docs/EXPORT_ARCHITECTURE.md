@@ -11,8 +11,8 @@ For Google OAuth/Drive setup, see `docs/GOOGLE_OAUTH_SETUP.md`.
 - `utils/export-delivery.ts` handles delivery targets (download, Google Drive, Notion) after exporters build blobs or accept structured payloads for destination-native layouts.
 
 ### Content-specific
-- `utils/quiz-export.ts`, `utils/flashcard-export.ts`, `utils/mindmap-export.ts`, `utils/datatable-export.ts`, and `utils/note-export.ts` implement per-type formats and keep HTML UIs distinct where needed.
-- `utils/extractors/` contains one extractor per content type (including notes) and a shared `data-app-data` extraction helper.
+- `utils/quiz-export.ts`, `utils/flashcard-export.ts`, `utils/mindmap-export.ts`, `utils/datatable-export.ts`, `utils/note-export.ts`, and `utils/report-export.ts` implement per-type formats and keep HTML UIs distinct where needed.
+- `utils/extractors/` contains one extractor per content type (including notes and reports) and a shared `data-app-data` extraction helper.
 - Note extraction details: see `docs/NOTE_EXTRACTION.md`.
 - Notes currently support Markdown, Word, and PDF exports; PDF uses HTML rendering for layout.
 - Exporters return `{ blob, filename, mimeType }` so delivery targets can decide whether to download or upload.

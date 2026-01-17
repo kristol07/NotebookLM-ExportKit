@@ -80,6 +80,15 @@ const BASE_EXPORT_SECTIONS: ExportSection[] = [
         ],
     },
     {
+        title: 'Report Exports',
+        contentType: 'report',
+        options: [
+            { format: 'PDF' },
+            { format: 'Word', label: 'Word', isPlus: true },
+            { format: 'Markdown', isPlus: true },
+        ],
+    },
+    {
         title: 'Chat Exports',
         contentType: 'chat',
         options: [
@@ -114,6 +123,7 @@ const NOTION_EXPORT_FORMAT_BY_TYPE: Record<ContentType, ExportFormat> = {
     mindmap: 'Markdown',
     datatable: 'CSV',
     note: 'Markdown',
+    report: 'Markdown',
     chat: 'Markdown',
     source: 'Markdown',
 };
@@ -152,6 +162,8 @@ const getContentLabel = (type: ContentType) => {
             return 'Mindmap';
         case 'note':
             return 'Note';
+        case 'report':
+            return 'Report';
         case 'chat':
             return 'Chat';
         case 'source':
@@ -568,6 +580,17 @@ export default function Dashboard({
                         case 'note':
                             result = await exportByType(
                                 'note',
+                                payload.items,
+                                format,
+                                tabTitle,
+                                timestamp,
+                                payload.meta,
+                                { pdfQuality: options?.pdfQualityOverride ?? pdfQuality }
+                            );
+                            break;
+                        case 'report':
+                            result = await exportByType(
+                                'report',
                                 payload.items,
                                 format,
                                 tabTitle,

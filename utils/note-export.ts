@@ -90,6 +90,20 @@ const renderParagraphMarkdown = (inlines: NoteInline[], footnotes: Map<string, s
     return content.trim().length > 0 ? content.trim() : '';
 };
 
+const renderHeadingMarkdown = (
+    level: number,
+    inlines: NoteInline[],
+    footnotes: Map<string, string>,
+    footnoteOrder: string[]
+) => {
+    const heading = renderParagraphMarkdown(inlines, footnotes, footnoteOrder);
+    if (!heading) {
+        return '';
+    }
+    const safeLevel = Math.min(Math.max(level, 1), 3);
+    return `${'#'.repeat(safeLevel)} ${heading}`;
+};
+
 const renderParagraphHtml = (
     inlines: NoteInline[],
     references: Map<string, string>,
@@ -97,6 +111,20 @@ const renderParagraphHtml = (
 ) => {
     const content = inlines.map((inline) => renderInlineHtml(inline, references, referenceOrder)).join('');
     return content.trim().length > 0 ? `<p>${content.trim()}</p>` : '';
+};
+
+const renderHeadingHtml = (
+    level: number,
+    inlines: NoteInline[],
+    references: Map<string, string>,
+    referenceOrder: string[]
+) => {
+    const content = inlines.map((inline) => renderInlineHtml(inline, references, referenceOrder)).join('').trim();
+    if (!content) {
+        return '';
+    }
+    const safeLevel = Math.min(Math.max(level, 1), 3);
+    return `<h${safeLevel}>${content}</h${safeLevel}>`;
 };
 
 const renderTableMarkdown = (rows: NoteInline[][][], footnotes: Map<string, string>, footnoteOrder: string[]) => {
@@ -147,6 +175,7 @@ const renderCodeHtml = (text: string) => {
 const DOCX_BODY_RUN = { font: 'Times New Roman', size: 24 };
 const DOCX_TITLE_RUN = { font: 'Times New Roman', size: 32, bold: true };
 const DOCX_HEADING_RUN = { font: 'Times New Roman', size: 26, bold: true };
+const DOCX_SUBHEADING_RUN = { font: 'Times New Roman', size: 24, bold: true };
 const DOCX_CODE_RUN = { font: 'Consolas', size: 22 };
 const DOCX_PARAGRAPH_SPACING = { after: 160, line: 276, lineRule: LineRuleType.AUTO };
 const DOCX_CODE_SPACING = { after: 160, line: 240, lineRule: LineRuleType.AUTO };
@@ -181,6 +210,7 @@ const createPdfStyleElement = () => {
         .note-export { font-family: "Times New Roman", serif; font-size: 12pt; line-height: 1.6; color: #1a1a1a; }
         .note-export h1 { font-size: 20pt; margin: 0 0 16pt; }
         .note-export h2 { font-size: 14pt; margin: 18pt 0 10pt; }
+        .note-export h3 { font-size: 12.5pt; margin: 16pt 0 8pt; }
         .note-export p { margin: 0 0 10pt; }
         .note-export table { border-collapse: collapse; width: 100%; margin: 12pt 0; }
         .note-export td, .note-export th { border: 1px solid #999; padding: 6pt; vertical-align: top; }
@@ -211,6 +241,10 @@ const collectReferences = (blocks: NoteBlock[]) => {
 
     blocks.forEach((block) => {
         if (block.type === 'paragraph') {
+            block.inlines.forEach(collectInline);
+            return;
+        }
+        if (block.type === 'heading') {
             block.inlines.forEach(collectInline);
             return;
         }
@@ -288,6 +322,55 @@ const buildDocxParagraph = (
     });
 };
 
+const buildDocxHeading = (
+    level: number,
+    inlines: NoteInline[],
+    references: Map<string, string>,
+    referenceOrder: string[]
+) => {
+    const children: TextRun[] = [];
+    for (const inline of inlines) {
+        if (inline.citation) {
+            const key = inline.citation.id;
+            if (!references.has(key)) {
+                references.set(key, inline.citation.source);
+                referenceOrder.push(key);
+            }
+            children.push(new TextRun({ text: `[${key}]` }));
+            continue;
+        }
+        if (inline.text.length === 0) {
+            continue;
+        }
+        children.push(
+            new TextRun({
+                text: inline.text,
+                bold: inline.bold,
+                italics: inline.italic
+            })
+        );
+    }
+    const safeLevel = Math.min(Math.max(level, 1), 3);
+    const headingLevel =
+        safeLevel === 1
+            ? HeadingLevel.HEADING_1
+            : safeLevel === 2
+            ? HeadingLevel.HEADING_2
+            : HeadingLevel.HEADING_3;
+    const run =
+        safeLevel === 1
+            ? DOCX_TITLE_RUN
+            : safeLevel === 2
+            ? DOCX_HEADING_RUN
+            : DOCX_SUBHEADING_RUN;
+    return new Paragraph({
+        children,
+        heading: headingLevel,
+        spacing: { after: 160 },
+        run
+    });
+};
+
 const buildDocxTable = (
     rows: NoteInline[][][],
     references: Map<string, string>,
@@ -332,6 +415,9 @@ const buildNoteHtmlContent = (title: string, blocks: NoteBlock[]) => {
             if (block.type === 'paragraph') {
                 return renderParagraphHtml(block.inlines, references, referenceOrder);
             }
+            if (block.type === 'heading') {
+                return renderHeadingHtml(block.level, block.inlines, references, referenceOrder);
+            }
             if (block.type === 'code') {
                 return renderCodeHtml(block.text);
             }
@@ -370,6 +456,7 @@ const generateLegacyDocHtml = (title: string, blocks: NoteBlock[]) => {
 
 type PdfRenderBlock =
     | { type: 'paragraph'; inlines: NoteInline[] }
+    | { type: 'heading'; level: number; inlines: NoteInline[] }
     | { type: 'table'; rows: NoteInline[][][] }
     | { type: 'code'; text: string }
     | { type: 'html'; html: string };
@@ -383,6 +470,10 @@ const renderBlockElement = (
     wrapper.className = 'note-block';
     if (block.type === 'paragraph') {
         wrapper.innerHTML = renderParagraphHtml(block.inlines, references, referenceOrder);
+        return wrapper;
+    }
+    if (block.type === 'heading') {
+        wrapper.innerHTML = renderHeadingHtml(block.level, block.inlines, references, referenceOrder);
         return wrapper;
     }
     if (block.type === 'table') {
@@ -617,6 +708,9 @@ const exportNotePdf = async (title: string, blocks: NoteBlock[], pdfQuality: Pdf
             if (block.type === 'paragraph') {
                 return { type: 'paragraph', inlines: block.inlines } as PdfRenderBlock;
             }
+            if (block.type === 'heading') {
+                return { type: 'heading', level: block.level, inlines: block.inlines } as PdfRenderBlock;
+            }
             if (block.type === 'code') {
                 return { type: 'code', text: block.text } as PdfRenderBlock;
             }
@@ -657,7 +751,8 @@ export const exportNote = async (
     tabTitle: string,
     timestamp: string,
     noteTitle?: string,
-    options?: ExportOptions
+    options?: ExportOptions,
+    filenamePrefix = 'notebooklm_note'
 ): Promise<ExportResult> => {
     const title = noteTitle?.trim() || tabTitle;
 
@@ -668,6 +763,9 @@ export const exportNote = async (
             .map((block) => {
                 if (block.type === 'paragraph') {
                     return renderParagraphMarkdown(block.inlines, footnotes, footnoteOrder);
+                }
+                if (block.type === 'heading') {
+                    return renderHeadingMarkdown(block.level, block.inlines, footnotes, footnoteOrder);
                 }
                 if (block.type === 'code') {
                     return renderCodeMarkdown(block.text);
@@ -682,7 +780,7 @@ export const exportNote = async (
             parts.push('', ...footnoteLines);
         }
         const content = parts.join('\n');
-        const filename = `notebooklm_note_${tabTitle}_${timestamp}.md`;
+        const filename = `${filenamePrefix}_${tabTitle}_${timestamp}.md`;
         const blob = new Blob([content], { type: 'text/markdown' });
         return { success: true, count: blocks.length, filename, mimeType: blob.type, blob };
     }
@@ -690,7 +788,7 @@ export const exportNote = async (
     if (format === 'PDF') {
         try {
             const blob = await exportNotePdf(title, blocks, options?.pdfQuality);
-            const filename = `notebooklm_note_${tabTitle}_${timestamp}.pdf`;
+            const filename = `${filenamePrefix}_${tabTitle}_${timestamp}.pdf`;
             return { success: true, count: blocks.length, filename, mimeType: 'application/pdf', blob };
         } catch (err) {
             console.error(err);
@@ -711,6 +809,9 @@ export const exportNote = async (
             ...blocks.flatMap((block) => {
                 if (block.type === 'paragraph') {
                     return buildDocxParagraph(block.inlines, references, referenceOrder);
+                }
+                if (block.type === 'heading') {
+                    return buildDocxHeading(block.level, block.inlines, references, referenceOrder);
                 }
                 if (block.type === 'code') {
                     return buildDocxCodeBlock(block.text);
@@ -752,7 +853,7 @@ export const exportNote = async (
             }
         });
 
-        const filename = `notebooklm_note_${tabTitle}_${timestamp}.docx`;
+        const filename = `${filenamePrefix}_${tabTitle}_${timestamp}.docx`;
         try {
             const blob = await Packer.toBlob(doc);
             return {

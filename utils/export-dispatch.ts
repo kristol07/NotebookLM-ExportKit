@@ -15,6 +15,7 @@ import { exportDatatable } from './datatable-export';
 import { exportFlashcards } from './flashcard-export';
 import { exportMindmap } from './mindmap-export';
 import { exportNote } from './note-export';
+import { exportReport } from './report-export';
 import { exportQuiz } from './quiz-export';
 import { exportChat } from './chat-export';
 import { exportSources } from './source-export';
@@ -25,6 +26,7 @@ export const supportedFormatsByType: Record<ContentType, ExportFormat[]> = {
     mindmap: ['HTML', 'OPML', 'FreeMind', 'JSONCanvas', 'SVG', 'Markdown'],
     datatable: ['CSV', 'Markdown'],
     note: ['Word', 'Markdown', 'PDF'],
+    report: ['Word', 'Markdown', 'PDF'],
     chat: ['PDF', 'Word', 'JSON', 'Markdown'],
     source: ['Markdown']
 };
@@ -57,6 +59,10 @@ export const exportByType = async (
 
     if (type === 'note') {
         return exportNote(items as NoteBlock[], format, tabTitle, timestamp, meta?.title, options);
+    }
+
+    if (type === 'report') {
+        return exportReport(items as NoteBlock[], format, tabTitle, timestamp, meta?.title, options);
     }
 
     if (type === 'chat') {

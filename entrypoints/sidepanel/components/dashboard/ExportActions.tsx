@@ -35,6 +35,7 @@ const NOTION_LAYOUT_BY_TYPE: Record<ContentType, string> = {
   mindmap: 'Section headings with nested bullet outline + toggles',
   datatable: 'Data table with row cells',
   note: 'Rich doc with paragraphs, tables, and code blocks',
+  report: 'Rich report with headings, paragraphs, tables, and code blocks',
   chat: 'Role headings with paragraphs, tables, and code blocks',
   source: 'Sources list with linked URLs when available',
 };
@@ -84,7 +85,7 @@ export const ExportActions = ({
   const renderFileOption = (section: ExportSection, option: ExportOption) => {
     const key = `${section.contentType}-${option.format}`;
     const hasTooltip = isFileTarget && !!option.apps?.length;
-    if ((section.contentType === 'note' || section.contentType === 'chat') && option.format === 'PDF') {
+    if ((section.contentType === 'note' || section.contentType === 'report' || section.contentType === 'chat') && option.format === 'PDF') {
       return (
         <div
           key={key}

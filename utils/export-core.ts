@@ -12,7 +12,7 @@ export type ExportFormat =
     | 'Markdown'
     | 'Word';
 export type ExportTarget = 'download' | 'drive' | 'notion';
-export type ContentType = 'quiz' | 'flashcards' | 'mindmap' | 'datatable' | 'note' | 'chat' | 'source';
+export type ContentType = 'quiz' | 'flashcards' | 'mindmap' | 'datatable' | 'note' | 'report' | 'chat' | 'source';
 export type ContentSource = 'notebooklm' | 'user';
 export type PdfQualityPreference = 'size' | 'clarity';
 
@@ -66,6 +66,12 @@ export interface NoteParagraphBlock {
     inlines: NoteInline[];
 }
 
+export interface NoteHeadingBlock {
+    type: 'heading';
+    level: 1 | 2 | 3;
+    inlines: NoteInline[];
+}
+
 export interface NoteTableBlock {
     type: 'table';
     rows: NoteInline[][][];
@@ -76,7 +82,7 @@ export interface NoteCodeBlock {
     text: string;
 }
 
-export type NoteBlock = NoteParagraphBlock | NoteTableBlock | NoteCodeBlock;
+export type NoteBlock = NoteParagraphBlock | NoteHeadingBlock | NoteTableBlock | NoteCodeBlock;
 
 export type ChatRole = 'user' | 'assistant';
 
@@ -359,11 +365,19 @@ export const validateNoteBlocks = (items: unknown): ValidationResult => {
             errors.push(`note.items[${index}] must be an object`);
             return;
         }
-        if (item.type !== 'paragraph' && item.type !== 'table' && item.type !== 'code') {
-            errors.push(`note.items[${index}].type must be paragraph, table, or code`);
+        if (item.type !== 'paragraph' && item.type !== 'heading' && item.type !== 'table' && item.type !== 'code') {
+            errors.push(`note.items[${index}].type must be paragraph, heading, table, or code`);
             return;
         }
         if (item.type === 'paragraph') {
+            validateParagraph(item, `note.items[${index}]`);
+            return;
+        }
+        if (item.type === 'heading') {
+            if (item.level !== 1 && item.level !== 2 && item.level !== 3) {
+                errors.push(`note.items[${index}].level must be 1, 2, or 3`);
+                return;
+            }
             validateParagraph(item, `note.items[${index}]`);
             return;
         }
