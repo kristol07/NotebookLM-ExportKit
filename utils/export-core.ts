@@ -11,7 +11,7 @@ export type ExportFormat =
     | 'SVG'
     | 'Markdown'
     | 'Word';
-export type ExportTarget = 'download' | 'drive';
+export type ExportTarget = 'download' | 'drive' | 'notion';
 export type ContentType = 'quiz' | 'flashcards' | 'mindmap' | 'datatable' | 'note' | 'chat' | 'source';
 export type ContentSource = 'notebooklm' | 'user';
 export type PdfQualityPreference = 'size' | 'clarity';

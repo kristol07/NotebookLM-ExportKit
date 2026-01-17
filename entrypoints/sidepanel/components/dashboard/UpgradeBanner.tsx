@@ -11,7 +11,7 @@ export const UpgradeBanner = ({ trialRemaining, onUpgrade }: UpgradeBannerProps)
     <div className="upgrade-banner">
       <div>
         <div className="section-label">Plus plan</div>
-        <p className="upgrade-note">Unlock advanced formats and Google Drive delivery.</p>
+        <p className="upgrade-note">Unlock advanced formats plus Drive and Notion delivery.</p>
         {trialRemaining !== null && (
           <div className="drive-status">
             <span className="status-pill warning">Free trial</span>

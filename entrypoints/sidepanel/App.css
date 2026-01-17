@@ -194,7 +194,7 @@
 
 .destination-toggle {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
   gap: var(--space-2);
   margin: var(--space-2) 0;
 }
@@ -321,6 +321,42 @@
   border-radius: var(--radius-md);
   padding: var(--space-3);
   border: 1px solid var(--stroke);
+}
+
+.setup-input-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+}
+
+.setup-button-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  flex-wrap: wrap;
+}
+
+.setup-input {
+  flex: 1;
+  min-width: 0;
+  max-width: 100%;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--stroke);
+  background: #fff;
+  color: var(--ink);
+  font-size: var(--size-xs);
+}
+
+.setup-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 var(--space-0) rgba(211, 84, 44, 0.15);
+}
+
+.setup-input:disabled {
+  opacity: 0.7;
 }
 
 .setup-step-main {
@@ -766,6 +802,15 @@
   gap: var(--space-5);
 }
 
+.notion-hint {
+  font-size: var(--size-xs);
+  color: var(--muted);
+  background: #fff;
+  border: 1px dashed var(--stroke);
+  border-radius: var(--radius-md);
+  padding: var(--space-2) var(--space-3);
+}
+
 .export-section {
   background: var(--card);
   border: 1px solid var(--stroke);
@@ -793,6 +838,11 @@
   gap: var(--space-1);
 }
 
+.section-grid.notion-grid {
+  grid-template-columns: 1fr;
+  gap: var(--space-2);
+}
+
 .export-option {
   position: relative;
   width: 100%;
@@ -800,6 +850,31 @@
 
 .export-option .export-btn {
   width: 100%;
+}
+
+.notion-export-btn {
+  width: 100%;
+}
+
+.notion-layout {
+  background: #fff;
+  border: 1px solid var(--stroke);
+  border-radius: var(--radius-sm);
+  padding: var(--space-2) var(--space-3);
+}
+
+.notion-layout-label {
+  font-size: var(--size-xxs);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  font-weight: 700;
+  margin-bottom: var(--space-0);
+}
+
+.notion-layout-detail {
+  font-size: var(--size-xs);
+  color: var(--ink);
 }
 
 .pdf-quality-popover {

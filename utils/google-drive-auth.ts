@@ -5,28 +5,42 @@ const DRIVE_ACCESS_EXPIRY_KEY = 'exportkitDriveAccessTokenExpiry';
 const DRIVE_ACCOUNT_EMAIL_KEY = 'exportkitDriveAccountEmail';
 const DRIVE_CONNECTED_STORAGE_KEY = 'exportkitDriveConnected';
 
-const getStoredAccessToken = () => localStorage.getItem(DRIVE_ACCESS_TOKEN_KEY);
-const getStoredExpiry = () => {
-  const value = localStorage.getItem(DRIVE_ACCESS_EXPIRY_KEY);
+const getStorageValue = async (key: string) => {
+  const result = await browser.storage.local.get(key);
+  const value = result[key];
+  return typeof value === 'string' ? value : null;
+};
+
+const setStorageValue = async (key: string, value: string) => {
+  await browser.storage.local.set({ [key]: value });
+};
+
+const removeStorageValue = async (key: string) => {
+  await browser.storage.local.remove(key);
+};
+
+const getStoredAccessToken = () => getStorageValue(DRIVE_ACCESS_TOKEN_KEY);
+const getStoredExpiry = async () => {
+  const value = await getStorageValue(DRIVE_ACCESS_EXPIRY_KEY);
   return value ? Number(value) : null;
 };
 
-const setStoredAccessToken = (token: string, expiresInSeconds?: number) => {
-  localStorage.setItem(DRIVE_ACCESS_TOKEN_KEY, token);
+const setStoredAccessToken = async (token: string, expiresInSeconds?: number) => {
+  await setStorageValue(DRIVE_ACCESS_TOKEN_KEY, token);
   if (typeof expiresInSeconds === 'number') {
     const expiresAt = Date.now() + Math.max(0, expiresInSeconds - 60) * 1000;
-    localStorage.setItem(DRIVE_ACCESS_EXPIRY_KEY, String(expiresAt));
+    await setStorageValue(DRIVE_ACCESS_EXPIRY_KEY, String(expiresAt));
   } else {
-    localStorage.removeItem(DRIVE_ACCESS_EXPIRY_KEY);
+    await removeStorageValue(DRIVE_ACCESS_EXPIRY_KEY);
   }
-  localStorage.setItem(DRIVE_CONNECTED_STORAGE_KEY, 'true');
+  await setStorageValue(DRIVE_CONNECTED_STORAGE_KEY, 'true');
 };
 
-const setStoredDriveEmail = (email?: string | null) => {
+const setStoredDriveEmail = async (email?: string | null) => {
   if (email) {
-    localStorage.setItem(DRIVE_ACCOUNT_EMAIL_KEY, email);
+    await setStorageValue(DRIVE_ACCOUNT_EMAIL_KEY, email);
   } else {
-    localStorage.removeItem(DRIVE_ACCOUNT_EMAIL_KEY);
+    await removeStorageValue(DRIVE_ACCOUNT_EMAIL_KEY);
   }
 };
 
@@ -56,26 +70,28 @@ const parseAuthResponse = (url: string) => {
   };
 };
 
-export const getDriveAccessToken = () => {
-  const token = getStoredAccessToken();
+export const getDriveAccessToken = async () => {
+  const token = await getStoredAccessToken();
   if (!token) {
     return null;
   }
-  const expiresAt = getStoredExpiry();
+  const expiresAt = await getStoredExpiry();
   if (expiresAt && Date.now() > expiresAt) {
-    clearDriveAuth();
+    await clearDriveAuth();
     return null;
   }
   return token;
 };
 
-export const getDriveAccountEmail = () => localStorage.getItem(DRIVE_ACCOUNT_EMAIL_KEY);
+export const getDriveAccountEmail = () => getStorageValue(DRIVE_ACCOUNT_EMAIL_KEY);
 
-export const clearDriveAuth = () => {
-  localStorage.removeItem(DRIVE_ACCESS_TOKEN_KEY);
-  localStorage.removeItem(DRIVE_ACCESS_EXPIRY_KEY);
-  localStorage.removeItem(DRIVE_ACCOUNT_EMAIL_KEY);
-  localStorage.removeItem(DRIVE_CONNECTED_STORAGE_KEY);
+export const clearDriveAuth = async () => {
+  await Promise.all([
+    removeStorageValue(DRIVE_ACCESS_TOKEN_KEY),
+    removeStorageValue(DRIVE_ACCESS_EXPIRY_KEY),
+    removeStorageValue(DRIVE_ACCOUNT_EMAIL_KEY),
+    removeStorageValue(DRIVE_CONNECTED_STORAGE_KEY),
+  ]);
 };
 
 export const connectGoogleDrive = async (scopes: string) => {
@@ -116,8 +132,8 @@ export const connectGoogleDrive = async (scopes: string) => {
     console.warn('Failed to fetch Google account email:', err);
   }
 
-  setStoredAccessToken(accessToken, expiresIn);
-  setStoredDriveEmail(email);
+  await setStoredAccessToken(accessToken, expiresIn);
+  await setStoredDriveEmail(email);
 
   return { accessToken, email };
 };

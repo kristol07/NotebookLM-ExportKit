@@ -84,7 +84,7 @@ export default function Login({ onClose }: { onClose?: () => void }) {
                             <span className="brand-dot" aria-hidden="true"></span>
                             NotebookLM ExportKit
                         </div>
-                        <p className="login-subtitle">Sign in to unlock advanced exports and Drive delivery</p>
+                        <p className="login-subtitle">Sign in to unlock advanced exports plus Drive and Notion delivery</p>
                         {/* <ul className="login-benefits">
                             <li>Advanced formats for study workflows</li>
                             <li>Google Drive delivery with any account</li>

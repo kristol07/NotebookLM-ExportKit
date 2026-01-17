@@ -6,6 +6,9 @@ type AccountPanelProps = {
   isPlus: boolean;
   hasDriveAccess: boolean;
   driveAccountEmail: string | null;
+  hasNotionAccess: boolean;
+  notionWorkspaceName: string | null;
+  notionDatabaseId: string | null;
   isCancelScheduled: boolean;
   formattedPeriodEnd: string | null;
   trialRemaining: number | null;
@@ -13,6 +16,8 @@ type AccountPanelProps = {
   onClose: () => void;
   onConnectDrive: () => void;
   onDisconnectDrive: () => void;
+  onConnectNotion: () => void;
+  onDisconnectNotion: () => void;
   onManageBilling: () => void;
   onUpgrade: () => void;
 };
@@ -22,6 +27,9 @@ export const AccountPanel = ({
   isPlus,
   hasDriveAccess,
   driveAccountEmail,
+  hasNotionAccess,
+  notionWorkspaceName,
+  notionDatabaseId,
   isCancelScheduled,
   formattedPeriodEnd,
   trialRemaining,
@@ -29,6 +37,8 @@ export const AccountPanel = ({
   onClose,
   onConnectDrive,
   onDisconnectDrive,
+  onConnectNotion,
+  onDisconnectNotion,
   onManageBilling,
   onUpgrade,
 }: AccountPanelProps) => {
@@ -65,8 +75,8 @@ export const AccountPanel = ({
           </div>
           <p className="panel-summary-note">
             {isPlus
-              ? 'Your subscription unlocks advanced export formats and Google Drive delivery.'
-              : 'Upgrade to unlock advanced export formats and Google Drive delivery.'}
+              ? 'Your subscription unlocks advanced export formats plus Drive and Notion delivery.'
+              : 'Upgrade to unlock advanced export formats plus Drive and Notion delivery.'}
           </p>
           <div className="panel-summary-actions">
             {isPlus ? (
@@ -95,7 +105,7 @@ export const AccountPanel = ({
                     disabled={loadingAction === 'drive-connect'}
                     className="export-btn small"
                   >
-                    Change {loadingAction === 'drive-connect' && <Spinner />}
+                    Change account {loadingAction === 'drive-connect' && <Spinner />}
                   </button>
                   <button onClick={onDisconnectDrive} className="export-btn small">
                     Disconnect
@@ -112,6 +122,38 @@ export const AccountPanel = ({
                   className="export-btn small"
                 >
                   Connect {loadingAction === 'drive-connect' && <Spinner />}
+                </button>
+              </div>
+            )}
+            {hasNotionAccess ? (
+              <div className="panel-destination-row connected">
+                <div className="panel-destination-info connected">
+                  <div className="panel-destination-title">Notion</div>
+                  <div className="panel-destination-email">{notionWorkspaceName ?? 'Connected'}</div>
+                </div>
+                <div className="panel-destination-buttons">
+                  <button
+                    onClick={onConnectNotion}
+                    disabled={loadingAction === 'notion-connect'}
+                    className="export-btn small"
+                  >
+                    Change workspace {loadingAction === 'notion-connect' && <Spinner />}
+                  </button>
+                  <button onClick={onDisconnectNotion} className="export-btn small">
+                    Disconnect
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="panel-destination-row not-connected">
+                <div className="panel-destination-title">Notion</div>
+                <span className="status-pill warning">Not connected</span>
+                <button
+                  onClick={onConnectNotion}
+                  disabled={loadingAction === 'notion-connect'}
+                  className="export-btn small"
+                >
+                  Connect {loadingAction === 'notion-connect' && <Spinner />}
                 </button>
               </div>
             )}

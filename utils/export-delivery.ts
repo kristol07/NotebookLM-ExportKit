@@ -1,11 +1,13 @@
-import { downloadBlob, ExportResult, ExportTarget } from './export-core';
+import { downloadBlob, ExportFormat, ExportResult, ExportTarget, ContentType } from './export-core';
 import { UploadProgressCallback, uploadToDrive } from './google-drive';
+import { uploadToNotion, NotionExportContext } from './notion';
 
 export const deliverExport = async (
     target: ExportTarget,
     result: ExportResult,
     session: any,
-    onProgress?: UploadProgressCallback
+    onProgress?: UploadProgressCallback,
+    context?: NotionExportContext
 ) => {
     if (!result.success) {
         return result;
@@ -22,6 +24,14 @@ export const deliverExport = async (
             return result;
         }
         return { success: false, error: driveResult.error };
+    }
+
+    if (target === 'notion') {
+        const notionResult = await uploadToNotion(result, context);
+        if (notionResult.success) {
+            return result;
+        }
+        return { success: false, error: notionResult.error };
     }
 
     return { success: false, error: 'Unsupported export destination.' };

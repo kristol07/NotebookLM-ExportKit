@@ -138,7 +138,7 @@
 
       <div class="policy-card">
         <h1>Privacy Policy</h1>
-        <div class="meta">Last updated: 2026-01-09</div>
+        <div class="meta">Last updated: 2026-01-15</div>
 
         <p>
           NotebookLM ExportKit is a browser extension that helps you export NotebookLM content into
@@ -151,6 +151,8 @@
           <li>Account data: your email address when you sign in with a one-time code.</li>
           <li>Google sign-in data: basic Google profile info and email when you sign in with Google.</li>
           <li>Google OAuth tokens: access tokens used to upload files to your Google Drive when enabled.</li>
+          <li>Notion OAuth tokens: access tokens used to create database entries when Notion delivery is enabled.</li>
+          <li>Notion workspace info: workspace name to display your connected destination.</li>
           <li>Subscription data: plan status, subscription status, and billing period end for Plus access.</li>
           <li>Trial usage: a counter of how many free trial exports you have used.</li>
           <li>Support data: any information you send to us when you contact support.</li>
@@ -161,6 +163,7 @@
         <ul>
           <li>NotebookLM content is processed locally in your browser and is not uploaded to our servers.</li>
           <li>We do not store your Google Drive files or their contents on our servers.</li>
+          <li>We do not store your Notion content or database entries on our servers.</li>
           <li>We do not run advertising or analytics trackers in the extension.</li>
         </ul>
 
@@ -168,6 +171,7 @@
         <ul>
           <li>Authenticate you and keep you signed in.</li>
           <li>Upload exports to Google Drive when you choose Drive as the destination.</li>
+          <li>Create Notion database entries when you choose Notion as the destination.</li>
           <li>Suggest your current Google account when you connect Drive to avoid account mismatches.</li>
           <li>Enable Plus features, manage trials, and show subscription status.</li>
           <li>Provide billing support and resolve account issues.</li>
@@ -178,7 +182,8 @@
         <p>
           We use Supabase for authentication and subscription metadata storage. We use Creem to process
           payments and manage subscriptions. We use Google APIs to upload exports to your Google Drive when
-          enabled. Payment details (such as card numbers) are handled directly by Creem and are not stored by us.
+          enabled. We use the Notion API to create database entries when Notion delivery is enabled. Payment
+          details (such as card numbers) are handled directly by Creem and are not stored by us.
         </p>
 
         <h2>Data retention</h2>
@@ -192,6 +197,7 @@
           <li>You can use the extension without signing in for free exports.</li>
           <li>You can choose Download or Google Drive as the export destination.</li>
           <li>You can disconnect Google Drive by signing out of Google in the app or revoking access in your Google account.</li>
+          <li>You can disconnect Notion by signing out of Notion in the app or revoking access in your Notion workspace.</li>
           <li>You can manage or cancel your subscription from the billing portal.</li>
           <li>You can request account deletion via support.</li>
         </ul>

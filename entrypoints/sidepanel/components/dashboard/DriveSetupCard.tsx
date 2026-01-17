@@ -82,27 +82,7 @@ export const DriveSetupCard = ({
           </div>
           <div className="setup-step">
             <div className="setup-step-main">
-              <div className="setup-title">2. Connect Google Drive</div>
-              <div className="setup-actions">
-                <button
-                  onClick={onConnectDrive}
-                  disabled={!!loadingAction || !isSignedIn}
-                  className={`export-btn small ${hasDriveAccess ? '' : 'primary'}`}
-                >
-                  {hasDriveAccess ? 'Change' : 'Connect'}{' '}
-                  {loadingAction === 'drive-connect' && <Spinner />}
-                </button>
-              </div>
-            </div>
-            <p className="setup-note">
-              {driveAccountEmail
-                ? `Connected as ${driveAccountEmail}`
-                : 'Choose any Google account for Drive delivery.'}
-            </p>
-          </div>
-          <div className="setup-step">
-            <div className="setup-step-main">
-              <div className="setup-title">3. Upgrade to Plus</div>
+              <div className="setup-title">2. Upgrade to Plus</div>
               {isPlus ? (
                 <span className="status-pill success">Unlocked</span>
               ) : (
@@ -112,6 +92,24 @@ export const DriveSetupCard = ({
               )}
             </div>
             <p className="setup-note">Drive delivery is available on Plus.</p>
+          </div>
+          <div className="setup-step">
+            <div className="setup-step-main">
+              <div className="setup-title">3. Connect Google Drive</div>
+              <button
+                onClick={onConnectDrive}
+                disabled={!!loadingAction || !isSignedIn}
+                className={`export-btn small ${hasDriveAccess ? '' : 'primary'}`}
+              >
+                {hasDriveAccess ? 'Change account' : 'Connect'}{' '}
+                {loadingAction === 'drive-connect' && <Spinner />}
+              </button>
+            </div>
+            <p className="setup-note">
+              {driveAccountEmail
+                ? `Connected as ${driveAccountEmail}`
+                : 'Choose any Google account for Drive delivery.'}
+            </p>
           </div>
         </>
       )}

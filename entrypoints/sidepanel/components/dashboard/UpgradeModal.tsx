@@ -2,7 +2,7 @@ import React from 'react';
 import { Spinner } from './Icons';
 
 type UpgradeModalProps = {
-  upgradeContext: 'drive' | 'format' | 'general' | null;
+  upgradeContext: 'drive' | 'notion' | 'format' | 'general' | null;
   trialRemaining: number | null;
   loadingAction: string | null;
   isPlus: boolean;
@@ -29,9 +29,11 @@ export const UpgradeModal = ({
             <div className="modal-subtitle">
               {upgradeContext === 'drive'
                 ? 'Enable Google Drive delivery and advanced formats.'
+                : upgradeContext === 'notion'
+                  ? 'Enable Notion delivery and advanced formats.'
                 : upgradeContext === 'format'
                   ? 'Unlock advanced export formats instantly.'
-                  : 'Unlock advanced formats and Drive delivery.'}
+                  : 'Unlock advanced formats plus Drive and Notion delivery.'}
             </div>
           </div>
           <button onClick={onClose} className="export-btn small">
@@ -47,6 +49,10 @@ export const UpgradeModal = ({
             <div className="modal-benefit">
               <span className="status-pill success">Drive</span>
               Deliver exports directly to Google Drive.
+            </div>
+            <div className="modal-benefit">
+              <span className="status-pill success">Notion</span>
+              Send exports into Notion pages.
             </div>
           </div>
           {trialRemaining !== null && (

@@ -1,3 +1,4 @@
+import { browser } from 'wxt/browser';
 import { ExportResult } from './export-core';
 import { clearDriveAuth, getDriveAccessToken, getDriveAccountEmail } from './google-drive-auth';
 
@@ -9,24 +10,36 @@ export type UploadProgressCallback = (progress: UploadProgress) => void;
 const getFolderStorageKey = (email?: string | null) => (
     email ? `${DRIVE_FOLDER_STORAGE_KEY}:${email}` : DRIVE_FOLDER_STORAGE_KEY
 );
-const getStoredFolderId = (email?: string | null) => localStorage.getItem(getFolderStorageKey(email));
-const setStoredFolderId = (id: string, email?: string | null) => {
-    localStorage.setItem(getFolderStorageKey(email), id);
+const getStorageValue = async (key: string) => {
+    const result = await browser.storage.local.get(key);
+    const value = result[key];
+    return typeof value === 'string' ? value : null;
 };
-const clearStoredFolderId = (email?: string | null) => {
-    if (email) {
-        localStorage.removeItem(getFolderStorageKey(email));
-    }
-    localStorage.removeItem(DRIVE_FOLDER_STORAGE_KEY);
+const setStorageValue = async (key: string, value: string) => {
+    await browser.storage.local.set({ [key]: value });
 };
-const clearDriveConnection = () => {
-    const email = getDriveAccountEmail();
-    clearStoredFolderId(email);
-    clearDriveAuth();
+const removeStorageValue = async (key: string) => {
+    await browser.storage.local.remove(key);
 };
 
-export const resetDriveConnection = () => {
-    clearDriveConnection();
+const getStoredFolderId = (email?: string | null) => getStorageValue(getFolderStorageKey(email));
+const setStoredFolderId = async (id: string, email?: string | null) => {
+    await setStorageValue(getFolderStorageKey(email), id);
+};
+const clearStoredFolderId = async (email?: string | null) => {
+    if (email) {
+        await removeStorageValue(getFolderStorageKey(email));
+    }
+    await removeStorageValue(DRIVE_FOLDER_STORAGE_KEY);
+};
+const clearDriveConnection = async () => {
+    const email = await getDriveAccountEmail();
+    await clearStoredFolderId(email);
+    await clearDriveAuth();
+};
+
+export const resetDriveConnection = async () => {
+    await clearDriveConnection();
 };
 
 const fetchDrive = async (accessToken: string, url: string, init?: RequestInit) => {
@@ -132,19 +145,19 @@ const createDriveFolder = async (accessToken: string) => {
 };
 
 const ensureDriveFolder = async (accessToken: string) => {
-    const email = getDriveAccountEmail();
-    const cachedId = getStoredFolderId(email);
+    const email = await getDriveAccountEmail();
+    const cachedId = await getStoredFolderId(email);
     if (cachedId) {
         return cachedId;
     }
     const existingId = await findDriveFolder(accessToken);
     if (existingId) {
-        setStoredFolderId(existingId, email);
+        await setStoredFolderId(existingId, email);
         return existingId;
     }
     const createdId = await createDriveFolder(accessToken);
     if (createdId) {
-        setStoredFolderId(createdId, email);
+        await setStoredFolderId(createdId, email);
     }
     return createdId;
 };
@@ -238,7 +251,7 @@ export const uploadToDrive = async (
     if (!exportResult.success) {
         return exportResult;
     }
-    const accessToken = getDriveAccessToken();
+    const accessToken = await getDriveAccessToken();
     if (!accessToken) {
         return { success: false, error: 'Connect Google Drive to continue.' };
     }
@@ -256,7 +269,7 @@ export const uploadToDrive = async (
     }
 
     if (response.status === 404) {
-        clearStoredFolderId(getDriveAccountEmail());
+        await clearStoredFolderId(await getDriveAccountEmail());
         const refreshedFolderId = await ensureDriveFolder(accessToken);
         if (!refreshedFolderId) {
             return { success: false, error: 'Unable to access the Google Drive folder.' };
@@ -272,7 +285,7 @@ export const uploadToDrive = async (
     if (!response.ok) {
         const detail = await response.text();
         if (response.status === 401 || response.status === 403) {
-            clearDriveConnection();
+            await clearDriveConnection();
         }
         const message = response.status === 401 || response.status === 403
             ? 'Google Drive access expired or missing. Reconnect to continue.'

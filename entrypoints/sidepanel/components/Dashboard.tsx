@@ -8,6 +8,21 @@ import { exportByType } from '../../../utils/export-dispatch';
 import { deliverExport } from '../../../utils/export-delivery';
 import { connectGoogleDrive, getDriveAccountEmail, getDriveAccessToken } from '../../../utils/google-drive-auth';
 import { resetDriveConnection } from '../../../utils/google-drive';
+import {
+    clearNotionAuth,
+    connectNotion,
+    getNotionAccessToken,
+    getNotionDatabaseId,
+    getNotionWorkspaceName,
+} from '../../../utils/notion-auth';
+import {
+    configureNotionDestination,
+    fetchNotionWorkspace,
+    getNotebookIdFromUrl,
+    listNotionPages,
+    NOTION_SUPPORTED_FORMATS_BY_TYPE,
+    type NotionPageChoice,
+} from '../../../utils/notion';
 
 import { extractByType } from '../../../utils/extractors';
 import { extractNotebookLmPayload } from '../../../utils/extractors/common';
@@ -15,13 +30,14 @@ import { consumeTrial, createCheckoutSession, createCustomerPortalLink, getPlan 
 import { AccountPanel } from './dashboard/AccountPanel';
 import { DashboardHeader } from './dashboard/DashboardHeader';
 import { DriveSetupCard } from './dashboard/DriveSetupCard';
+import { NotionSetupCard } from './dashboard/NotionSetupCard';
 import { ExportActions, ExportSection } from './dashboard/ExportActions';
 import { ExportDestinationCard } from './dashboard/ExportDestinationCard';
 import { ToastNotice } from './dashboard/ToastNotice';
 import { UpgradeBanner } from './dashboard/UpgradeBanner';
 import { UpgradeModal } from './dashboard/UpgradeModal';
 
-const EXPORT_SECTIONS: ExportSection[] = [
+const BASE_EXPORT_SECTIONS: ExportSection[] = [
     {
         title: 'Quiz Exports',
         contentType: 'quiz',
@@ -90,6 +106,29 @@ const EXPORT_SECTIONS: ExportSection[] = [
     },
 ];
 
+const EXPORT_SECTIONS: ExportSection[] = BASE_EXPORT_SECTIONS;
+
+const NOTION_EXPORT_FORMAT_BY_TYPE: Record<ContentType, ExportFormat> = {
+    quiz: 'JSON',
+    flashcards: 'JSON',
+    mindmap: 'Markdown',
+    datatable: 'CSV',
+    note: 'Markdown',
+    chat: 'Markdown',
+    source: 'Markdown',
+};
+
+const filterSectionsForNotion = (sections: ExportSection[]) =>
+    sections
+        .map((section) => {
+            const supportedFormats = NOTION_SUPPORTED_FORMATS_BY_TYPE[section.contentType as ContentType] ?? [];
+            return {
+                ...section,
+                options: section.options.filter((option) => supportedFormats.includes(option.format)),
+            };
+        })
+        .filter((section) => section.options.length > 0);
+
 const PLUS_EXPORTS = new Set(
     EXPORT_SECTIONS.flatMap((section) =>
         section.options
@@ -98,11 +137,29 @@ const PLUS_EXPORTS = new Set(
     )
 );
 const EXPORT_TARGET_STORAGE_KEY = 'exportkitExportTarget';
-const DRIVE_CONNECTED_STORAGE_KEY = 'exportkitDriveConnected';
 const PDF_QUALITY_STORAGE_KEY = 'exportkitPdfQuality';
 const DRIVE_EXPORT_REQUIRES_PLUS = true;
+const NOTION_EXPORT_REQUIRES_PLUS = true;
 const EXTRACTION_ERROR_MESSAGE =
     'Failed to extract content. Ensure you are on a NotebookLM page and the content is visible.';
+const getContentLabel = (type: ContentType) => {
+    switch (type) {
+        case 'quiz':
+            return 'Quiz';
+        case 'flashcards':
+            return 'Flashcards';
+        case 'mindmap':
+            return 'Mindmap';
+        case 'note':
+            return 'Note';
+        case 'chat':
+            return 'Chat';
+        case 'source':
+            return 'Sources';
+        default:
+            return 'Data table';
+    }
+};
 export default function Dashboard({
     session,
     onRequestLogin,
@@ -115,10 +172,14 @@ export default function Dashboard({
     const [trialRemaining, setTrialRemaining] = useState<number | null>(null);
     const [driveConnected, setDriveConnected] = useState(false);
     const [driveAccountEmail, setDriveAccountEmail] = useState<string | null>(null);
+    const [notionConnected, setNotionConnected] = useState(false);
+    const [notionWorkspaceName, setNotionWorkspaceName] = useState<string | null>(null);
+    const [notionDatabaseId, setNotionDatabaseId] = useState<string | null>(null);
+    const [notionPages, setNotionPages] = useState<NotionPageChoice[]>([]);
     const [uploadProgress, setUploadProgress] = useState<{ percent: number } | null>(null);
     const [showAccountPanel, setShowAccountPanel] = useState(false);
     const [showUpgradeModal, setShowUpgradeModal] = useState(false);
-    const [upgradeContext, setUpgradeContext] = useState<'drive' | 'format' | 'general' | null>(null);
+    const [upgradeContext, setUpgradeContext] = useState<'drive' | 'notion' | 'format' | 'general' | null>(null);
     const noticeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const upgradeInFlightRef = useRef(false);
     const [exportTarget, setExportTarget] = useState<ExportTarget>('download');
@@ -157,16 +218,24 @@ export default function Dashboard({
         };
     }, []);
 
-    const refreshDriveState = () => {
-        const token = getDriveAccessToken();
+    const refreshDriveState = async () => {
+        const token = await getDriveAccessToken();
         setDriveConnected(Boolean(token));
-        setDriveAccountEmail(getDriveAccountEmail());
-        localStorage.setItem(DRIVE_CONNECTED_STORAGE_KEY, token ? 'true' : 'false');
+        setDriveAccountEmail(await getDriveAccountEmail());
     };
+    const refreshNotionState = async () => {
+        const token = await getNotionAccessToken();
+        setNotionConnected(Boolean(token));
+        setNotionWorkspaceName(await getNotionWorkspaceName());
+        setNotionDatabaseId(await getNotionDatabaseId());
+    };
+
+    const hasDriveAccess = driveConnected;
+    const hasNotionAccess = notionConnected;
 
     useEffect(() => {
         const stored = localStorage.getItem(EXPORT_TARGET_STORAGE_KEY);
-        if (stored === 'download' || stored === 'drive') {
+        if (stored === 'download' || stored === 'drive' || stored === 'notion') {
             setExportTarget(stored);
         }
     }, []);
@@ -179,8 +248,35 @@ export default function Dashboard({
     }, []);
 
     useEffect(() => {
-        refreshDriveState();
+        void refreshDriveState();
     }, []);
+
+    useEffect(() => {
+        void refreshNotionState();
+    }, []);
+
+    const loadNotionPages = async () => {
+        const token = await getNotionAccessToken();
+        if (!token) {
+            return;
+        }
+        setLoadingAction('notion-page-list');
+        try {
+            const results = await listNotionPages(token);
+            setNotionPages(results);
+        } catch (err) {
+            console.error(err);
+            showNotice('error', 'Could not load Notion pages. Try refreshing.');
+        } finally {
+            setLoadingAction(null);
+        }
+    };
+
+    useEffect(() => {
+        if (exportTarget === 'notion' && hasNotionAccess && notionPages.length === 0) {
+            void loadNotionPages();
+        }
+    }, [exportTarget, hasNotionAccess, notionPages.length]);
 
     useEffect(() => {
         let isActive = true;
@@ -220,7 +316,13 @@ export default function Dashboard({
         return PLUS_EXPORTS.has(`${contentType}:${format}`);
     };
 
-    const hasDriveAccess = Boolean(getDriveAccessToken()) && driveConnected;
+    const isNotionFormatSupported = (format: ExportFormat, contentType?: ContentType) => {
+        if (!contentType) {
+            return false;
+        }
+        const supported = NOTION_SUPPORTED_FORMATS_BY_TYPE[contentType as ContentType] ?? [];
+        return supported.includes(format);
+    };
 
     const handleExportTargetChange = (value: ExportTarget) => {
         setExportTarget(value);
@@ -243,7 +345,6 @@ export default function Dashboard({
             const driveResult = await connectGoogleDrive(getGoogleDriveOAuthScopes());
             setDriveConnected(true);
             setDriveAccountEmail(driveResult.email ?? null);
-            localStorage.setItem(DRIVE_CONNECTED_STORAGE_KEY, 'true');
         } catch (err) {
             console.error(err);
             showNotice('error', 'Could not connect Google Drive. Please try again.');
@@ -252,22 +353,82 @@ export default function Dashboard({
         }
     };
 
-    const disconnectDrive = (options?: { silent?: boolean }) => {
-        resetDriveConnection();
+    const handleConnectNotion = async () => {
+        if (!isSignedIn) {
+            showNotice('info', 'Sign in to connect Notion.');
+            onRequestLogin?.();
+            return;
+        }
+        setLoadingAction('notion-connect');
+        try {
+            const result = await connectNotion();
+            setNotionConnected(true);
+            const workspace = await fetchNotionWorkspace(result.accessToken);
+            setNotionWorkspaceName(workspace ?? await getNotionWorkspaceName());
+            void loadNotionPages();
+        } catch (err: any) {
+            console.error(err);
+            showNotice('error', err?.message || 'Could not connect Notion. Please try again.');
+        } finally {
+            setLoadingAction(null);
+        }
+    };
+
+    const disconnectDrive = async (options?: { silent?: boolean }) => {
+        await resetDriveConnection();
         setDriveConnected(false);
         setDriveAccountEmail(null);
-        localStorage.removeItem(DRIVE_CONNECTED_STORAGE_KEY);
         if (!options?.silent) {
             showNotice('info', 'Google Drive disconnected.');
         }
     };
 
     const handleDisconnectDrive = () => {
-        disconnectDrive();
+        void disconnectDrive();
+    };
+
+    const disconnectNotion = async (options?: { silent?: boolean }) => {
+        await clearNotionAuth();
+        setNotionConnected(false);
+        setNotionWorkspaceName(null);
+        setNotionDatabaseId(null);
+        setNotionPages([]);
+        if (!options?.silent) {
+            showNotice('info', 'Notion disconnected.');
+        }
+    };
+
+    const handleDisconnectNotion = () => {
+        void disconnectNotion();
+    };
+
+    const handleConfigureNotionDestination = async (value: string) => {
+        const token = await getNotionAccessToken();
+        if (!token) {
+            showNotice('info', 'Connect Notion before setting a destination page.');
+            return;
+        }
+        setLoadingAction('notion-destination');
+        try {
+            const database = await configureNotionDestination(token, value);
+            setNotionDatabaseId(database.id);
+            showNotice(
+                'success',
+                database.title
+                    ? `Notion destination set: ${database.title}.`
+                    : 'Notion destination is ready.'
+            );
+        } catch (err: any) {
+            console.error(err);
+            showNotice('error', err?.message || 'Could not set the Notion destination. Please try again.');
+        } finally {
+            setLoadingAction(null);
+        }
     };
 
     const handleSignOut = async () => {
-        disconnectDrive({ silent: true });
+        await disconnectDrive({ silent: true });
+        await disconnectNotion({ silent: true });
         await supabase.auth.signOut();
     };
 
@@ -294,7 +455,7 @@ export default function Dashboard({
         }
     };
 
-    const openUpgradeModal = (context: 'drive' | 'format' | 'general' = 'general') => {
+    const openUpgradeModal = (context: 'drive' | 'notion' | 'format' | 'general' = 'general') => {
         setShowAccountPanel(false);
         setUpgradeContext(context);
         setShowUpgradeModal(true);
@@ -322,18 +483,26 @@ export default function Dashboard({
         setLoadingAction(actionId);
         try {
             const plusExport = isPlusExport(format, contentType);
-            const requiresPlus = plusExport || (exportTarget === 'drive' && DRIVE_EXPORT_REQUIRES_PLUS);
-                if (requiresPlus) {
-                    if (!isSignedIn) {
-                        showNotice('info', 'Sign in to unlock advanced exports.');
-                        onRequestLogin?.();
-                        return;
+            const requiresPlus = plusExport
+                || (exportTarget === 'drive' && DRIVE_EXPORT_REQUIRES_PLUS)
+                || (exportTarget === 'notion' && NOTION_EXPORT_REQUIRES_PLUS);
+            if (requiresPlus) {
+                if (!isSignedIn) {
+                    showNotice('info', 'Sign in to unlock advanced exports.');
+                    onRequestLogin?.();
+                    return;
                     }
                 if (!isPlus) {
                     const trialResult = await consumeTrial(false);
                     if (!trialResult.allowed) {
                         showNotice('error', 'Your free trials are used up. Upgrade to continue.');
-                        openUpgradeModal(exportTarget === 'drive' ? 'drive' : 'format');
+                        openUpgradeModal(
+                            exportTarget === 'drive'
+                                ? 'drive'
+                                : exportTarget === 'notion'
+                                    ? 'notion'
+                                    : 'format'
+                        );
                         return;
                     }
                     if (typeof trialResult.remaining === 'number') {
@@ -342,10 +511,33 @@ export default function Dashboard({
                 }
             }
 
+            if (exportTarget === 'notion' && contentType) {
+                const supportedFormats = NOTION_SUPPORTED_FORMATS_BY_TYPE[contentType as ContentType] ?? [];
+                if (!isNotionFormatSupported(format, contentType)) {
+                    showNotice(
+                        'error',
+                        `Notion exports for ${getContentLabel(contentType)} support ${supportedFormats.join(', ')}.`
+                    );
+                    return;
+                }
+            }
+
             if (exportTarget === 'drive' && !hasDriveAccess) {
                 showNotice('info', 'Connect Google Drive to continue.');
-                refreshDriveState();
+                void refreshDriveState();
                 return;
+            }
+
+            if (exportTarget === 'notion') {
+                if (!hasNotionAccess) {
+                    showNotice('info', 'Connect Notion to continue.');
+                    refreshNotionState();
+                    return;
+                }
+                if (!notionDatabaseId) {
+                    showNotice('info', 'Set a Notion destination page to continue.');
+                    return;
+                }
             }
 
             const tabs = await browser.tabs.query({ active: true, currentWindow: true });
@@ -354,25 +546,14 @@ export default function Dashboard({
                 return;
             }
 
-            const tabTitle = sanitizeFilename(tabs[0].title || 'notebooklm');
+            const rawTabTitle = tabs[0].title || 'notebooklm';
+            const tabTitle = sanitizeFilename(rawTabTitle);
             const timestamp = getTimestamp();
             if (contentType) {
                 const response = await extractByType(contentType, tabs[0].id, format);
                 if (response && response.success && response.payload) {
                     const payload = response.payload;
-                    const contentLabel = payload.type === 'quiz'
-                        ? 'Quiz'
-                        : payload.type === 'flashcards'
-                            ? 'Flashcards'
-                            : payload.type === 'mindmap'
-                                ? 'Mindmap'
-                                : payload.type === 'note'
-                                    ? 'Note'
-                                    : payload.type === 'chat'
-                                        ? 'Chat'
-                                        : payload.type === 'source'
-                                            ? 'Sources'
-                                            : 'Data table';
+                    const contentLabel = getContentLabel(payload.type);
                     let result;
                     switch (payload.type) {
                         case 'quiz':
@@ -422,11 +603,27 @@ export default function Dashboard({
                         session,
                         exportTarget === 'drive'
                             ? (progress) => setUploadProgress({ percent: progress.percent })
+                            : undefined,
+                        exportTarget === 'notion'
+                            ? {
+                                contentType: payload.type,
+                                format,
+                                sourceTitle: rawTabTitle,
+                                sourceUrl: tabs[0].url,
+                                notebookId: getNotebookIdFromUrl(tabs[0].url),
+                                notebookTitle: rawTabTitle,
+                                items: payload.items,
+                                meta: payload.meta,
+                            }
                             : undefined
                     );
                     if (delivered.success) {
                         const formatName = format === 'CSV' ? 'Excel' : format;
-                        const destinationLabel = exportTarget === 'drive' ? 'Google Drive' : 'Downloads';
+                        const destinationLabel = exportTarget === 'drive'
+                            ? 'Google Drive'
+                            : exportTarget === 'notion'
+                                ? 'Notion'
+                                : 'Downloads';
                         let trialMessage = '';
                         if (requiresPlus && !isPlus) {
                             const trialResult = await consumeTrial(true);
@@ -441,6 +638,8 @@ export default function Dashboard({
                         const failureMessage = delivered.error
                             || (exportTarget === 'drive'
                                 ? 'Export failed. Check your Drive connection and try again.'
+                                : exportTarget === 'notion'
+                                    ? 'Export failed. Check your Notion connection and destination.'
                                 : 'Export failed.');
                         showNotice('error', failureMessage);
                     }
@@ -449,6 +648,11 @@ export default function Dashboard({
                 }
 
                 showNotice('error', EXTRACTION_ERROR_MESSAGE);
+                return;
+            }
+
+            if (exportTarget === 'notion') {
+                showNotice('error', 'Choose a specific export format for Notion delivery.');
                 return;
             }
 
@@ -469,6 +673,9 @@ export default function Dashboard({
     const handleRequestLogin = () => {
         onRequestLogin?.();
     };
+    const visibleSections = exportTarget === 'notion'
+        ? filterSectionsForNotion(EXPORT_SECTIONS)
+        : EXPORT_SECTIONS;
 
     return (
         <div className="exportkit-shell">
@@ -500,6 +707,23 @@ export default function Dashboard({
                     />
                 )}
 
+                {exportTarget === 'notion' && (
+                    <NotionSetupCard
+                        isSignedIn={isSignedIn}
+                        hasNotionAccess={hasNotionAccess}
+                        notionWorkspaceName={notionWorkspaceName}
+                        notionDatabaseId={notionDatabaseId}
+                        notionPages={notionPages}
+                        loadingAction={loadingAction}
+                        isPlus={isPlus}
+                        onRequestLogin={handleRequestLogin}
+                        onConnectNotion={handleConnectNotion}
+                        onConfigureDestination={handleConfigureNotionDestination}
+                        onRefreshPages={loadNotionPages}
+                        onUpgrade={() => openUpgradeModal('notion')}
+                    />
+                )}
+
                 {uploadProgress && (
                     <div className="upload-progress">
                         <div className="upload-progress-meta">
@@ -513,11 +737,13 @@ export default function Dashboard({
                 )}
 
                 <ExportActions
-                    sections={EXPORT_SECTIONS}
+                    sections={visibleSections}
+                    exportTarget={exportTarget}
                     loadingAction={loadingAction}
                     onExport={handleExport}
                     pdfQuality={pdfQuality}
                     onPdfQualityChange={handlePdfQualityChange}
+                    notionExportFormatByType={NOTION_EXPORT_FORMAT_BY_TYPE}
                 />
 
                 {notice && <ToastNotice notice={notice} />}
@@ -539,6 +765,9 @@ export default function Dashboard({
                     isPlus={isPlus}
                     hasDriveAccess={hasDriveAccess}
                     driveAccountEmail={driveAccountEmail}
+                    hasNotionAccess={hasNotionAccess}
+                    notionWorkspaceName={notionWorkspaceName}
+                    notionDatabaseId={notionDatabaseId}
                     isCancelScheduled={isCancelScheduled}
                     formattedPeriodEnd={formattedPeriodEnd}
                     trialRemaining={trialRemaining}
@@ -546,6 +775,8 @@ export default function Dashboard({
                     onClose={() => setShowAccountPanel(false)}
                     onConnectDrive={handleConnectDrive}
                     onDisconnectDrive={handleDisconnectDrive}
+                    onConnectNotion={handleConnectNotion}
+                    onDisconnectNotion={handleDisconnectNotion}
                     onManageBilling={handleManageBilling}
                     onUpgrade={() => openUpgradeModal('general')}
                 />

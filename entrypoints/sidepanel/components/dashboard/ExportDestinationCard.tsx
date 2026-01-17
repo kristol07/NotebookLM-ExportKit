@@ -25,11 +25,20 @@ export const ExportDestinationCard = ({ exportTarget, onChange }: ExportDestinat
         >
           Google Drive
         </button>
+        <button
+          type="button"
+          className={`toggle-btn ${exportTarget === 'notion' ? 'active' : ''}`}
+          onClick={() => onChange('notion')}
+        >
+          Notion
+        </button>
       </div>
       <p className="destination-hint">
         {exportTarget === 'drive'
           ? 'Drive exports require a Google Drive connection and a Plus subscription.'
-          : 'Local exports are instant. Advanced formats unlock with Plus.'}
+          : exportTarget === 'notion'
+            ? 'Notion exports require a Notion connection and a Plus subscription.'
+            : 'Local exports are instant. Advanced formats unlock with Plus.'}
       </p>
     </div>
   );
