@@ -655,7 +655,13 @@ const getDatabaseDataSources = (database: any) => {
 };
 
 const parseDatabaseInfo = (database: any, dataSource?: any): NotionDatabaseInfo | null => {
-  if (!database || typeof database !== 'object' || !database.id) {
+  if (
+    !database
+    || typeof database !== 'object'
+    || !database.id
+    || database.archived
+    || database.in_trash
+  ) {
     return null;
   }
   const databaseTitle = getNotionTitle(database.title);
@@ -751,6 +757,7 @@ const createDatabase = async (accessToken: string, parentPageId: string) => {
             },
           },
           Source: { rich_text: {} },
+          'Notebook URL': { url: {} },
           Exported: { date: {} },
           Items: { number: { format: 'number' } },
         },
@@ -845,6 +852,9 @@ const findDatabaseUnderPage = async (accessToken: string, parentPageId: string) 
     const results = Array.isArray(data?.results) ? data.results : [];
     for (const block of results) {
       if (block?.type !== 'child_database' || !block?.id) {
+        continue;
+      }
+      if (block?.archived || block?.in_trash) {
         continue;
       }
       const title = getNotionTitle(block.child_database?.title);
@@ -1001,6 +1011,7 @@ const buildNotionProperties = (
   contentType?: ContentType,
   format?: ExportFormat,
   sourceTitle?: string,
+  notebookUrl?: string,
   count?: number
 ) => {
   const properties: Record<string, any> = {
@@ -1017,6 +1028,14 @@ const buildNotionProperties = (
 
   if (database.properties.Source?.type === 'rich_text' && sourceTitle) {
     properties.Source = { rich_text: buildRichText(sourceTitle) };
+  }
+
+  if (notebookUrl) {
+    if (database.properties['Notebook URL']?.type === 'url') {
+      properties['Notebook URL'] = { url: notebookUrl };
+    } else if (database.properties['Notebook URL']?.type === 'rich_text') {
+      properties['Notebook URL'] = { rich_text: buildRichText(notebookUrl) };
+    }
   }
 
   if (database.properties.Exported?.type === 'date') {
@@ -1073,6 +1092,7 @@ export const uploadToNotion = async (
   const contentType = context?.contentType;
   const format = context?.format;
   const sourceTitle = context?.sourceTitle;
+  const sourceUrl = context?.sourceUrl;
   const fallbackTitle = contentType ? CONTENT_TYPE_LABELS[contentType] : 'Export';
   const title = buildNotionTitle(exportResult, fallbackTitle, context);
   const properties = buildNotionProperties(
@@ -1081,6 +1101,7 @@ export const uploadToNotion = async (
     contentType,
     format,
     sourceTitle,
+    sourceUrl,
     exportResult.count
   );
   let blocks: any[] = [];

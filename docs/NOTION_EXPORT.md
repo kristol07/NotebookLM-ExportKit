@@ -54,17 +54,22 @@ We use the Notion 2025-09-03 API model where **databases** are containers and **
   - `Type`, `Format`, `Source`, `Exported`, `Items` from export context
 - Children: Notion blocks generated from content (tables, toggles, etc).
 
-## Mapping Storage (planned)
-Store these in extension storage to avoid re-creating data sources:
-- `notionDatabaseId`: the single container database ID.
+## Mapping Storage
+Store these in extension storage to avoid re-creating destinations:
+- `notionDatabaseId`: the last-selected container database ID.
+- `notionPageDatabaseMap`: `{ [pageId: string]: databaseId }` for per-page reuse.
 - `notionNotebookMap`: `{ [notebookId: string]: { dataSourceId: string; name: string } }`
 
 `notebookId` should be a stable NotebookLM identifier (not just title).
 
-## Delivery Flow (planned)
+## Delivery Flow
 1. User connects Notion via OAuth.
 2. User selects a Notion **page** destination.
-3. Extension creates or finds the `NotebookLM ExportKit` database under that page.
+3. Extension resolves the `NotebookLM ExportKit` database under that page:
+   - Check `notionPageDatabaseMap` for a saved database ID and validate it.
+   - If missing, scan the page's child databases via `GET /v1/blocks/{page_id}/children`.
+   - Ignore archived or trashed databases (Notion "trash" still returns them via the API).
+   - Create a new database only if no existing one is found.
 4. On each export:
    - Resolve notebook ID from the active NotebookLM page.
    - Get or create a data source for that notebook.
@@ -91,3 +96,9 @@ Notion exports are stored as native blocks. Only text-based formats are supporte
 | Sources | Markdown |
 
 If you need a non-text export (PDF, Word, SVG, etc.), use the Download or Google Drive destinations.
+
+## Archived Destination Gotcha
+If the `NotebookLM ExportKit` database is deleted in Notion, it is **archived** (moved to trash), not permanently removed.
+Archived or trashed databases can still be returned by the API and may accept new pages, but they will not show up in the workspace UI unless restored.
+The integration now ignores `archived`/`in_trash` databases during destination resolution so a new database is created when the previous one is trashed.
+`archived` is the legacy field used for deleted items; `in_trash` is the newer explicit flag for items moved to trash, and not all objects set both.
