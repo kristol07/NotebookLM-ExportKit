@@ -35,7 +35,7 @@ export default defineConfig({
       'https://www.googleapis.com/*',
       'https://api.notion.com/*'
     ],
-    name: 'NotebookLM ExportKit - export NotebookLM content to any format',
+    name: 'NotebookLM ExportKit: export any format to local, GDrive & Notion',
     description: 'Export NotebookLM chat, quiz, flashcard, mindmap, note, report, etc. to multiple formats with Drive or Notion delivery.',
     icons: {
       16: 'icon/16.png',
