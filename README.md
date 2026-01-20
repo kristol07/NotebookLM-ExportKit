@@ -1,4 +1,13 @@
-# Extension store page
+# Extension
+
+Store listing: [Chrome Web Store](https://chromewebstore.google.com/detail/notebooklm-exportkit-expo/badkjigcpokmligdghppmippgfjhabmp)
+
+## Demo
+
+![Save to Notion](docs/site/demo_save_to_notion.png)
+![Quiz to Anki](docs/site/demo_quiz_to_anki.png)
+![Note to PDF](docs/site/demo_note_to_pdf.png)
+![Mindmap to Obsidian](docs/site/demo_mindmap_to_obsidian.png)
 
 Copyright (C) 2026 kristol07
 
