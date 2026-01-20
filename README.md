@@ -1,5 +1,7 @@
 # Extension store page
 
+Copyright (C) 2026 kristol07
+
 ## Title
 
 NotebookLM ExportKit - export NotebookLM content to any format
@@ -37,3 +39,79 @@ How to use:
   Simply open the content you want to export in NotebookLM first, then click button in the extension for the format you would like to receive, and you'll get it exported finally. That's all.
 
 More content types and export formats are coming soon.
+
+## Open Source Usage
+
+### Requirements
+
+- Node.js 20+ (recommended)
+- pnpm 10+
+
+### Install
+
+```bash
+pnpm install
+```
+
+### Development
+
+```bash
+pnpm dev
+```
+
+Browser-specific dev builds:
+
+```bash
+pnpm dev:edge
+pnpm dev:firefox
+```
+
+### Build
+
+```bash
+pnpm build
+pnpm zip
+```
+
+Browser-specific builds:
+
+```bash
+pnpm build:edge
+pnpm build:firefox
+pnpm zip:firefox
+```
+
+### Type Check
+
+```bash
+pnpm compile
+```
+
+### Configuration
+
+Create `.env` from `.env.example`:
+
+```bash
+cp .env.example .env
+```
+
+- `VITE_SUPABASE_URL`: Supabase project URL
+- `VITE_SUPABASE_PUBLISHABLE_DEFAULT_KEY`: Supabase publishable key
+- `VITE_GOOGLE_DRIVE_CLIENT_ID`: Google OAuth client id for Drive uploads
+
+Billing and Supabase edge functions use `.env.supabase` (optional unless you deploy billing):
+
+```bash
+cp .env.supabase.example .env.supabase
+```
+
+- `CREEM_API_KEY`
+- `CREEM_WEBHOOK_SECRET`
+- `CREEM_PRODUCT_ID_PLUS`
+- `CREEM_SUCCESS_URL`
+
+See `docs/GOOGLE_OAUTH_SETUP.md` and `docs/CREEM_BILLING.md` for setup details.
+
+### License
+
+This project is licensed under the GNU Affero General Public License v3.0. See `LICENSE`.
