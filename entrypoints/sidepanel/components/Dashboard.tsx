@@ -126,7 +126,9 @@ const BASE_EXPORT_SECTIONS: ExportSection[] = [
         title: 'Source Exports',
         contentType: 'source',
         options: [
-            { format: 'Markdown', label: 'Markdown' },
+            { format: 'PDF' },
+            { format: 'Word', label: 'Word', isPlus: true },
+            { format: 'Markdown', label: 'Markdown', isPlus: true },
         ],
     },
 ];
@@ -627,7 +629,15 @@ export default function Dashboard({
                             );
                             break;
                         case 'source':
-                            result = await exportByType('source', payload.items, format, tabTitle, timestamp);
+                            result = await exportByType(
+                                'source',
+                                payload.items,
+                                format,
+                                tabTitle,
+                                timestamp,
+                                undefined,
+                                { pdfQuality: options?.pdfQualityOverride ?? pdfQuality }
+                            );
                             break;
                         default:
                             result = await exportByType('datatable', payload.items, format, tabTitle, timestamp);

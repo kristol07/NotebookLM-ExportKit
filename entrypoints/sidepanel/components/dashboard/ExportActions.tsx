@@ -53,7 +53,7 @@ const NOTION_LAYOUT_BY_TYPE: Record<ContentType, string> = {
   note: 'Rich doc with paragraphs, tables, and code blocks',
   report: 'Rich report with headings, paragraphs, tables, and code blocks',
   chat: 'Role headings with paragraphs, tables, and code blocks',
-  source: 'Sources list with linked URLs when available',
+  source: 'Source detail with summary, key topics, and structured content',
 };
 
 export const ExportActions = ({
@@ -101,7 +101,7 @@ export const ExportActions = ({
   const renderFileOption = (section: ExportSection, option: ExportOption) => {
     const key = `${section.contentType}-${option.format}`;
     const hasTooltip = isFileTarget && !!option.apps?.length;
-    if ((section.contentType === 'note' || section.contentType === 'report' || section.contentType === 'chat') && option.format === 'PDF') {
+    if ((section.contentType === 'note' || section.contentType === 'report' || section.contentType === 'chat' || section.contentType === 'source') && option.format === 'PDF') {
       return (
         <div
           key={key}

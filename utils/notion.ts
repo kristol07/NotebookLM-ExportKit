@@ -498,8 +498,8 @@ const buildDataTableBlocks = (items: DataTableRow[]) => {
   return blocks;
 };
 
-const buildNoteBlocks = (items: NoteBlock[], label = 'Note') => {
-  const blocks: any[] = [buildHeadingBlock(2, label)];
+const buildNoteContentBlocks = (items: NoteBlock[]) => {
+  const blocks: any[] = [];
   items.forEach((block) => {
     if (block.type === 'paragraph') {
       blocks.push(buildParagraphBlock(buildInlineRichText(block.inlines)));
@@ -525,6 +525,10 @@ const buildNoteBlocks = (items: NoteBlock[], label = 'Note') => {
     }
   });
   return blocks;
+};
+
+const buildNoteBlocks = (items: NoteBlock[], label = 'Note') => {
+  return [buildHeadingBlock(2, label), ...buildNoteContentBlocks(items)];
 };
 
 const buildChatBlocks = (items: ChatMessage[]) => {
@@ -555,15 +559,37 @@ const buildChatBlocks = (items: ChatMessage[]) => {
 };
 
 const buildSourceBlocks = (items: SourceItem[]) => {
-  const blocks: any[] = [buildHeadingBlock(2, 'Sources')];
-  items.forEach((item) => {
-    const value = item.title?.trim();
-    if (!value) return;
-    if (isUrl(value)) {
-      blocks.push(buildParagraphBlock(buildTextRichText(value, { link: value })));
-      return;
+  const blocks: any[] = [];
+  if (items.length === 0) {
+    return [buildHeadingBlock(2, 'Source'), buildParagraphBlock(buildTextRichText('No source content found.'))];
+  }
+  items.forEach((item, index) => {
+    const title = item.title?.trim() || `Source ${index + 1}`;
+    blocks.push(buildHeadingBlock(2, title));
+
+    if (item.summary && item.summary.length > 0) {
+      blocks.push(buildHeadingBlock(3, 'Summary'));
+      blocks.push(...buildNoteContentBlocks(item.summary));
     }
-    blocks.push(buildBulletedItem(value));
+
+    if (item.keyTopics && item.keyTopics.length > 0) {
+      blocks.push(buildHeadingBlock(3, 'Key topics'));
+      item.keyTopics.forEach((topic) => {
+        const cleaned = topic?.trim();
+        if (cleaned) {
+          blocks.push(buildBulletedItem(cleaned));
+        }
+      });
+    }
+
+    if (item.content && item.content.length > 0) {
+      blocks.push(buildHeadingBlock(3, 'Source content'));
+      blocks.push(...buildNoteContentBlocks(item.content));
+    }
+
+    if (index < items.length - 1) {
+      blocks.push(buildDividerBlock());
+    }
   });
   return blocks;
 };

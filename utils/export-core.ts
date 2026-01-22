@@ -65,6 +65,9 @@ export interface DataTableRow {
 
 export interface SourceItem {
     title: string;
+    summary?: NoteBlock[];
+    keyTopics?: string[];
+    content?: NoteBlock[];
 }
 
 export interface NoteInline {
@@ -300,6 +303,37 @@ export const validateSourceItems = (items: unknown): ValidationResult => {
         }
         if (!isNonEmptyString(item.title)) {
             errors.push(`source.items[${index}].title must be a non-empty string`);
+        }
+        if (item.summary !== undefined) {
+            if (!Array.isArray(item.summary)) {
+                errors.push(`source.items[${index}].summary must be an array`);
+            } else {
+                const summaryValidation = validateNoteBlocks(item.summary);
+                if (!summaryValidation.valid) {
+                    errors.push(`source.items[${index}].summary invalid: ${summaryValidation.errors.join('; ')}`);
+                }
+            }
+        }
+        if (item.keyTopics !== undefined) {
+            if (!Array.isArray(item.keyTopics)) {
+                errors.push(`source.items[${index}].keyTopics must be an array`);
+            } else {
+                (item.keyTopics as unknown[]).forEach((topic, topicIndex) => {
+                    if (!isNonEmptyString(topic)) {
+                        errors.push(`source.items[${index}].keyTopics[${topicIndex}] must be a non-empty string`);
+                    }
+                });
+            }
+        }
+        if (item.content !== undefined) {
+            if (!Array.isArray(item.content)) {
+                errors.push(`source.items[${index}].content must be an array`);
+            } else {
+                const contentValidation = validateNoteBlocks(item.content);
+                if (!contentValidation.valid) {
+                    errors.push(`source.items[${index}].content invalid: ${contentValidation.errors.join('; ')}`);
+                }
+            }
         }
     });
 

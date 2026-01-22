@@ -44,7 +44,7 @@ export const supportedFormatsByType: Record<ContentType, ExportFormat[]> = {
     note: ['Word', 'Markdown', 'PDF'],
     report: ['Word', 'Markdown', 'PDF'],
     chat: ['PDF', 'Word', 'JSON', 'Markdown'],
-    source: ['Markdown']
+    source: ['Word', 'Markdown', 'PDF']
 };
 
 export const exportByType = async (
@@ -86,7 +86,7 @@ export const exportByType = async (
     }
 
     if (type === 'source') {
-        return exportSources(items as SourceItem[], format, tabTitle, timestamp);
+        return exportSources(items as SourceItem[], format, tabTitle, timestamp, options);
     }
 
     return exportDatatable(items as DataTableRow[], format, tabTitle, timestamp);
