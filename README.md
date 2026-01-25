@@ -23,7 +23,9 @@ Export NotebookLM chats, quizzes, flashcards, mindmaps, notes, reports, and tabl
 
 NotebookLM Export Kit is a purpose‑built export tool for NotebookLM. 
 
-It turns your quizzes, flashcards, mindmaps, notes, reports, and tables into clean, reusable files so you can keep learning, organize research, and share results outside of NotebookLM. 
+It turns your quizzes, flashcards, mindmaps, notes, reports, and tables into clean, reusable files so you can keep learning, organize research, and share results outside of NotebookLM.
+
+NotebookLM ExportKit is open source (AGPLv3). Repo: https://github.com/kristol07/NotebookLM-ExportKit
 
 If you rely on NotebookLM for study, teaching, or knowledge management, this extension makes your content portable and future‑proof.
 
