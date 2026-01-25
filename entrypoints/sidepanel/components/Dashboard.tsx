@@ -47,7 +47,7 @@ import { AccountPanel } from './dashboard/AccountPanel';
 import { DashboardHeader } from './dashboard/DashboardHeader';
 import { DriveSetupCard } from './dashboard/DriveSetupCard';
 import { NotionSetupCard } from './dashboard/NotionSetupCard';
-import { ExportActions, ExportSection } from './dashboard/ExportActions';
+import { ExportActions, ExportDelivery, ExportSection } from './dashboard/ExportActions';
 import { ExportDestinationCard } from './dashboard/ExportDestinationCard';
 import { ToastNotice } from './dashboard/ToastNotice';
 import { UpgradeBanner } from './dashboard/UpgradeBanner';
@@ -134,6 +134,14 @@ const BASE_EXPORT_SECTIONS: ExportSection[] = [
 ];
 
 const EXPORT_SECTIONS: ExportSection[] = BASE_EXPORT_SECTIONS;
+const CLIPBOARD_CONTENT_TYPES = new Set<ContentType>([
+    'mindmap',
+    'note',
+    'report',
+    'chat',
+    'datatable',
+    'source',
+]);
 
 const NOTION_EXPORT_FORMAT_BY_TYPE: Record<ContentType, ExportFormat> = {
     quiz: 'JSON',
@@ -156,6 +164,33 @@ const filterSectionsForNotion = (sections: ExportSection[]) =>
             };
         })
         .filter((section) => section.options.length > 0);
+
+const withClipboardOptions = (sections: ExportSection[]) =>
+    sections.map((section) => {
+        if (!CLIPBOARD_CONTENT_TYPES.has(section.contentType)) {
+            return section;
+        }
+        if (section.options.some((option) => option.delivery === 'clipboard')) {
+            return section;
+        }
+        const markdownIndex = section.options.findIndex((option) => option.format === 'Markdown');
+        if (markdownIndex === -1) {
+            return section;
+        }
+        const markdownOption = section.options[markdownIndex];
+        const copyOption = {
+            format: 'Markdown' as const,
+            label: 'Clipboard',
+            isPlus: markdownOption.isPlus,
+            delivery: 'clipboard' as ExportDelivery,
+        };
+        const options = [...section.options];
+        options.splice(markdownIndex + 1, 0, copyOption);
+        return {
+            ...section,
+            options,
+        };
+    });
 
 const PLUS_EXPORTS = new Set(
     EXPORT_SECTIONS.flatMap((section) =>
@@ -339,6 +374,22 @@ export default function Dashboard({
         noticeTimerRef.current = setTimeout(() => setNotice(null), 3500);
     };
 
+    const copyTextToClipboard = async (text: string) => {
+        if (navigator.clipboard?.writeText) {
+            await navigator.clipboard.writeText(text);
+            return;
+        }
+        const textarea = document.createElement('textarea');
+        textarea.value = text;
+        textarea.setAttribute('readonly', 'true');
+        textarea.style.position = 'absolute';
+        textarea.style.left = '-9999px';
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textarea);
+    };
+
     const isPlusExport = (format: ExportFormat, contentType?: ContentType) => {
         if (!contentType) {
             return false;
@@ -507,9 +558,11 @@ export default function Dashboard({
     const handleExport = async (
         format: ExportFormat,
         contentType?: ContentType,
-        options?: { pdfQualityOverride?: PdfQualityPreference }
+        options?: { pdfQualityOverride?: PdfQualityPreference; deliveryOverride?: ExportDelivery }
     ) => {
-        const actionId = contentType ? `${contentType}:${format}` : 'notebooklm-payload';
+        const actionId = contentType
+            ? `${contentType}:${format}${options?.deliveryOverride ? `:${options.deliveryOverride}` : ''}`
+            : 'notebooklm-payload';
         setLoadingAction(actionId);
         try {
             const plusExport = isPlusExport(format, contentType);
@@ -643,6 +696,31 @@ export default function Dashboard({
                             result = await exportByType('datatable', payload.items, format, tabTitle, timestamp);
                             break;
                     }
+                    const getTrialMessage = async () => {
+                        if (requiresPlus && !isPlus) {
+                            const trialResult = await consumeTrial(true);
+                            if (typeof trialResult.remaining === 'number') {
+                                const remainingText = trialResult.remaining === 1 ? '1 export' : `${trialResult.remaining} exports`;
+                                setTrialRemaining(trialResult.remaining);
+                                return ` Trial used. ${remainingText} left.`;
+                            }
+                        }
+                        return '';
+                    };
+
+                    if (exportTarget === 'download' && options?.deliveryOverride === 'clipboard') {
+                        try {
+                            const markdownText = await result.blob.text();
+                            await copyTextToClipboard(markdownText);
+                            const trialMessage = await getTrialMessage();
+                            showNotice('success', `Copied ${contentLabel} Markdown to Clipboard.${trialMessage}`);
+                        } catch (err) {
+                            console.error(err);
+                            showNotice('error', 'Copy failed. Please try again.');
+                        }
+                        return;
+                    }
+
                     if (exportTarget === 'drive') {
                         setUploadProgress({ percent: 0 });
                     }
@@ -673,15 +751,7 @@ export default function Dashboard({
                             : exportTarget === 'notion'
                                 ? 'Notion'
                                 : 'Downloads';
-                        let trialMessage = '';
-                        if (requiresPlus && !isPlus) {
-                            const trialResult = await consumeTrial(true);
-                            if (typeof trialResult.remaining === 'number') {
-                                const remainingText = trialResult.remaining === 1 ? '1 export' : `${trialResult.remaining} exports`;
-                                setTrialRemaining(trialResult.remaining);
-                                trialMessage = ` Trial used. ${remainingText} left.`;
-                            }
-                        }
+                        const trialMessage = await getTrialMessage();
                         showNotice('success', `Exported ${contentLabel} to ${destinationLabel} as ${formatName}.${trialMessage}`);
                     } else {
                         const failureMessage = delivered.error
@@ -689,7 +759,7 @@ export default function Dashboard({
                                 ? 'Export failed. Check your Drive connection and try again.'
                                 : exportTarget === 'notion'
                                     ? 'Export failed. Check your Notion connection and destination.'
-                                : 'Export failed.');
+                                    : 'Export failed.');
                         showNotice('error', failureMessage);
                     }
                     setUploadProgress(null);
@@ -724,7 +794,9 @@ export default function Dashboard({
     };
     const visibleSections = exportTarget === 'notion'
         ? filterSectionsForNotion(EXPORT_SECTIONS)
-        : EXPORT_SECTIONS;
+        : exportTarget === 'download'
+            ? withClipboardOptions(EXPORT_SECTIONS)
+            : EXPORT_SECTIONS;
 
     return (
         <div className="exportkit-shell">

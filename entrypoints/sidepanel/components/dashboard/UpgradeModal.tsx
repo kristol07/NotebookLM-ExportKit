@@ -71,6 +71,9 @@ export const UpgradeModal = ({
               Send exports into Notion pages.
             </div>
           </div>
+          <div className="modal-trial">
+            Plus is $2.99/month after your trials. Checkout is managed securely by creem.io.
+          </div>
           {trialRemaining !== null && (
             <div className="modal-trial">
               {trialRemaining === 0

@@ -23,7 +23,10 @@ type ExportOption = {
   label?: string;
   isPlus?: boolean;
   apps?: string[];
+  delivery?: ExportDelivery;
 };
+
+export type ExportDelivery = 'download' | 'clipboard';
 
 export type ExportSection = {
   title: string;
@@ -38,7 +41,7 @@ type ExportActionsProps = {
   onExport: (
     format: ExportFormat,
     contentType?: ContentType,
-    options?: { pdfQualityOverride?: PdfQualityPreference }
+    options?: { pdfQualityOverride?: PdfQualityPreference; deliveryOverride?: ExportDelivery }
   ) => void;
   pdfQuality: PdfQualityPreference;
   onPdfQualityChange: (value: PdfQualityPreference) => void;
@@ -93,13 +96,16 @@ export const ExportActions = ({
     onExport('PDF', contentType, { pdfQualityOverride: value });
     setActivePdfQualityKey(null);
   };
-  const handleExportClick = (format: ExportFormat, contentType: ContentType) => {
+  const handleExportClick = (option: ExportOption, contentType: ContentType) => {
     setActivePdfQualityKey(null);
-    onExport(format, contentType);
+    onExport(option.format, contentType, {
+      deliveryOverride: option.delivery
+    });
   };
 
   const renderFileOption = (section: ExportSection, option: ExportOption) => {
-    const key = `${section.contentType}-${option.format}`;
+    const actionId = `${section.contentType}:${option.format}${option.delivery ? `:${option.delivery}` : ''}`;
+    const key = `${section.contentType}-${option.format}${option.delivery ? `-${option.delivery}` : ''}`;
     const hasTooltip = isFileTarget && !!option.apps?.length;
     if ((section.contentType === 'note' || section.contentType === 'report' || section.contentType === 'chat' || section.contentType === 'source') && option.format === 'PDF') {
       return (
@@ -112,7 +118,7 @@ export const ExportActions = ({
             type="button"
             onClick={() => {
               if (activePdfQualityKey === key) {
-                handleExportClick(option.format, section.contentType);
+                handleExportClick(option, section.contentType);
               } else {
                 setActivePdfQualityKey(key);
               }
@@ -131,7 +137,7 @@ export const ExportActions = ({
                 <span className="tooltip-content">Supported by {option.apps?.join(', ')}</span>
               ) : null}
               {option.isPlus && <PlusIcon />}
-              {loadingAction === `${section.contentType}:${option.format}` && <Spinner />}
+              {loadingAction === actionId && <Spinner />}
             </span>
           </button>
           {activePdfQualityKey === key && (
@@ -162,7 +168,7 @@ export const ExportActions = ({
     return (
       <button
         key={key}
-        onClick={() => handleExportClick(option.format, section.contentType)}
+        onClick={() => handleExportClick(option, section.contentType)}
         disabled={!!loadingAction}
         className={`export-btn${hasTooltip ? ' has-tooltip' : ''}`}
         aria-label={
@@ -177,7 +183,7 @@ export const ExportActions = ({
             <span className="tooltip-content">Supported by {option.apps?.join(', ')}</span>
           ) : null}
           {option.isPlus && <PlusIcon />}
-          {loadingAction === `${section.contentType}:${option.format}` && <Spinner />}
+          {loadingAction === actionId && <Spinner />}
         </span>
       </button>
     );

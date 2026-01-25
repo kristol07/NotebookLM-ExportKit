@@ -9,6 +9,7 @@ For Google OAuth/Drive setup, see `docs/GOOGLE_OAUTH_SETUP.md`.
 - `utils/export-core.ts` owns shared types and validation.
 - `utils/export-dispatch.ts` routes by content type to the correct exporter and enforces per-type format support.
 - `utils/export-delivery.ts` handles delivery targets (download, Google Drive, Notion) after exporters build blobs or accept structured payloads for destination-native layouts.
+- Clipboard delivery for Markdown (select content types) is handled in the dashboard when the target is **download**, so it can bypass file saving while reusing the same export pipeline.
 
 ### Content-specific
 - `utils/quiz-export.ts`, `utils/flashcard-export.ts`, `utils/mindmap-export.ts`, `utils/datatable-export.ts`, `utils/note-export.ts`, and `utils/report-export.ts` implement per-type formats and keep HTML UIs distinct where needed.
