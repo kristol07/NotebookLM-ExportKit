@@ -16,6 +16,7 @@
  */
 import React from 'react';
 import type { ExportTarget } from '../../../utils/export-core';
+import { useI18n } from '../../i18n/i18n';
 
 type ExportDestinationCardProps = {
   exportTarget: ExportTarget;
@@ -23,38 +24,39 @@ type ExportDestinationCardProps = {
 };
 
 export const ExportDestinationCard = ({ exportTarget, onChange }: ExportDestinationCardProps) => {
+  const { t } = useI18n();
   return (
     <div className="destination-card">
-      <div className="section-label">Export destination</div>
-      <div className="destination-toggle" role="group" aria-label="Export destination">
+      <div className="section-label">{t('common.exportDestination')}</div>
+      <div className="destination-toggle" role="group" aria-label={t('common.exportDestination')}>
         <button
           type="button"
           className={`toggle-btn ${exportTarget === 'download' ? 'active' : ''}`}
           onClick={() => onChange('download')}
         >
-          This device
+          {t('common.thisDevice')}
         </button>
         <button
           type="button"
           className={`toggle-btn ${exportTarget === 'drive' ? 'active' : ''}`}
           onClick={() => onChange('drive')}
         >
-          Google Drive
+          {t('common.googleDrive')}
         </button>
         <button
           type="button"
           className={`toggle-btn ${exportTarget === 'notion' ? 'active' : ''}`}
           onClick={() => onChange('notion')}
         >
-          Notion
+          {t('common.notion')}
         </button>
       </div>
       <p className="destination-hint">
         {exportTarget === 'drive'
-          ? 'Drive exports require a Google Drive connection and a Plus subscription.'
+          ? t('export.destinationHint.drive')
           : exportTarget === 'notion'
-            ? 'Notion exports require a Notion connection and a Plus subscription.'
-            : 'Local exports are instant. Advanced formats unlock with Plus.'}
+            ? t('export.destinationHint.notion')
+            : t('export.destinationHint.download')}
       </p>
     </div>
   );

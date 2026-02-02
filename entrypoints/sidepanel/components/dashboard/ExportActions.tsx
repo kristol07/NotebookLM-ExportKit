@@ -14,9 +14,10 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import type { ContentType, ExportFormat, ExportTarget, PdfQualityPreference } from '../../../utils/export-core';
 import { PlusIcon, Spinner } from './Icons';
+import { useI18n } from '../../i18n/i18n';
 
 type ExportOption = {
   format: ExportFormat;
@@ -48,17 +49,6 @@ type ExportActionsProps = {
   notionExportFormatByType: Record<ContentType, ExportFormat>;
 };
 
-const NOTION_LAYOUT_BY_TYPE: Record<ContentType, string> = {
-  quiz: 'Callout questions, option bullets, hint/answer toggles, rationale sections',
-  flashcards: 'Toggle cards with blue back notes',
-  mindmap: 'Section headings with nested bullet outline + toggles',
-  datatable: 'Data table with row cells',
-  note: 'Rich doc with paragraphs, tables, and code blocks',
-  report: 'Rich report with headings, paragraphs, tables, and code blocks',
-  chat: 'Role headings with paragraphs, tables, and code blocks',
-  source: 'Source detail with summary, key topics, and structured content',
-};
-
 export const ExportActions = ({
   sections,
   exportTarget,
@@ -68,10 +58,21 @@ export const ExportActions = ({
   onPdfQualityChange,
   notionExportFormatByType
 }: ExportActionsProps) => {
+  const { t, formatList } = useI18n();
   const [activePdfQualityKey, setActivePdfQualityKey] = useState<string | null>(null);
   const pdfQualityRef = useRef<HTMLDivElement | null>(null);
   const isNotionTarget = exportTarget === 'notion';
   const isFileTarget = exportTarget === 'download' || exportTarget === 'drive';
+  const notionLayoutByType = useMemo(() => ({
+    quiz: t('export.notionLayout.quiz'),
+    flashcards: t('export.notionLayout.flashcards'),
+    mindmap: t('export.notionLayout.mindmap'),
+    datatable: t('export.notionLayout.datatable'),
+    note: t('export.notionLayout.note'),
+    report: t('export.notionLayout.report'),
+    chat: t('export.notionLayout.chat'),
+    source: t('export.notionLayout.source'),
+  }), [t]);
 
   useEffect(() => {
     if (!activePdfQualityKey) {
@@ -107,6 +108,8 @@ export const ExportActions = ({
     const actionId = `${section.contentType}:${option.format}${option.delivery ? `:${option.delivery}` : ''}`;
     const key = `${section.contentType}-${option.format}${option.delivery ? `-${option.delivery}` : ''}`;
     const hasTooltip = isFileTarget && !!option.apps?.length;
+    const appsLabel = option.apps?.length ? formatList(option.apps) : '';
+    const supportedByLabel = hasTooltip ? t('export.supportedBy', { apps: appsLabel }) : '';
     if ((section.contentType === 'note' || section.contentType === 'report' || section.contentType === 'chat' || section.contentType === 'source') && option.format === 'PDF') {
       return (
         <div
@@ -127,14 +130,14 @@ export const ExportActions = ({
             className={`export-btn${hasTooltip ? ' has-tooltip' : ''}`}
             aria-label={
               hasTooltip
-                ? `${option.label ?? option.format}. Supported by ${option.apps?.join(', ')}`
+                ? `${option.label ?? option.format}. ${supportedByLabel}`
                 : undefined
             }
           >
             <span className="button-content">
               {option.label ?? option.format}
               {hasTooltip ? (
-                <span className="tooltip-content">Supported by {option.apps?.join(', ')}</span>
+                <span className="tooltip-content">{supportedByLabel}</span>
               ) : null}
               {option.isPlus && <PlusIcon />}
               {loadingAction === actionId && <Spinner />}
@@ -142,21 +145,21 @@ export const ExportActions = ({
           </button>
           {activePdfQualityKey === key && (
             <div className="pdf-quality-popover">
-              <div className="pdf-quality-title">PDF quality</div>
+              <div className="pdf-quality-title">{t('export.pdfQualityTitle')}</div>
               <div className="pdf-quality-actions">
                 <button
                   type="button"
                   className={`pdf-quality-btn ${pdfQuality === 'size' ? 'active' : ''}`}
                   onClick={() => handlePdfChoice('size', section.contentType)}
                 >
-                  Size first
+                  {t('export.pdfQualitySize')}
                 </button>
                 <button
                   type="button"
                   className={`pdf-quality-btn ${pdfQuality === 'clarity' ? 'active' : ''}`}
                   onClick={() => handlePdfChoice('clarity', section.contentType)}
                 >
-                  Clarity first
+                  {t('export.pdfQualityClarity')}
                 </button>
               </div>
             </div>
@@ -173,14 +176,14 @@ export const ExportActions = ({
         className={`export-btn${hasTooltip ? ' has-tooltip' : ''}`}
         aria-label={
           hasTooltip
-            ? `${option.label ?? option.format}. Supported by ${option.apps?.join(', ')}`
+            ? `${option.label ?? option.format}. ${supportedByLabel}`
             : undefined
         }
       >
         <span className="button-content">
           {option.label ?? option.format}
           {hasTooltip ? (
-            <span className="tooltip-content">Supported by {option.apps?.join(', ')}</span>
+            <span className="tooltip-content">{supportedByLabel}</span>
           ) : null}
           {option.isPlus && <PlusIcon />}
           {loadingAction === actionId && <Spinner />}
@@ -199,14 +202,14 @@ export const ExportActions = ({
           className="export-btn notion-export-btn"
         >
           <span className="button-content">
-            Export to Notion
+            {t('common.exportToNotion')}
             {loadingAction === `${section.contentType}:${notionExportFormatByType[section.contentType]}` && (
               <Spinner />
             )}
           </span>
         </button>
         <div className="notion-layout-detail">
-          {NOTION_LAYOUT_BY_TYPE[section.contentType]}
+          {notionLayoutByType[section.contentType]}
         </div>
       </div>
     </div>
@@ -234,14 +237,14 @@ export const ExportActions = ({
     <div className="actions">
       {isNotionTarget && (
         <div className="notion-hint">
-          Notion exports use native layouts.
+          {t('export.hint.notion')}
         </div>
       )}
       {renderSections()}
 
       <div className="coming-soon">
-        <div className="section-label muted">Coming soon</div>
-        <div className="coming-card">Video & Audio Overviews to Transcript/Slides</div>
+        <div className="section-label muted">{t('export.comingSoon')}</div>
+        <div className="coming-card">{t('export.comingSoonDetail')}</div>
       </div>
     </div>
   );

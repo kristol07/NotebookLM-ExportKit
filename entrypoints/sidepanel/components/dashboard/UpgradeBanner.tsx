@@ -15,7 +15,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 import React from 'react';
-import { PlusIcon } from './Icons';
+import { useI18n } from '../../i18n/i18n';
 
 type UpgradeBannerProps = {
   trialRemaining: number | null;
@@ -23,24 +23,23 @@ type UpgradeBannerProps = {
 };
 
 export const UpgradeBanner = ({ trialRemaining, onUpgrade }: UpgradeBannerProps) => {
+  const { t } = useI18n();
   return (
     <div className="upgrade-banner">
       <div>
-        <div className="section-label">Plus plan</div>
-        <p className="upgrade-note">Unlock advanced formats plus Drive and Notion delivery.</p>
+        <div className="section-label">{t('upgrade.banner.title')}</div>
+        <p className="upgrade-note">{t('upgrade.banner.note')}</p>
         {trialRemaining !== null && (
           <div className="drive-status">
-            <span className="status-pill warning">Free trial</span>
+            <span className="status-pill warning">{t('trial.free')}</span>
             <span className="status-pill">
-              {trialRemaining === 0
-                ? 'No exports left'
-                : `${trialRemaining} ${trialRemaining === 1 ? 'export' : 'exports'} left`}
+              {t('trial.exportsLeft', { count: trialRemaining })}
             </span>
           </div>
         )}
       </div>
       <button onClick={onUpgrade} className="export-btn small primary">
-        Upgrade
+        {t('common.upgrade')}
       </button>
     </div>
   );

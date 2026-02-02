@@ -16,6 +16,7 @@
  */
 import React from 'react';
 import { PlusIcon, Spinner } from './Icons';
+import { useI18n } from '../../i18n/i18n';
 
 type AccountPanelProps = {
   email: string | null;
@@ -58,62 +59,67 @@ export const AccountPanel = ({
   onManageBilling,
   onUpgrade,
 }: AccountPanelProps) => {
+  const { t, locale, setLocale, availableLocales } = useI18n();
   return (
     <div className="panel-overlay" role="dialog" aria-modal="true" onClick={onClose}>
       <div className="panel-card" onClick={(event) => event.stopPropagation()}>
         <div className="panel-header">
-          <div className="panel-title">Account</div>
+          <div className="panel-title">{t('account.title')}</div>
           <div className="panel-header-meta">
-            <div className="panel-subtitle">{email ?? 'Signed in'}</div>
+            <div className="panel-subtitle">{email ?? t('common.signedIn')}</div>
             <button onClick={onClose} className="export-btn small">
-              Close
+              {t('common.close')}
             </button>
           </div>
         </div>
         <div className="panel-summary-card">
           <div className="panel-summary-row">
             <span className={`status-pill ${isPlus ? 'success' : 'warning'}`}>
-              {isPlus ? 'Plus plan' : 'Free plan'}
+              {isPlus ? t('account.plan.plus') : t('account.plan.free')}
             </span>
-            {isCancelScheduled && <span className="status-pill">Ends {formattedPeriodEnd ?? 'soon'}</span>}
+            {isCancelScheduled && (
+              <span className="status-pill">
+                {formattedPeriodEnd
+                  ? t('account.endsOn', { date: formattedPeriodEnd })
+                  : t('account.endsSoon')}
+              </span>
+            )}
             {!isPlus && (
               <>
-                <span className="status-pill warning">Free trial</span>
+                <span className="status-pill warning">{t('trial.free')}</span>
                 <span className="status-pill">
                   {trialRemaining === null
-                    ? 'Checking exports...'
-                    : trialRemaining === 0
-                      ? 'No exports left'
-                      : `${trialRemaining} ${trialRemaining === 1 ? 'export' : 'exports'} left`}
+                    ? t('trial.statusChecking')
+                    : t('trial.exportsLeft', { count: trialRemaining })}
                 </span>
               </>
             )}
           </div>
           <p className="panel-summary-note">
             {isPlus
-              ? 'Your subscription unlocks advanced export formats plus Drive and Notion delivery.'
-              : 'Upgrade to unlock advanced export formats plus Drive and Notion delivery.'}
+              ? t('account.summary.plus')
+              : t('account.summary.free')}
           </p>
           <div className="panel-summary-actions">
             {isPlus ? (
               <button onClick={onManageBilling} disabled={!!loadingAction} className="export-btn small">
-                Manage Subscription {loadingAction === 'billing' && <Spinner />}
+                {t('account.manageSubscription')} {loadingAction === 'billing' && <Spinner />}
               </button>
             ) : (
               <button onClick={onUpgrade} disabled={!!loadingAction} className="export-btn small primary">
-                Upgrade to Plus <PlusIcon /> {loadingAction === 'upgrade' && <Spinner />}
+                {t('account.upgradeToPlus')} <PlusIcon /> {loadingAction === 'upgrade' && <Spinner />}
               </button>
             )}
           </div>
         </div>
         <div className="panel-destinations">
-          <div className="panel-actions-title">Destinations</div>
+          <div className="panel-actions-title">{t('account.destinations')}</div>
           <div className="panel-destination-list">
             {hasDriveAccess ? (
               <div className="panel-destination-row connected">
               <div className="panel-destination-info connected">
-                <div className="panel-destination-title">Google Drive</div>
-                <div className="panel-destination-email">{driveAccountEmail ?? 'Connected'}</div>
+                <div className="panel-destination-title">{t('common.googleDrive')}</div>
+                <div className="panel-destination-email">{driveAccountEmail ?? t('account.connected')}</div>
               </div>
                 <div className="panel-destination-buttons">
                   <button
@@ -121,31 +127,31 @@ export const AccountPanel = ({
                     disabled={loadingAction === 'drive-connect'}
                     className="export-btn small"
                   >
-                    Change account {loadingAction === 'drive-connect' && <Spinner />}
+                    {t('common.changeAccount')} {loadingAction === 'drive-connect' && <Spinner />}
                   </button>
                   <button onClick={onDisconnectDrive} className="export-btn small">
-                    Disconnect
+                    {t('common.disconnect')}
                   </button>
                 </div>
               </div>
             ) : (
               <div className="panel-destination-row not-connected">
-                <div className="panel-destination-title">Google Drive</div>
-                <span className="status-pill warning">Not connected</span>
+                <div className="panel-destination-title">{t('common.googleDrive')}</div>
+                <span className="status-pill warning">{t('account.notConnected')}</span>
                 <button
                   onClick={onConnectDrive}
                   disabled={loadingAction === 'drive-connect'}
                   className="export-btn small"
                 >
-                  Connect {loadingAction === 'drive-connect' && <Spinner />}
+                  {t('common.connect')} {loadingAction === 'drive-connect' && <Spinner />}
                 </button>
               </div>
             )}
             {hasNotionAccess ? (
               <div className="panel-destination-row connected">
                 <div className="panel-destination-info connected">
-                  <div className="panel-destination-title">Notion</div>
-                  <div className="panel-destination-email">{notionWorkspaceName ?? 'Connected'}</div>
+                  <div className="panel-destination-title">{t('common.notion')}</div>
+                  <div className="panel-destination-email">{notionWorkspaceName ?? t('account.connected')}</div>
                 </div>
                 <div className="panel-destination-buttons">
                   <button
@@ -153,26 +159,48 @@ export const AccountPanel = ({
                     disabled={loadingAction === 'notion-connect'}
                     className="export-btn small"
                   >
-                    Change workspace {loadingAction === 'notion-connect' && <Spinner />}
+                    {t('common.changeWorkspace')} {loadingAction === 'notion-connect' && <Spinner />}
                   </button>
                   <button onClick={onDisconnectNotion} className="export-btn small">
-                    Disconnect
+                    {t('common.disconnect')}
                   </button>
                 </div>
               </div>
             ) : (
               <div className="panel-destination-row not-connected">
-                <div className="panel-destination-title">Notion</div>
-                <span className="status-pill warning">Not connected</span>
+                <div className="panel-destination-title">{t('common.notion')}</div>
+                <span className="status-pill warning">{t('account.notConnected')}</span>
                 <button
                   onClick={onConnectNotion}
                   disabled={loadingAction === 'notion-connect'}
                   className="export-btn small"
                 >
-                  Connect {loadingAction === 'notion-connect' && <Spinner />}
+                  {t('common.connect')} {loadingAction === 'notion-connect' && <Spinner />}
                 </button>
               </div>
             )}
+          </div>
+        </div>
+        <div className="panel-section">
+          <div className="panel-actions-title">{t('common.language')}</div>
+          <div className="panel-info-card">
+            <div className="panel-info-text">
+              <div className="panel-info-label">{t('common.uiLanguage')}</div>
+              <div className="panel-info-value">
+                {availableLocales.find((option) => option.value === locale)?.label ?? locale}
+              </div>
+            </div>
+            <select
+              value={locale}
+              onChange={(event) => setLocale(event.target.value as typeof locale)}
+              className="setup-input panel-language-select"
+            >
+              {availableLocales.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
           </div>
         </div>
       </div>

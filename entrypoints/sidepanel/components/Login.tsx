@@ -17,8 +17,10 @@
 import React, { useState } from 'react';
 import { supabase } from '../../../utils/supabase';
 import { signInWithGoogleOAuth } from '../../../utils/supabase-oauth';
+import { useI18n } from '../i18n/i18n';
 
 export default function Login({ onClose }: { onClose?: () => void }) {
+    const { t } = useI18n();
     const [email, setEmail] = useState('');
     const [otp, setOtp] = useState('');
     const [loading, setLoading] = useState(false);
@@ -44,7 +46,7 @@ export default function Login({ onClose }: { onClose?: () => void }) {
         if (error) {
             showMessage('error', error.message);
         } else {
-            showMessage('success', 'Code sent! Check your email.');
+            showMessage('success', t('login.codeSentSuccess'));
             setStep('otp');
         }
         setLoading(false);
@@ -63,7 +65,7 @@ export default function Login({ onClose }: { onClose?: () => void }) {
         if (error) {
             showMessage('error', error.message);
         } else {
-            showMessage('success', 'Signed in! Returning to the dashboard.');
+            showMessage('success', t('login.signedInSuccess'));
         }
         setLoading(false);
     };
@@ -74,7 +76,7 @@ export default function Login({ onClose }: { onClose?: () => void }) {
         try {
             await signInWithGoogleOAuth();
         } catch (err: any) {
-            showMessage('error', err?.message || 'Unable to start Google sign-in.');
+            showMessage('error', err?.message || t('login.googleError'));
         } finally {
             setGoogleLoading(false);
         }
@@ -88,9 +90,9 @@ export default function Login({ onClose }: { onClose?: () => void }) {
                         type="button"
                         onClick={onClose}
                         className="export-btn small ghost"
-                        title="Back to Dashboard"
+                        title={t('login.backToDashboard')}
                     >
-                        Back
+                        {t('common.back')}
                     </button>
                 )}
 
@@ -98,9 +100,9 @@ export default function Login({ onClose }: { onClose?: () => void }) {
                     <div className="login-header">
                         <div className="brand-line">
                             <span className="brand-dot" aria-hidden="true"></span>
-                            NotebookLM ExportKit
+                            {t('app.name')}
                         </div>
-                        <p className="login-subtitle">Sign in to unlock advanced exports plus Drive and Notion delivery</p>
+                        <p className="login-subtitle">{t('login.subtitle')}</p>
                         {/* <ul className="login-benefits">
                             <li>Advanced formats for study workflows</li>
                             <li>Google Drive delivery with any account</li>
@@ -121,40 +123,40 @@ export default function Login({ onClose }: { onClose?: () => void }) {
                                 disabled={googleLoading}
                                 className="export-btn primary"
                             >
-                                {googleLoading ? 'Opening Google...' : 'Continue with Google'}
+                                {googleLoading ? t('login.googleOpening') : t('login.googleContinue')}
                             </button>
                             <div className="login-divider">
-                                <span>or use email</span>
+                                <span>{t('common.orUseEmail')}</span>
                             </div>
                             <div className="login-email">
-                                <label className="login-label" htmlFor="login-email">Email</label>
+                                <label className="login-label" htmlFor="login-email">{t('common.email')}</label>
                                 <input
                                     id="login-email"
                                     type="email"
-                                    placeholder="Enter your email"
+                                    placeholder={t('login.emailPlaceholder')}
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
                                     required
                                     className="login-input"
                                 />
-                                <p className="login-helper">We’ll send a one-time code.</p>
+                                <p className="login-helper">{t('login.emailHelper')}</p>
                                 <button
                                     type="submit"
                                     disabled={loading}
                                     className="export-btn primary"
                                 >
-                                    {loading ? 'Sending...' : 'Send Login Code'}
+                                    {loading ? t('login.sending') : t('login.sendCode')}
                                 </button>
                             </div>
                         </form>
                     ) : (
                         <form onSubmit={handleVerifyOtp} className="login-form">
                             <p className="login-hint">
-                                Enter the code sent to <strong>{email}</strong>
+                                {t('login.otpHint', { email })}
                             </p>
                             <input
                                 type="text"
-                                placeholder="Enter 6-digit Code"
+                                placeholder={t('login.otpPlaceholder')}
                                 value={otp}
                                 onChange={(e) => setOtp(e.target.value)}
                                 required
@@ -165,14 +167,14 @@ export default function Login({ onClose }: { onClose?: () => void }) {
                                 disabled={loading}
                                 className="export-btn primary"
                             >
-                                {loading ? 'Verifying...' : 'Verify & Login'}
+                                {loading ? t('login.verifying') : t('login.verify')}
                             </button>
                             <button
                                 type="button"
                                 onClick={() => setStep('email')}
                                 className="link-button"
                             >
-                                Use a different email
+                                {t('login.useDifferentEmail')}
                             </button>
                         </form>
                     )}

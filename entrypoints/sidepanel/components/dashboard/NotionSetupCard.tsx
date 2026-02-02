@@ -16,6 +16,7 @@
  */
 import React, { useEffect, useState } from 'react';
 import { Spinner } from './Icons';
+import { useI18n } from '../../i18n/i18n';
 
 type NotionSetupCardProps = {
   isSignedIn: boolean;
@@ -46,6 +47,7 @@ export const NotionSetupCard = ({
   onRefreshPages,
   onUpgrade,
 }: NotionSetupCardProps) => {
+  const { t } = useI18n();
   const [isExpanded, setIsExpanded] = useState(!hasNotionAccess || !notionDatabaseId);
   const [selectedPageId, setSelectedPageId] = useState('');
   const [pendingPageId, setPendingPageId] = useState('');
@@ -114,10 +116,10 @@ export const NotionSetupCard = ({
         tabIndex={isReady ? 0 : -1}
         aria-expanded={isReady ? isExpanded : undefined}
       >
-        <div className="section-label">Notion setup</div>
+        <div className="section-label">{t('notion.setup')}</div>
         <div className="setup-header-actions">
           <span className={`status-pill ${isReady ? 'success' : 'warning'}`}>
-            {isReady ? 'Ready' : 'Needs setup'}
+            {isReady ? t('common.ready') : t('common.needsSetup')}
           </span>
           {isReady && <span className={`setup-toggle${isExpanded ? ' is-expanded' : ''}`} />}
         </div>
@@ -126,57 +128,57 @@ export const NotionSetupCard = ({
         <>
           <div className="setup-step">
             <div className="setup-step-main">
-              <div className="setup-title">1. Sign in to your account</div>
+              <div className="setup-title">{t('notion.step.signIn')}</div>
               {!isSignedIn ? (
                 <button onClick={onRequestLogin} className="export-btn small">
-                  Sign in
+                  {t('common.signIn')}
                 </button>
               ) : (
-                <span className="status-pill success">Done</span>
+                <span className="status-pill success">{t('common.done')}</span>
               )}
             </div>
-            <p className="setup-note">Your subscription stays with this account.</p>
+            <p className="setup-note">{t('notion.note.subscription')}</p>
           </div>
           <div className="setup-step">
             <div className="setup-step-main">
-              <div className="setup-title">2. Upgrade to Plus</div>
+              <div className="setup-title">{t('notion.step.upgrade')}</div>
               {isPlus ? (
-                <span className="status-pill success">Unlocked</span>
+                <span className="status-pill success">{t('common.unlocked')}</span>
               ) : (
                 <button onClick={onUpgrade} className="export-btn small">
-                  Upgrade
+                  {t('common.upgrade')}
                 </button>
               )}
             </div>
-            <p className="setup-note">Notion delivery is available on Plus.</p>
+            <p className="setup-note">{t('notion.note.plus')}</p>
           </div>
           <div className="setup-step">
             <div className="setup-step-main">
-              <div className="setup-title">3. Connect Notion</div>
+              <div className="setup-title">{t('notion.step.connect')}</div>
               <button
                 onClick={onConnectNotion}
                 disabled={!!loadingAction || !isSignedIn}
                 className={`export-btn small ${hasNotionAccess ? '' : 'primary'}`}
               >
-                {hasNotionAccess ? 'Change workspace' : 'Connect'}{' '}
+                {hasNotionAccess ? t('common.changeWorkspace') : t('common.connect')}{' '}
                 {loadingAction === 'notion-connect' && <Spinner />}
               </button>
             </div>
             <p className="setup-note">
               {notionWorkspaceName
-                ? `Connected to ${notionWorkspaceName}.`
-                : 'Authorize the workspace where exports should land.'}
+                ? t('notion.note.connectedTo', { workspace: notionWorkspaceName })
+                : t('notion.note.authorizeWorkspace')}
             </p>
           </div>
           <div className="setup-step">
             <div className="setup-step-main">
-              <div className="setup-title">4. Pick a destination page</div>
+              <div className="setup-title">{t('notion.step.destination')}</div>
               <button
                 onClick={onRefreshPages}
                 disabled={!hasNotionAccess || !!loadingAction}
                 className="export-btn small"
               >
-                Refresh list {isListing && <Spinner />}
+                {t('common.refreshList')} {isListing && <Spinner />}
               </button>
             </div>
             <div className="setup-input-row">
@@ -187,7 +189,7 @@ export const NotionSetupCard = ({
                 disabled={!hasNotionAccess || isListing || isSaving}
               >
                 <option value="">
-                  {notionPages.length > 0 ? 'Choose a Notion page' : 'No pages found'}
+                  {notionPages.length > 0 ? t('notion.pages.choose') : t('notion.pages.none')}
                 </option>
                 {notionPages.map((page) => (
                   <option key={page.id} value={page.id}>
@@ -200,12 +202,12 @@ export const NotionSetupCard = ({
               {isSaving
                 ? (
                   <>
-                    Saving destination... <Spinner />
+                    {t('notion.saving')} <Spinner />
                   </>
                 )
                 : databasePreview
-                  ? `Destination set (${databasePreview}).`
-                  : 'Pick a page to host the NotebookLM ExportKit database.'}
+                  ? t('notion.note.destinationSet', { preview: databasePreview })
+                  : t('notion.note.destinationPick')}
             </p>
           </div>
         </>

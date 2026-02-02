@@ -15,6 +15,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 import React from 'react';
+import { useI18n } from '../../i18n/i18n';
 
 type DashboardHeaderProps = {
   isSignedIn: boolean;
@@ -24,6 +25,7 @@ type DashboardHeaderProps = {
 };
 
 export const DashboardHeader = ({ isSignedIn, onAccountClick, onSignOut, onSignIn }: DashboardHeaderProps) => {
+  const { t } = useI18n();
   return (
     <div className="dashboard-header">
       {/* <div className="brand-line compact">
@@ -34,15 +36,15 @@ export const DashboardHeader = ({ isSignedIn, onAccountClick, onSignOut, onSignI
         {isSignedIn ? (
           <>
             <button onClick={onAccountClick} className="export-btn small">
-              Account
+              {t('common.account')}
             </button>
-            <button onClick={onSignOut} title="Sign Out" className="export-btn small">
-              Sign Out
+            <button onClick={onSignOut} title={t('header.signOutTitle')} className="export-btn small">
+              {t('common.signOut')}
             </button>
           </>
         ) : (
           <button onClick={onSignIn} className="export-btn small">
-            Sign In
+            {t('common.signIn')}
           </button>
         )}
       </div>
