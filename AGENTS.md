@@ -18,6 +18,8 @@
 - TypeScript + React with ESM (`"type": "module"`). Use 2-space indentation, semicolons, and single quotes to match existing files.
 - React components use PascalCase filenames (e.g., `Dashboard.tsx`); utilities use kebab-case or descriptive names in `utils/`.
 - Export logic is organized by content type; add new extractors in `utils/extractors/` and route via `utils/export-dispatch.ts`.
+- Add the AGPL copyright header to any new source files.
+- Ensure new UI elements use i18n message keys and update all locale catalogs accordingly.
 
 ## Testing Guidelines
 - No automated test framework is configured yet.
