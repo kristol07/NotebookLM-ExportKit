@@ -29,8 +29,23 @@ const normalizeLocale = (value?: string | null): Locale => {
     return DEFAULT_LOCALE;
   }
   const lower = value.toLowerCase();
+  if (lower.startsWith('en')) {
+    return 'en-US';
+  }
   if (lower.startsWith('es')) {
-    return 'es';
+    return 'es-ES';
+  }
+  if (lower.startsWith('de')) {
+    return 'de-DE';
+  }
+  if (lower.startsWith('it')) {
+    return 'it-IT';
+  }
+  if (lower.startsWith('pt')) {
+    return 'pt-BR';
+  }
+  if (lower.startsWith('fr')) {
+    return 'fr-FR';
   }
   return DEFAULT_LOCALE;
 };
