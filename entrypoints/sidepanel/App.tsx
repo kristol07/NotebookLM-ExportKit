@@ -20,6 +20,7 @@ import './App.css';
 import { supabase } from '../../utils/supabase';
 import Login from './components/Login';
 import Dashboard from './components/Dashboard';
+import { I18nProvider } from './i18n/i18n';
 
 function App() {
   const [session, setSession] = useState<any>(null);
@@ -62,13 +63,13 @@ function App() {
   }, [session]);
 
   return (
-    <>
+    <I18nProvider>
       {showLogin ? (
         <Login onClose={() => setShowLogin(false)} />
       ) : (
         <Dashboard session={session} onRequestLogin={() => setShowLogin(true)} />
       )}
-    </>
+    </I18nProvider>
   );
 }
 

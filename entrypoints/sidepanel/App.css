@@ -766,6 +766,11 @@
   padding: var(--space-3);
 }
 
+.panel-language-select {
+  max-width: 160px;
+  margin-left: auto;
+}
+
 .panel-info-text {
   display: flex;
   flex-direction: column;

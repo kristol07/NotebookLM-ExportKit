@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { supabase } from '../../../utils/supabase';
 import { browser } from 'wxt/browser';
 import { getGoogleDriveOAuthScopes } from '../../../utils/supabase-oauth';
@@ -52,10 +52,11 @@ import { ExportDestinationCard } from './dashboard/ExportDestinationCard';
 import { ToastNotice } from './dashboard/ToastNotice';
 import { UpgradeBanner } from './dashboard/UpgradeBanner';
 import { UpgradeModal } from './dashboard/UpgradeModal';
+import { useI18n } from '../i18n/i18n';
 
-const BASE_EXPORT_SECTIONS: ExportSection[] = [
+const buildExportSections = (t: (key: any, params?: any) => string): ExportSection[] => [
     {
-        title: 'Quiz Exports',
+        title: t('export.section.quiz'),
         contentType: 'quiz',
         options: [
             { format: 'CSV', label: 'Excel' },
@@ -65,7 +66,7 @@ const BASE_EXPORT_SECTIONS: ExportSection[] = [
         ],
     },
     {
-        title: 'Flashcard Exports',
+        title: t('export.section.flashcards'),
         contentType: 'flashcards',
         options: [
             { format: 'CSV', label: 'Excel' },
@@ -75,7 +76,7 @@ const BASE_EXPORT_SECTIONS: ExportSection[] = [
         ],
     },
     {
-        title: 'Mindmap Exports',
+        title: t('export.section.mindmap'),
         contentType: 'mindmap',
         options: [
             { format: 'SVG' },
@@ -87,7 +88,7 @@ const BASE_EXPORT_SECTIONS: ExportSection[] = [
         ],
     },
     {
-        title: 'Note Exports',
+        title: t('export.section.note'),
         contentType: 'note',
         options: [
             { format: 'PDF' },
@@ -96,7 +97,7 @@ const BASE_EXPORT_SECTIONS: ExportSection[] = [
         ],
     },
     {
-        title: 'Report Exports',
+        title: t('export.section.report'),
         contentType: 'report',
         options: [
             { format: 'PDF' },
@@ -105,7 +106,7 @@ const BASE_EXPORT_SECTIONS: ExportSection[] = [
         ],
     },
     {
-        title: 'Chat Exports',
+        title: t('export.section.chat'),
         contentType: 'chat',
         options: [
             { format: 'PDF' },
@@ -115,7 +116,7 @@ const BASE_EXPORT_SECTIONS: ExportSection[] = [
         ],
     },
     {
-        title: 'Data Table Exports',
+        title: t('export.section.datatable'),
         contentType: 'datatable',
         options: [
             { format: 'CSV', label: 'Excel' },
@@ -123,7 +124,7 @@ const BASE_EXPORT_SECTIONS: ExportSection[] = [
         ],
     },
     {
-        title: 'Source Exports',
+        title: t('export.section.source'),
         contentType: 'source',
         options: [
             { format: 'PDF' },
@@ -132,8 +133,6 @@ const BASE_EXPORT_SECTIONS: ExportSection[] = [
         ],
     },
 ];
-
-const EXPORT_SECTIONS: ExportSection[] = BASE_EXPORT_SECTIONS;
 const CLIPBOARD_CONTENT_TYPES = new Set<ContentType>([
     'mindmap',
     'note',
@@ -165,7 +164,7 @@ const filterSectionsForNotion = (sections: ExportSection[]) =>
         })
         .filter((section) => section.options.length > 0);
 
-const withClipboardOptions = (sections: ExportSection[]) =>
+const withClipboardOptions = (sections: ExportSection[], clipboardLabel: string) =>
     sections.map((section) => {
         if (!CLIPBOARD_CONTENT_TYPES.has(section.contentType)) {
             return section;
@@ -180,7 +179,7 @@ const withClipboardOptions = (sections: ExportSection[]) =>
         const markdownOption = section.options[markdownIndex];
         const copyOption = {
             format: 'Markdown' as const,
-            label: 'Clipboard',
+            label: clipboardLabel,
             isPlus: markdownOption.isPlus,
             delivery: 'clipboard' as ExportDelivery,
         };
@@ -192,39 +191,10 @@ const withClipboardOptions = (sections: ExportSection[]) =>
         };
     });
 
-const PLUS_EXPORTS = new Set(
-    EXPORT_SECTIONS.flatMap((section) =>
-        section.options
-            .filter((option) => option.isPlus)
-            .map((option) => `${section.contentType}:${option.format}`)
-    )
-);
 const EXPORT_TARGET_STORAGE_KEY = 'exportkitExportTarget';
 const PDF_QUALITY_STORAGE_KEY = 'exportkitPdfQuality';
 const DRIVE_EXPORT_REQUIRES_PLUS = true;
 const NOTION_EXPORT_REQUIRES_PLUS = true;
-const EXTRACTION_ERROR_MESSAGE =
-    'Failed to extract content. Ensure you are on a NotebookLM page and the content is visible.';
-const getContentLabel = (type: ContentType) => {
-    switch (type) {
-        case 'quiz':
-            return 'Quiz';
-        case 'flashcards':
-            return 'Flashcards';
-        case 'mindmap':
-            return 'Mindmap';
-        case 'note':
-            return 'Note';
-        case 'report':
-            return 'Report';
-        case 'chat':
-            return 'Chat';
-        case 'source':
-            return 'Sources';
-        default:
-            return 'Data table';
-    }
-};
 export default function Dashboard({
     session,
     onRequestLogin,
@@ -232,6 +202,15 @@ export default function Dashboard({
     session: any;
     onRequestLogin?: () => void;
 }) {
+    const { t, formatDate, formatList } = useI18n();
+    const exportSections = useMemo(() => buildExportSections(t), [t]);
+    const plusExports = useMemo(() => new Set(
+        exportSections.flatMap((section) =>
+            section.options
+                .filter((option) => option.isPlus)
+                .map((option) => `${section.contentType}:${option.format}`)
+        )
+    ), [exportSections]);
     const [loadingAction, setLoadingAction] = useState<string | null>(null);
     const [notice, setNotice] = useState<{ type: 'success' | 'error' | 'info'; message: string } | null>(null);
     const [trialRemaining, setTrialRemaining] = useState<number | null>(null);
@@ -263,17 +242,36 @@ export default function Dashboard({
         if (!value) {
             return null;
         }
-        const date = new Date(value);
-        if (Number.isNaN(date.getTime())) {
-            return null;
-        }
-        return date.toLocaleDateString('en-US', {
+        return formatDate(value, {
             year: 'numeric',
             month: 'short',
             day: 'numeric',
         });
     };
     const formattedPeriodEnd = formatPeriodEnd(subscriptionCurrentPeriodEnd);
+
+    const formatName = (format: ExportFormat) => (format === 'CSV' ? 'Excel' : format);
+
+    const getContentLabel = (type: ContentType) => {
+        switch (type) {
+            case 'quiz':
+                return t('content.quiz');
+            case 'flashcards':
+                return t('content.flashcards');
+            case 'mindmap':
+                return t('content.mindmap');
+            case 'note':
+                return t('content.note');
+            case 'report':
+                return t('content.report');
+            case 'chat':
+                return t('content.chat');
+            case 'source':
+                return t('content.source');
+            default:
+                return t('content.datatable');
+        }
+    };
 
     useEffect(() => {
         return () => {
@@ -331,7 +329,7 @@ export default function Dashboard({
             setNotionPages(results);
         } catch (err) {
             console.error(err);
-            showNotice('error', 'Could not load Notion pages. Try refreshing.');
+            showNotice('error', t('notice.notionPagesError'));
         } finally {
             setLoadingAction(null);
         }
@@ -394,7 +392,7 @@ export default function Dashboard({
         if (!contentType) {
             return false;
         }
-        return PLUS_EXPORTS.has(`${contentType}:${format}`);
+        return plusExports.has(`${contentType}:${format}`);
     };
 
     const isNotionFormatSupported = (format: ExportFormat, contentType?: ContentType) => {
@@ -417,7 +415,7 @@ export default function Dashboard({
 
     const handleConnectDrive = async () => {
         if (!isSignedIn) {
-            showNotice('info', 'Sign in to connect Google Drive.');
+            showNotice('info', t('notice.signInToConnectDrive'));
             onRequestLogin?.();
             return;
         }
@@ -428,7 +426,7 @@ export default function Dashboard({
             setDriveAccountEmail(driveResult.email ?? null);
         } catch (err) {
             console.error(err);
-            showNotice('error', 'Could not connect Google Drive. Please try again.');
+            showNotice('error', t('notice.driveConnectError'));
         } finally {
             setLoadingAction(null);
         }
@@ -436,7 +434,7 @@ export default function Dashboard({
 
     const handleConnectNotion = async () => {
         if (!isSignedIn) {
-            showNotice('info', 'Sign in to connect Notion.');
+            showNotice('info', t('notice.signInToConnectNotion'));
             onRequestLogin?.();
             return;
         }
@@ -449,7 +447,7 @@ export default function Dashboard({
             void loadNotionPages();
         } catch (err: any) {
             console.error(err);
-            showNotice('error', err?.message || 'Could not connect Notion. Please try again.');
+            showNotice('error', err?.message || t('notice.notionConnectError'));
         } finally {
             setLoadingAction(null);
         }
@@ -460,7 +458,7 @@ export default function Dashboard({
         setDriveConnected(false);
         setDriveAccountEmail(null);
         if (!options?.silent) {
-            showNotice('info', 'Google Drive disconnected.');
+            showNotice('info', t('notice.driveDisconnected'));
         }
     };
 
@@ -475,7 +473,7 @@ export default function Dashboard({
         setNotionDatabaseId(null);
         setNotionPages([]);
         if (!options?.silent) {
-            showNotice('info', 'Notion disconnected.');
+            showNotice('info', t('notice.notionDisconnected'));
         }
     };
 
@@ -486,7 +484,7 @@ export default function Dashboard({
     const handleConfigureNotionDestination = async (value: string) => {
         const token = await getNotionAccessToken();
         if (!token) {
-            showNotice('info', 'Connect Notion before setting a destination page.');
+            showNotice('info', t('notice.notionDestinationMissingToken'));
             return;
         }
         setLoadingAction('notion-destination');
@@ -496,12 +494,12 @@ export default function Dashboard({
             showNotice(
                 'success',
                 database.title
-                    ? `Notion destination set: ${database.title}.`
-                    : 'Notion destination is ready.'
+                    ? t('notice.notionDestinationSet', { title: database.title })
+                    : t('notice.notionDestinationReady')
             );
         } catch (err: any) {
             console.error(err);
-            showNotice('error', err?.message || 'Could not set the Notion destination. Please try again.');
+            showNotice('error', err?.message || t('notice.notionDestinationError'));
         } finally {
             setLoadingAction(null);
         }
@@ -515,7 +513,7 @@ export default function Dashboard({
 
     const handleUpgrade = async () => {
         if (!isSignedIn) {
-            showNotice('info', 'Sign in to upgrade.');
+            showNotice('info', t('notice.signInToUpgrade'));
             onRequestLogin?.();
             return;
         }
@@ -529,7 +527,7 @@ export default function Dashboard({
             await browser.tabs.create({ url: checkoutUrl });
         } catch (err) {
             console.error(err);
-            showNotice('error', 'Could not start checkout. Please try again.');
+            showNotice('error', t('notice.checkoutError'));
         } finally {
             setLoadingAction(null);
             upgradeInFlightRef.current = false;
@@ -549,7 +547,7 @@ export default function Dashboard({
             await browser.tabs.create({ url: portalUrl });
         } catch (err) {
             console.error(err);
-            showNotice('error', 'Could not open billing portal. Please try again.');
+            showNotice('error', t('notice.billingPortalError'));
         } finally {
             setLoadingAction(null);
         }
@@ -571,14 +569,14 @@ export default function Dashboard({
                 || (exportTarget === 'notion' && NOTION_EXPORT_REQUIRES_PLUS);
             if (requiresPlus) {
                 if (!isSignedIn) {
-                    showNotice('info', 'Sign in to unlock advanced exports.');
+                    showNotice('info', t('notice.signInToUnlock'));
                     onRequestLogin?.();
                     return;
-                    }
+                }
                 if (!isPlus) {
                     const trialResult = await consumeTrial(false);
                     if (!trialResult.allowed) {
-                        showNotice('error', 'Your free trials are used up. Upgrade to continue.');
+                        showNotice('error', t('notice.trialsUsedUp'));
                         openUpgradeModal(
                             exportTarget === 'drive'
                                 ? 'drive'
@@ -599,33 +597,36 @@ export default function Dashboard({
                 if (!isNotionFormatSupported(format, contentType)) {
                     showNotice(
                         'error',
-                        `Notion exports for ${getContentLabel(contentType)} support ${supportedFormats.join(', ')}.`
+                        t('notice.notionUnsupportedFormat', {
+                            contentLabel: getContentLabel(contentType),
+                            formats: formatList(supportedFormats.map(formatName)),
+                        })
                     );
                     return;
                 }
             }
 
             if (exportTarget === 'drive' && !hasDriveAccess) {
-                showNotice('info', 'Connect Google Drive to continue.');
+                showNotice('info', t('notice.connectDriveToContinue'));
                 void refreshDriveState();
                 return;
             }
 
             if (exportTarget === 'notion') {
                 if (!hasNotionAccess) {
-                    showNotice('info', 'Connect Notion to continue.');
+                    showNotice('info', t('notice.connectNotionToContinue'));
                     refreshNotionState();
                     return;
                 }
                 if (!notionDatabaseId) {
-                    showNotice('info', 'Set a Notion destination page to continue.');
+                    showNotice('info', t('notice.setNotionDestination'));
                     return;
                 }
             }
 
             const tabs = await browser.tabs.query({ active: true, currentWindow: true });
             if (tabs.length === 0 || !tabs[0].id) {
-                showNotice('error', 'No active tab found.');
+                showNotice('error', t('notice.noActiveTab'));
                 return;
             }
 
@@ -700,9 +701,8 @@ export default function Dashboard({
                         if (requiresPlus && !isPlus) {
                             const trialResult = await consumeTrial(true);
                             if (typeof trialResult.remaining === 'number') {
-                                const remainingText = trialResult.remaining === 1 ? '1 export' : `${trialResult.remaining} exports`;
                                 setTrialRemaining(trialResult.remaining);
-                                return ` Trial used. ${remainingText} left.`;
+                                return ` ${t('trial.used', { count: trialResult.remaining })}`;
                             }
                         }
                         return '';
@@ -713,10 +713,13 @@ export default function Dashboard({
                             const markdownText = await result.blob.text();
                             await copyTextToClipboard(markdownText);
                             const trialMessage = await getTrialMessage();
-                            showNotice('success', `Copied ${contentLabel} Markdown to Clipboard.${trialMessage}`);
+                            showNotice('success', t('notice.copySuccess', {
+                                contentLabel,
+                                trialMessage,
+                            }));
                         } catch (err) {
                             console.error(err);
-                            showNotice('error', 'Copy failed. Please try again.');
+                            showNotice('error', t('notice.copyFailed'));
                         }
                         return;
                     }
@@ -745,45 +748,49 @@ export default function Dashboard({
                             : undefined
                     );
                     if (delivered.success) {
-                        const formatName = format === 'CSV' ? 'Excel' : format;
                         const destinationLabel = exportTarget === 'drive'
-                            ? 'Google Drive'
+                            ? t('common.googleDrive')
                             : exportTarget === 'notion'
-                                ? 'Notion'
-                                : 'Downloads';
+                                ? t('common.notion')
+                                : t('common.downloads');
                         const trialMessage = await getTrialMessage();
-                        showNotice('success', `Exported ${contentLabel} to ${destinationLabel} as ${formatName}.${trialMessage}`);
+                        showNotice('success', t('notice.exportSuccess', {
+                            contentLabel,
+                            destination: destinationLabel,
+                            format: formatName(format),
+                            trialMessage,
+                        }));
                     } else {
                         const failureMessage = delivered.error
                             || (exportTarget === 'drive'
-                                ? 'Export failed. Check your Drive connection and try again.'
+                                ? t('notice.exportFailedDrive')
                                 : exportTarget === 'notion'
-                                    ? 'Export failed. Check your Notion connection and destination.'
-                                    : 'Export failed.');
+                                    ? t('notice.exportFailedNotion')
+                                    : t('notice.exportFailed'));
                         showNotice('error', failureMessage);
                     }
                     setUploadProgress(null);
                     return;
                 }
 
-                showNotice('error', EXTRACTION_ERROR_MESSAGE);
+                showNotice('error', t('notice.extractionFailed'));
                 return;
             }
 
             if (exportTarget === 'notion') {
-                showNotice('error', 'Choose a specific export format for Notion delivery.');
+                showNotice('error', t('notice.notionSpecificFormat'));
                 return;
             }
 
             const response = await extractNotebookLmPayload(tabs[0].id, format);
             if (response && response.success) {
-                showNotice('info', 'Export started. You will be prompted when it is ready.');
+                showNotice('info', t('notice.exportStarted'));
             } else {
-                showNotice('error', EXTRACTION_ERROR_MESSAGE);
+                showNotice('error', t('notice.extractionFailed'));
             }
         } catch (err) {
             console.error(err);
-            showNotice('error', 'Error communicating with content script. Refresh the page and try again.');
+            showNotice('error', t('notice.contentScriptError'));
         } finally {
             setLoadingAction(null);
         }
@@ -793,10 +800,10 @@ export default function Dashboard({
         onRequestLogin?.();
     };
     const visibleSections = exportTarget === 'notion'
-        ? filterSectionsForNotion(EXPORT_SECTIONS)
+        ? filterSectionsForNotion(exportSections)
         : exportTarget === 'download'
-            ? withClipboardOptions(EXPORT_SECTIONS)
-            : EXPORT_SECTIONS;
+            ? withClipboardOptions(exportSections, t('export.option.clipboard'))
+            : exportSections;
 
     return (
         <div className="exportkit-shell">
@@ -848,7 +855,7 @@ export default function Dashboard({
                 {uploadProgress && (
                     <div className="upload-progress">
                         <div className="upload-progress-meta">
-                            <span>Uploading to Drive</span>
+                            <span>{t('common.uploadingToDrive')}</span>
                             <span>{uploadProgress.percent}%</span>
                         </div>
                         <div className="upload-progress-bar">

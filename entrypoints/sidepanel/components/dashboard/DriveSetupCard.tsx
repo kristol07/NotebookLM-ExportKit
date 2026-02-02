@@ -16,6 +16,7 @@
  */
 import React, { useEffect, useState } from 'react';
 import { Spinner } from './Icons';
+import { useI18n } from '../../i18n/i18n';
 
 type DriveSetupCardProps = {
   isSignedIn: boolean;
@@ -38,6 +39,7 @@ export const DriveSetupCard = ({
   onConnectDrive,
   onUpgrade,
 }: DriveSetupCardProps) => {
+  const { t } = useI18n();
   const [isExpanded, setIsExpanded] = useState(!hasDriveAccess);
 
   useEffect(() => {
@@ -73,10 +75,10 @@ export const DriveSetupCard = ({
         tabIndex={hasDriveAccess ? 0 : -1}
         aria-expanded={hasDriveAccess ? isExpanded : undefined}
       >
-        <div className="section-label">Drive setup</div>
+        <div className="section-label">{t('drive.setup')}</div>
         <div className="setup-header-actions">
           <span className={`status-pill ${hasDriveAccess ? 'success' : 'warning'}`}>
-            {hasDriveAccess ? 'Ready' : 'Needs setup'}
+            {hasDriveAccess ? t('common.ready') : t('common.needsSetup')}
           </span>
           {hasDriveAccess && <span className={`setup-toggle${isExpanded ? ' is-expanded' : ''}`} />}
         </div>
@@ -85,46 +87,46 @@ export const DriveSetupCard = ({
         <>
           <div className="setup-step">
             <div className="setup-step-main">
-              <div className="setup-title">1. Sign in to your account</div>
+              <div className="setup-title">{t('drive.step.signIn')}</div>
               {!isSignedIn ? (
                 <button onClick={onRequestLogin} className="export-btn small">
-                  Sign in
+                  {t('common.signIn')}
                 </button>
               ) : (
-                <span className="status-pill success">Done</span>
+                <span className="status-pill success">{t('common.done')}</span>
               )}
             </div>
-            <p className="setup-note">Your subscription stays with this account.</p>
+            <p className="setup-note">{t('drive.note.subscription')}</p>
           </div>
           <div className="setup-step">
             <div className="setup-step-main">
-              <div className="setup-title">2. Upgrade to Plus</div>
+              <div className="setup-title">{t('drive.step.upgrade')}</div>
               {isPlus ? (
-                <span className="status-pill success">Unlocked</span>
+                <span className="status-pill success">{t('common.unlocked')}</span>
               ) : (
                 <button onClick={onUpgrade} className="export-btn small">
-                  Upgrade
+                  {t('common.upgrade')}
                 </button>
               )}
             </div>
-            <p className="setup-note">Drive delivery is available on Plus.</p>
+            <p className="setup-note">{t('drive.note.plus')}</p>
           </div>
           <div className="setup-step">
             <div className="setup-step-main">
-              <div className="setup-title">3. Connect Google Drive</div>
+              <div className="setup-title">{t('drive.step.connect')}</div>
               <button
                 onClick={onConnectDrive}
                 disabled={!!loadingAction || !isSignedIn}
                 className={`export-btn small ${hasDriveAccess ? '' : 'primary'}`}
               >
-                {hasDriveAccess ? 'Change account' : 'Connect'}{' '}
+                {hasDriveAccess ? t('common.changeAccount') : t('common.connect')}{' '}
                 {loadingAction === 'drive-connect' && <Spinner />}
               </button>
             </div>
             <p className="setup-note">
               {driveAccountEmail
-                ? `Connected as ${driveAccountEmail}`
-                : 'Choose any Google account for Drive delivery.'}
+                ? t('drive.note.connectedAs', { email: driveAccountEmail })
+                : t('drive.note.chooseAccount')}
             </p>
           </div>
         </>
