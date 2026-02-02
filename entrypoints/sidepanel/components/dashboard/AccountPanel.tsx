@@ -182,13 +182,10 @@ export const AccountPanel = ({
           </div>
         </div>
         <div className="panel-section">
-          <div className="panel-actions-title">{t('common.language')}</div>
+          <div className="panel-actions-title">{t('common.settings')}</div>
           <div className="panel-info-card">
             <div className="panel-info-text">
               <div className="panel-info-label">{t('common.uiLanguage')}</div>
-              <div className="panel-info-value">
-                {availableLocales.find((option) => option.value === locale)?.label ?? locale}
-              </div>
             </div>
             <select
               value={locale}

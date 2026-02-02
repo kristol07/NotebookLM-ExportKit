@@ -615,14 +615,6 @@
   gap: var(--space-2);
 }
 
-.panel-summary-label {
-  font-size: var(--size-xxs);
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: var(--muted);
-  font-weight: 700;
-}
-
 .panel-summary-card {
   display: flex;
   flex-direction: column;
@@ -656,38 +648,12 @@
   width: 100%;
 }
 
-.panel-actions {
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
-}
-
-.panel-actions-right {
-  justify-content: flex-end;
-}
-
-.panel-actions-group {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-}
-
 .panel-actions-title {
   font-size: var(--size-xxs);
   text-transform: uppercase;
   letter-spacing: 0.1em;
   color: var(--muted);
   font-weight: 700;
-}
-
-.panel-actions-stack {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-}
-
-.panel-actions-stack .export-btn {
-  width: 100%;
 }
 
 .panel-destinations {
@@ -779,17 +745,10 @@
 }
 
 .panel-info-label {
-  font-size: var(--size-xxs);
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--muted);
+  font-size: var(--size-sm);
+  font-weight: 600;
 }
 
-.panel-info-value {
-  font-size: var(--size-xs);
-  color: var(--ink);
-  word-break: break-all;
-}
 
 .link-button {
   background: none;

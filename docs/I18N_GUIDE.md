@@ -9,7 +9,10 @@ This document is a maintenance guide for adding new UI languages after the initi
 - Catalogs are bundled with the extension (no runtime download flow).
 
 ## Architecture Overview
-- Catalogs live in `entrypoints/sidepanel/i18n/messages.ts` with a flat key map per locale.
+- Catalogs live in `entrypoints/sidepanel/i18n/messages/` with one flat key map per locale file.
+- `entrypoints/sidepanel/i18n/messages.ts` aggregates locale catalogs and exports helpers/types.
+- Shared i18n types live in `entrypoints/sidepanel/i18n/messages/types.ts`.
+- Shared helpers (pluralization) live in `entrypoints/sidepanel/i18n/messages/helpers.ts`.
 - The i18n runtime is in `entrypoints/sidepanel/i18n/i18n.tsx` (provider + `useI18n` + `t()`).
 - Locale selection persists to local storage via the `exportkitLocale` key.
 - Supported locales: `en-US`, `es-ES`, `de-DE`, `it-IT`, `pt-BR`, `fr-FR`.
@@ -17,7 +20,7 @@ This document is a maintenance guide for adding new UI languages after the initi
   1. User override (`exportkitLocale`).
   2. Browser UI language (`browser.i18n.getUILanguage()`).
   3. `navigator.language` fallback.
-  4. Default to `en`.
+  4. Default to `en-US`.
 - Stored values are region-specific locales (current: `en-US`, `es-ES`, `de-DE`, `it-IT`, `pt-BR`, `fr-FR`).
 - Language tags are normalized to the closest supported region-specific locale (e.g., `es-MX` -> `es-ES`).
 - The document `lang` attribute is set to the active locale for accessibility and proper font fallback.
@@ -42,7 +45,9 @@ This document is a maintenance guide for adding new UI languages after the initi
    - Add it to the `Locale` union type.
    - Update `normalizeLocale` to map any related language tags to the chosen locale.
 2. **Add catalog entries**
-   - Add a new locale key in `MESSAGES`.
+   - Add a new locale file in `entrypoints/sidepanel/i18n/messages/` (e.g., `ja-JP.ts`).
+   - Export a `const XX_MESSAGES` map with the same keys as other locales.
+   - Import the new locale in `entrypoints/sidepanel/i18n/messages.ts` and add it to `MESSAGES`.
    - Translate all existing keys; do not introduce locale-only keys.
    - Keep punctuation and sentence case consistent with existing locales.
 3. **Update language selector**
@@ -61,6 +66,9 @@ This document is a maintenance guide for adding new UI languages after the initi
 
 ## Files Most Likely to Change
 - `entrypoints/sidepanel/i18n/messages.ts`
+- `entrypoints/sidepanel/i18n/messages/*.ts`
+- `entrypoints/sidepanel/i18n/messages/types.ts`
+- `entrypoints/sidepanel/i18n/messages/helpers.ts`
 - `entrypoints/sidepanel/i18n/i18n.tsx`
 - `entrypoints/sidepanel/components/AccountPanel.tsx` (language selector)
 - `entrypoints/sidepanel/App.tsx` (provider wiring)
