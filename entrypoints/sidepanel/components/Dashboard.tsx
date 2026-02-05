@@ -49,6 +49,7 @@ import { DriveSetupCard } from './dashboard/DriveSetupCard';
 import { NotionSetupCard } from './dashboard/NotionSetupCard';
 import { ExportActions, ExportDelivery, ExportSection } from './dashboard/ExportActions';
 import { ExportDestinationCard } from './dashboard/ExportDestinationCard';
+import { SettingsPanel } from './dashboard/SettingsPanel';
 import { ToastNotice } from './dashboard/ToastNotice';
 import { UpgradeBanner } from './dashboard/UpgradeBanner';
 import { UpgradeModal } from './dashboard/UpgradeModal';
@@ -223,6 +224,7 @@ export default function Dashboard({
     const [uploadProgress, setUploadProgress] = useState<{ percent: number } | null>(null);
     const [showAccountPanel, setShowAccountPanel] = useState(false);
     const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+    const [showSettingsPanel, setShowSettingsPanel] = useState(false);
     const [upgradeContext, setUpgradeContext] = useState<'drive' | 'notion' | 'format' | 'general' | null>(null);
     const noticeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const upgradeInFlightRef = useRef(false);
@@ -814,6 +816,15 @@ export default function Dashboard({
                     onAccountClick={() => setShowAccountPanel(true)}
                     onSignOut={handleSignOut}
                     onSignIn={handleRequestLogin}
+                    leftSlot={!isSignedIn ? (
+                        <button
+                            type="button"
+                            className="export-btn small"
+                            onClick={() => setShowSettingsPanel(true)}
+                        >
+                            {t('common.settings')}
+                        </button>
+                    ) : null}
                 />
 
                 <ExportDestinationCard exportTarget={exportTarget} onChange={handleExportTargetChange} />
@@ -908,6 +919,9 @@ export default function Dashboard({
                     onManageBilling={handleManageBilling}
                     onUpgrade={() => openUpgradeModal('general')}
                 />
+            )}
+            {!isSignedIn && showSettingsPanel && (
+                <SettingsPanel onClose={() => setShowSettingsPanel(false)} />
             )}
         </div>
     );

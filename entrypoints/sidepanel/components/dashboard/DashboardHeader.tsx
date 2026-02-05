@@ -22,16 +22,20 @@ type DashboardHeaderProps = {
   onAccountClick: () => void;
   onSignOut: () => void;
   onSignIn: () => void;
+  leftSlot?: React.ReactNode;
 };
 
-export const DashboardHeader = ({ isSignedIn, onAccountClick, onSignOut, onSignIn }: DashboardHeaderProps) => {
+export const DashboardHeader = ({ isSignedIn, onAccountClick, onSignOut, onSignIn, leftSlot }: DashboardHeaderProps) => {
   const { t } = useI18n();
   return (
     <div className="dashboard-header">
-      {/* <div className="brand-line compact">
-        <span className="brand-dot" aria-hidden="true"></span>
-        NotebookLM ExportKit
-      </div> */}
+      <div className="dashboard-header-left">
+        {leftSlot}
+        {/* <div className="brand-line compact">
+          <span className="brand-dot" aria-hidden="true"></span>
+          NotebookLM ExportKit
+        </div> */}
+      </div>
       <div className="account-actions">
         {isSignedIn ? (
           <>

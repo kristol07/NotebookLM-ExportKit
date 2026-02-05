@@ -84,6 +84,12 @@
   margin-bottom: var(--space-5);
 }
 
+.dashboard-header-left {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
 .brand-line.compact {
   justify-content: flex-start;
   font-size: var(--size-sm);
