@@ -28,6 +28,7 @@ import { DE_MESSAGES } from './messages/de-DE';
 import { IT_MESSAGES } from './messages/it-IT';
 import { PT_MESSAGES } from './messages/pt-BR';
 import { FR_MESSAGES } from './messages/fr-FR';
+import { JA_MESSAGES } from './messages/ja-JP';
 
 export { DEFAULT_LOCALE, LOCALE_LABELS, type Locale, type MessageParams, type MessageValue };
 
@@ -38,6 +39,7 @@ export const MESSAGES: Record<Locale, Record<string, MessageValue>> = {
   'it-IT': IT_MESSAGES,
   'pt-BR': PT_MESSAGES,
   'fr-FR': FR_MESSAGES,
+  'ja-JP': JA_MESSAGES,
 };
 
 export const isLocale = (value?: string | null): value is Locale =>
@@ -46,7 +48,8 @@ export const isLocale = (value?: string | null): value is Locale =>
   value === 'de-DE' ||
   value === 'it-IT' ||
   value === 'pt-BR' ||
-  value === 'fr-FR';
+  value === 'fr-FR' ||
+  value === 'ja-JP';
 
 export type MessageKey = keyof typeof EN_MESSAGES;
 

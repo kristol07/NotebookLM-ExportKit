@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-export type Locale = 'en-US' | 'es-ES' | 'de-DE' | 'it-IT' | 'pt-BR' | 'fr-FR';
+export type Locale = 'en-US' | 'es-ES' | 'de-DE' | 'it-IT' | 'pt-BR' | 'fr-FR' | 'ja-JP';
 
 export const DEFAULT_LOCALE: Locale = 'en-US';
 
@@ -25,6 +25,7 @@ export const LOCALE_LABELS: Record<Locale, string> = {
   'it-IT': 'Italiano (Italia)',
   'pt-BR': 'Português (Brasil)',
   'fr-FR': 'Français (France)',
+  'ja-JP': '日本語 (日本)',
 };
 
 export type MessageParams = Record<string, string | number | undefined> & {

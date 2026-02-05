@@ -15,13 +15,13 @@ This document is a maintenance guide for adding new UI languages after the initi
 - Shared helpers (pluralization) live in `entrypoints/sidepanel/i18n/messages/helpers.ts`.
 - The i18n runtime is in `entrypoints/sidepanel/i18n/i18n.tsx` (provider + `useI18n` + `t()`).
 - Locale selection persists to local storage via the `exportkitLocale` key.
-- Supported locales: `en-US`, `es-ES`, `de-DE`, `it-IT`, `pt-BR`, `fr-FR`.
+- Supported locales: `en-US`, `es-ES`, `de-DE`, `it-IT`, `pt-BR`, `fr-FR`, `ja-JP`.
 - Locale resolution order:
   1. User override (`exportkitLocale`).
   2. Browser UI language (`browser.i18n.getUILanguage()`).
   3. `navigator.language` fallback.
   4. Default to `en-US`.
-- Stored values are region-specific locales (current: `en-US`, `es-ES`, `de-DE`, `it-IT`, `pt-BR`, `fr-FR`).
+- Stored values are region-specific locales (current: `en-US`, `es-ES`, `de-DE`, `it-IT`, `pt-BR`, `fr-FR`, `ja-JP`).
 - Language tags are normalized to the closest supported region-specific locale (e.g., `es-MX` -> `es-ES`).
 - The document `lang` attribute is set to the active locale for accessibility and proper font fallback.
 

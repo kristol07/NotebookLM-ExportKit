@@ -64,6 +64,9 @@ const normalizeLocale = (value?: string | null): Locale => {
   if (lower.startsWith('fr')) {
     return 'fr-FR';
   }
+  if (lower.startsWith('ja')) {
+    return 'ja-JP';
+  }
   return DEFAULT_LOCALE;
 };
 
