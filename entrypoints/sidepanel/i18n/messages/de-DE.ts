@@ -180,6 +180,8 @@ export const DE_MESSAGES: Record<string, MessageValue> = {
   'account.destinations': 'Ziele',
   'account.connected': 'Verbunden',
   'account.notConnected': 'Nicht verbunden',
+  'account.supportTitle': 'Kontakt',
+  'account.supportEmail': 'notebooklm.exportkit@gmail.com',
 
   'login.subtitle': 'Melde dich an, um erweiterte Exporte sowie Drive- und Notion-Zustellung freizuschalten',
   'login.googleOpening': 'Google wird geöffnet...',

@@ -186,6 +186,12 @@ export const AccountPanel = ({
           <div className="panel-actions-title">{t('common.settings')}</div>
           <LanguageSelect />
         </div>
+        <div className="panel-footer">
+          <span className="panel-footer-label">{t('account.supportTitle')}</span>
+          <a className="panel-support-link" href={`mailto:${t('account.supportEmail')}`}>
+            {t('account.supportEmail')}
+          </a>
+        </div>
       </div>
     </div>
   );

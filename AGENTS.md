@@ -19,6 +19,7 @@
 - React components use PascalCase filenames (e.g., `Dashboard.tsx`); utilities use kebab-case or descriptive names in `utils/`.
 - Export logic is organized by content type; add new extractors in `utils/extractors/` and route via `utils/export-dispatch.ts`.
 - Add the AGPL copyright header to any new source files.
+- When doing any UI design work, always review `docs/DESIGN_SYSTEM.md` first and follow its guidance.
 - Ensure new UI elements use i18n message keys and update all locale catalogs accordingly.
 
 ## Testing Guidelines

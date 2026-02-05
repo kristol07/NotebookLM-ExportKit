@@ -755,6 +755,34 @@
   font-weight: 600;
 }
 
+.panel-footer {
+  margin-top: auto;
+  padding-top: var(--space-2);
+  border-top: 1px dashed var(--stroke);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  font-size: var(--size-xs);
+  color: var(--muted);
+}
+
+.panel-footer-label {
+  font-weight: 600;
+}
+
+.panel-support-link {
+  font-size: var(--size-xs);
+  color: var(--teal);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.panel-support-link:hover,
+.panel-support-link:focus-visible {
+  text-decoration: underline;
+}
+
 
 .link-button {
   background: none;
