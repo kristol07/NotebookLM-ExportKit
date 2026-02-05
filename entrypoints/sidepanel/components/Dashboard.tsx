@@ -43,6 +43,7 @@ import {
 import { extractByType } from '../../../utils/extractors';
 import { extractNotebookLmPayload } from '../../../utils/extractors/common';
 import { consumeTrial, createCheckoutSession, createCustomerPortalLink, getPlan } from '../../../utils/billing';
+import { getAnalyticsEnabled, setAnalyticsEnabled, trackEvent } from '../../../utils/analytics';
 import { AccountPanel } from './dashboard/AccountPanel';
 import { DashboardHeader } from './dashboard/DashboardHeader';
 import { DriveSetupCard } from './dashboard/DriveSetupCard';
@@ -249,6 +250,7 @@ export default function Dashboard({
     const upgradeInFlightRef = useRef(false);
     const [exportTarget, setExportTarget] = useState<ExportTarget>('download');
     const [pdfQuality, setPdfQuality] = useState<PdfQualityPreference>('size');
+    const [analyticsEnabled, setAnalyticsEnabledState] = useState(true);
     const plan = getPlan(session);
     const isPlus = plan === 'plus' || plan === 'pro';
     const isSignedIn = Boolean(session?.user?.id);
@@ -281,6 +283,21 @@ export default function Dashboard({
                 clearTimeout(noticeTimerRef.current);
             }
         };
+    }, []);
+
+    useEffect(() => {
+        getAnalyticsEnabled()
+            .then((enabled) => setAnalyticsEnabledState(enabled))
+            .catch(() => setAnalyticsEnabledState(true));
+    }, []);
+
+    useEffect(() => {
+        void trackEvent('panel_opened', {
+            signed_in: isSignedIn,
+            plan_tier: plan,
+            export_target: exportTarget,
+        });
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const refreshDriveState = async () => {
@@ -413,9 +430,17 @@ export default function Dashboard({
     const handlePdfQualityChange = (value: PdfQualityPreference) => {
         setPdfQuality(value);
         localStorage.setItem(PDF_QUALITY_STORAGE_KEY, value);
+        void trackEvent('pdf_quality_changed', {
+            pdf_quality: value,
+            plan_tier: plan,
+        });
     };
 
     const handleConnectDrive = async () => {
+        void trackEvent('drive_connect_started', {
+            signed_in: isSignedIn,
+            plan_tier: plan,
+        });
         if (!isSignedIn) {
             showNotice('info', 'Sign in to connect Google Drive.');
             onRequestLogin?.();
@@ -426,8 +451,14 @@ export default function Dashboard({
             const driveResult = await connectGoogleDrive(getGoogleDriveOAuthScopes());
             setDriveConnected(true);
             setDriveAccountEmail(driveResult.email ?? null);
+            void trackEvent('drive_connected', {
+                plan_tier: plan,
+            });
         } catch (err) {
             console.error(err);
+            void trackEvent('drive_connect_failed', {
+                plan_tier: plan,
+            });
             showNotice('error', 'Could not connect Google Drive. Please try again.');
         } finally {
             setLoadingAction(null);
@@ -435,6 +466,10 @@ export default function Dashboard({
     };
 
     const handleConnectNotion = async () => {
+        void trackEvent('notion_connect_started', {
+            signed_in: isSignedIn,
+            plan_tier: plan,
+        });
         if (!isSignedIn) {
             showNotice('info', 'Sign in to connect Notion.');
             onRequestLogin?.();
@@ -447,8 +482,14 @@ export default function Dashboard({
             const workspace = await fetchNotionWorkspace(result.accessToken);
             setNotionWorkspaceName(workspace ?? await getNotionWorkspaceName());
             void loadNotionPages();
+            void trackEvent('notion_connected', {
+                plan_tier: plan,
+            });
         } catch (err: any) {
             console.error(err);
+            void trackEvent('notion_connect_failed', {
+                plan_tier: plan,
+            });
             showNotice('error', err?.message || 'Could not connect Notion. Please try again.');
         } finally {
             setLoadingAction(null);
@@ -517,6 +558,10 @@ export default function Dashboard({
         if (!isSignedIn) {
             showNotice('info', 'Sign in to upgrade.');
             onRequestLogin?.();
+            void trackEvent('upgrade_blocked', {
+                reason: 'not_signed_in',
+                plan_tier: plan,
+            });
             return;
         }
         if (upgradeInFlightRef.current) {
@@ -527,9 +572,17 @@ export default function Dashboard({
         try {
             const checkoutUrl = await createCheckoutSession();
             await browser.tabs.create({ url: checkoutUrl });
+            void trackEvent('checkout_started', {
+                context: upgradeContext ?? 'general',
+                plan_tier: plan,
+            });
         } catch (err) {
             console.error(err);
             showNotice('error', 'Could not start checkout. Please try again.');
+            void trackEvent('checkout_failed', {
+                context: upgradeContext ?? 'general',
+                plan_tier: plan,
+            });
         } finally {
             setLoadingAction(null);
             upgradeInFlightRef.current = false;
@@ -540,6 +593,11 @@ export default function Dashboard({
         setShowAccountPanel(false);
         setUpgradeContext(context);
         setShowUpgradeModal(true);
+        void trackEvent('upgrade_modal_opened', {
+            context,
+            plan_tier: plan,
+            signed_in: isSignedIn,
+        });
     };
 
     const handleManageBilling = async () => {
@@ -547,12 +605,44 @@ export default function Dashboard({
         try {
             const portalUrl = await createCustomerPortalLink();
             await browser.tabs.create({ url: portalUrl });
+            void trackEvent('billing_portal_opened', {
+                plan_tier: plan,
+            });
         } catch (err) {
             console.error(err);
             showNotice('error', 'Could not open billing portal. Please try again.');
         } finally {
             setLoadingAction(null);
         }
+    };
+
+    const buildExportAnalyticsParams = (
+        format: ExportFormat,
+        contentType?: ContentType,
+        options?: { pdfQualityOverride?: PdfQualityPreference; deliveryOverride?: ExportDelivery }
+    ) => ({
+        content_type: contentType ?? 'notebooklm_payload',
+        export_format: format,
+        export_target: exportTarget,
+        delivery: options?.deliveryOverride ?? 'download',
+        is_plus: isPlus,
+        signed_in: isSignedIn,
+        plan_tier: plan,
+    });
+
+    const handleAnalyticsToggle = async (nextEnabled: boolean) => {
+        if (nextEnabled === analyticsEnabled) {
+            return;
+        }
+        if (!nextEnabled) {
+            await trackEvent('analytics_opt_out', { plan_tier: plan });
+            await setAnalyticsEnabled(false);
+            setAnalyticsEnabledState(false);
+            return;
+        }
+        await setAnalyticsEnabled(true);
+        setAnalyticsEnabledState(true);
+        await trackEvent('analytics_opt_in', { plan_tier: plan });
     };
 
     const handleExport = async (
@@ -564,6 +654,9 @@ export default function Dashboard({
             ? `${contentType}:${format}${options?.deliveryOverride ? `:${options.deliveryOverride}` : ''}`
             : 'notebooklm-payload';
         setLoadingAction(actionId);
+        const exportStartedAt = Date.now();
+        const analyticsParams = buildExportAnalyticsParams(format, contentType, options);
+        void trackEvent('export_requested', analyticsParams);
         try {
             const plusExport = isPlusExport(format, contentType);
             const requiresPlus = plusExport
@@ -573,6 +666,10 @@ export default function Dashboard({
                 if (!isSignedIn) {
                     showNotice('info', 'Sign in to unlock advanced exports.');
                     onRequestLogin?.();
+                    void trackEvent('export_blocked', {
+                        ...analyticsParams,
+                        failure_reason: 'not_signed_in',
+                    });
                     return;
                     }
                 if (!isPlus) {
@@ -586,6 +683,10 @@ export default function Dashboard({
                                     ? 'notion'
                                     : 'format'
                         );
+                        void trackEvent('export_blocked', {
+                            ...analyticsParams,
+                            failure_reason: 'trial_exhausted',
+                        });
                         return;
                     }
                     if (typeof trialResult.remaining === 'number') {
@@ -601,6 +702,10 @@ export default function Dashboard({
                         'error',
                         `Notion exports for ${getContentLabel(contentType)} support ${supportedFormats.join(', ')}.`
                     );
+                    void trackEvent('export_blocked', {
+                        ...analyticsParams,
+                        failure_reason: 'notion_format_unsupported',
+                    });
                     return;
                 }
             }
@@ -608,6 +713,10 @@ export default function Dashboard({
             if (exportTarget === 'drive' && !hasDriveAccess) {
                 showNotice('info', 'Connect Google Drive to continue.');
                 void refreshDriveState();
+                void trackEvent('export_blocked', {
+                    ...analyticsParams,
+                    failure_reason: 'drive_not_connected',
+                });
                 return;
             }
 
@@ -615,10 +724,18 @@ export default function Dashboard({
                 if (!hasNotionAccess) {
                     showNotice('info', 'Connect Notion to continue.');
                     refreshNotionState();
+                    void trackEvent('export_blocked', {
+                        ...analyticsParams,
+                        failure_reason: 'notion_not_connected',
+                    });
                     return;
                 }
                 if (!notionDatabaseId) {
                     showNotice('info', 'Set a Notion destination page to continue.');
+                    void trackEvent('export_blocked', {
+                        ...analyticsParams,
+                        failure_reason: 'notion_no_destination',
+                    });
                     return;
                 }
             }
@@ -626,6 +743,10 @@ export default function Dashboard({
             const tabs = await browser.tabs.query({ active: true, currentWindow: true });
             if (tabs.length === 0 || !tabs[0].id) {
                 showNotice('error', 'No active tab found.');
+                void trackEvent('export_failed', {
+                    ...analyticsParams,
+                    failure_reason: 'no_active_tab',
+                });
                 return;
             }
 
@@ -714,9 +835,18 @@ export default function Dashboard({
                             await copyTextToClipboard(markdownText);
                             const trialMessage = await getTrialMessage();
                             showNotice('success', `Copied ${contentLabel} Markdown to Clipboard.${trialMessage}`);
+                            void trackEvent('export_completed', {
+                                ...analyticsParams,
+                                duration_ms: Date.now() - exportStartedAt,
+                                success: true,
+                            });
                         } catch (err) {
                             console.error(err);
                             showNotice('error', 'Copy failed. Please try again.');
+                            void trackEvent('export_failed', {
+                                ...analyticsParams,
+                                failure_reason: 'clipboard_failed',
+                            });
                         }
                         return;
                     }
@@ -753,6 +883,11 @@ export default function Dashboard({
                                 : 'Downloads';
                         const trialMessage = await getTrialMessage();
                         showNotice('success', `Exported ${contentLabel} to ${destinationLabel} as ${formatName}.${trialMessage}`);
+                        void trackEvent('export_completed', {
+                            ...analyticsParams,
+                            duration_ms: Date.now() - exportStartedAt,
+                            success: true,
+                        });
                     } else {
                         const failureMessage = delivered.error
                             || (exportTarget === 'drive'
@@ -761,17 +896,29 @@ export default function Dashboard({
                                     ? 'Export failed. Check your Notion connection and destination.'
                                     : 'Export failed.');
                         showNotice('error', failureMessage);
+                        void trackEvent('export_failed', {
+                            ...analyticsParams,
+                            failure_reason: 'delivery_failed',
+                        });
                     }
                     setUploadProgress(null);
                     return;
                 }
 
                 showNotice('error', EXTRACTION_ERROR_MESSAGE);
+                void trackEvent('export_failed', {
+                    ...analyticsParams,
+                    failure_reason: 'extraction_failed',
+                });
                 return;
             }
 
             if (exportTarget === 'notion') {
                 showNotice('error', 'Choose a specific export format for Notion delivery.');
+                void trackEvent('export_blocked', {
+                    ...analyticsParams,
+                    failure_reason: 'notion_missing_format',
+                });
                 return;
             }
 
@@ -780,10 +927,18 @@ export default function Dashboard({
                 showNotice('info', 'Export started. You will be prompted when it is ready.');
             } else {
                 showNotice('error', EXTRACTION_ERROR_MESSAGE);
+                void trackEvent('export_failed', {
+                    ...analyticsParams,
+                    failure_reason: 'extraction_failed',
+                });
             }
         } catch (err) {
             console.error(err);
             showNotice('error', 'Error communicating with content script. Refresh the page and try again.');
+            void trackEvent('export_failed', {
+                ...analyticsParams,
+                failure_reason: 'exception',
+            });
         } finally {
             setLoadingAction(null);
         }
@@ -893,6 +1048,7 @@ export default function Dashboard({
                     formattedPeriodEnd={formattedPeriodEnd}
                     trialRemaining={trialRemaining}
                     loadingAction={loadingAction}
+                    analyticsEnabled={analyticsEnabled}
                     onClose={() => setShowAccountPanel(false)}
                     onConnectDrive={handleConnectDrive}
                     onDisconnectDrive={handleDisconnectDrive}
@@ -900,6 +1056,7 @@ export default function Dashboard({
                     onDisconnectNotion={handleDisconnectNotion}
                     onManageBilling={handleManageBilling}
                     onUpgrade={() => openUpgradeModal('general')}
+                    onAnalyticsToggle={handleAnalyticsToggle}
                 />
             )}
         </div>

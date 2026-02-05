@@ -33,7 +33,8 @@ export default defineConfig({
       'https://notebooklm.google.com/*',
       'https://*.usercontent.goog/*',
       'https://www.googleapis.com/*',
-      'https://api.notion.com/*'
+      'https://api.notion.com/*',
+      'https://www.google-analytics.com/*'
     ],
     name: 'NotebookLM ExportKit: export any format to local, GDrive & Notion',
     description: 'Export NotebookLM chat, quiz, flashcard, mindmap, note, report, etc. to multiple formats with Drive or Notion delivery.',

@@ -29,6 +29,7 @@ type AccountPanelProps = {
   formattedPeriodEnd: string | null;
   trialRemaining: number | null;
   loadingAction: string | null;
+  analyticsEnabled: boolean;
   onClose: () => void;
   onConnectDrive: () => void;
   onDisconnectDrive: () => void;
@@ -36,6 +37,7 @@ type AccountPanelProps = {
   onDisconnectNotion: () => void;
   onManageBilling: () => void;
   onUpgrade: () => void;
+  onAnalyticsToggle: (enabled: boolean) => void;
 };
 
 export const AccountPanel = ({
@@ -50,6 +52,7 @@ export const AccountPanel = ({
   formattedPeriodEnd,
   trialRemaining,
   loadingAction,
+  analyticsEnabled,
   onClose,
   onConnectDrive,
   onDisconnectDrive,
@@ -57,6 +60,7 @@ export const AccountPanel = ({
   onDisconnectNotion,
   onManageBilling,
   onUpgrade,
+  onAnalyticsToggle,
 }: AccountPanelProps) => {
   return (
     <div className="panel-overlay" role="dialog" aria-modal="true" onClick={onClose}>
@@ -173,6 +177,25 @@ export const AccountPanel = ({
                 </button>
               </div>
             )}
+          </div>
+        </div>
+        <div className="panel-section">
+          <div className="panel-actions-title">Privacy</div>
+          <div className="panel-toggle-row">
+            <div className="panel-toggle-text">
+              <div className="panel-toggle-title">Share anonymous usage analytics</div>
+              <div className="panel-toggle-note">
+                Helps us learn which exports are most useful. No content is collected.
+              </div>
+            </div>
+            <button
+              type="button"
+              className={`toggle-switch ${analyticsEnabled ? 'on' : ''}`}
+              aria-pressed={analyticsEnabled}
+              onClick={() => onAnalyticsToggle(!analyticsEnabled)}
+            >
+              <span className="toggle-thumb" />
+            </button>
           </div>
         </div>
       </div>
