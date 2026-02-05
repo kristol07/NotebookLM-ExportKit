@@ -159,6 +159,11 @@ export const generateQuizHtml = (quizData: QuizItem[], title: string) => {
             border-color: var(--error);
         }
 
+        .option-item.revealed-correct {
+            border-color: rgba(31, 111, 120, 0.5);
+            box-shadow: inset 0 0 0 1px rgba(31, 111, 120, 0.16);
+        }
+
         .option-label {
             font-weight: 500;
             display: flex;
@@ -176,8 +181,13 @@ export const generateQuizHtml = (quizData: QuizItem[], title: string) => {
             display: block;
         }
 
+        .revealed-correct .feedback-state {
+            display: block;
+        }
+
         .correct .feedback-state { color: var(--teal); }
         .incorrect .feedback-state { color: var(--error); }
+        .revealed-correct .feedback-state { color: var(--teal); }
 
         .rationale {
             font-size: 0.95em;
@@ -191,6 +201,9 @@ export const generateQuizHtml = (quizData: QuizItem[], title: string) => {
             display: block;
         }
 
+        .revealed-correct .rationale {
+            display: block;
+        }
         .hint-toggle {
             border: 1px solid var(--stroke);
             color: var(--muted);
@@ -281,6 +294,70 @@ export const generateQuizHtml = (quizData: QuizItem[], title: string) => {
             cursor: not-allowed;
         }
 
+        .results-screen {
+            display: flex;
+            flex-direction: column;
+            gap: var(--space-8);
+        }
+
+        .results-title {
+            font-family: var(--font-display);
+            font-size: 2.1em;
+            margin: 0;
+        }
+
+        .results-subtitle {
+            color: var(--muted);
+            margin: 0;
+            font-size: 1em;
+        }
+
+        .results-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: var(--space-6);
+        }
+
+        .result-card {
+            padding: var(--space-6);
+            border-radius: var(--radius-xl);
+            background: #fff;
+            border: 1px solid var(--stroke);
+            display: flex;
+            flex-direction: column;
+            gap: var(--space-3);
+        }
+
+        .result-label {
+            color: var(--muted);
+            font-size: 0.95em;
+        }
+
+        .result-value {
+            font-size: 2em;
+            font-family: var(--font-display);
+        }
+
+        .result-metrics {
+            display: flex;
+            flex-direction: column;
+            gap: var(--space-2);
+            color: var(--muted);
+            font-size: 0.95em;
+        }
+
+        .results-actions {
+            display: flex;
+            gap: var(--space-4);
+            flex-wrap: wrap;
+        }
+
+        .btn-ghost {
+            background-color: transparent;
+            border: 1px solid var(--stroke);
+            color: var(--ink);
+        }
+
         .hidden { display: none; }
 
         @media (max-width: 900px) {
@@ -337,6 +414,10 @@ export const generateQuizHtml = (quizData: QuizItem[], title: string) => {
             .hint-toggle {
                 justify-content: space-between;
             }
+
+            .results-actions {
+                flex-direction: column;
+            }
         }
     </style>
 </head>
@@ -345,6 +426,7 @@ export const generateQuizHtml = (quizData: QuizItem[], title: string) => {
         <div id="quiz-content">
             <!-- Dynamic Content -->
         </div>
+        <div id="results-content" class="hidden"></div>
 
         <div id="hint-box" class="hint-content">
             <div class="hint-icon-box">💡</div>
@@ -366,21 +448,60 @@ export const generateQuizHtml = (quizData: QuizItem[], title: string) => {
     <script>
         const quizData = ${jsonData};
         let currentIndex = 0;
-        const state = quizData.map(() => ({ selectedIndex: null, hintVisible: false }));
+        let mode = 'quiz';
+        let state = quizData.map(() => ({ selectedIndex: null, hintVisible: false }));
+
+        function getStats() {
+            const answered = state.filter((s) => s.selectedIndex !== null).length;
+            const correct = state.filter((s, i) => s.selectedIndex !== null && quizData[i].answerOptions[s.selectedIndex].isCorrect).length;
+            const wrong = state.filter((s, i) => s.selectedIndex !== null && !quizData[i].answerOptions[s.selectedIndex].isCorrect).length;
+            const skipped = quizData.length - answered;
+            const accuracy = answered > 0 ? Math.round((correct / answered) * 100) : 0;
+            return { answered, correct, wrong, skipped, accuracy };
+        }
+
+        function shuffleAnswers() {
+            quizData.forEach((q) => {
+                for (let i = q.answerOptions.length - 1; i > 0; i -= 1) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [q.answerOptions[i], q.answerOptions[j]] = [q.answerOptions[j], q.answerOptions[i]];
+                }
+            });
+        }
+
+        function shuffleQuestions() {
+            for (let i = quizData.length - 1; i > 0; i -= 1) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [quizData[i], quizData[j]] = [quizData[j], quizData[i]];
+            }
+        }
+
+        function resetState() {
+            state = quizData.map(() => ({ selectedIndex: null, hintVisible: false }));
+        }
 
         function renderQuestion() {
             const q = quizData[currentIndex];
             const s = state[currentIndex];
             const content = document.getElementById('quiz-content');
-            
+            const results = document.getElementById('results-content');
+            const hintBox = document.getElementById('hint-box');
+            const nav = document.querySelector('.navigation');
+            const nextBtn = document.getElementById('next-btn');
+            const prevBtn = document.getElementById('prev-btn');
+
             let optionsHtml = '';
+            const correctIndex = q.answerOptions.findIndex((o) => o.isCorrect);
+            const selectedCorrect = s.selectedIndex !== null && q.answerOptions[s.selectedIndex].isCorrect;
             q.answerOptions.forEach((opt, idx) => {
                 const isSelected = s.selectedIndex === idx;
                 const statusClass = isSelected ? (opt.isCorrect ? 'correct' : 'incorrect') : '';
                 const selectedClass = isSelected ? 'selected' : '';
-                
+                const revealCorrect = (s.selectedIndex !== null && !selectedCorrect && opt.isCorrect) || (mode === 'review' && opt.isCorrect);
+                const revealClass = revealCorrect ? 'revealed-correct' : '';
+
                 optionsHtml += \`
-                    <li class="option-item \${selectedClass} \${statusClass}" onclick="selectOption(\${idx})">
+                    <li class="option-item \${selectedClass} \${statusClass} \${revealClass}" onclick="selectOption(\${idx})">
                         <div class="option-label">
                             <span>\${String.fromCharCode(65 + idx)}. \${opt.text}</span>
                         </div>
@@ -392,8 +513,7 @@ export const generateQuizHtml = (quizData: QuizItem[], title: string) => {
                 \`;
             });
 
-            const correctCount = state.filter((s, i) => s.selectedIndex !== null && quizData[i].answerOptions[s.selectedIndex].isCorrect).length;
-            const wrongCount = state.filter((s, i) => s.selectedIndex !== null && !quizData[i].answerOptions[s.selectedIndex].isCorrect).length;
+            const stats = getStats();
 
             content.innerHTML = \`
                 <div class="progress-container">
@@ -401,11 +521,11 @@ export const generateQuizHtml = (quizData: QuizItem[], title: string) => {
                     <div class="status-bar">
                         <div class="status-item status-correct">
                             <span>✓</span>
-                            <span>\${correctCount}</span>
+                            <span>\${stats.correct}</span>
                         </div>
                         <div class="status-item status-wrong">
                             <span>✕</span>
-                            <span>\${wrongCount}</span>
+                            <span>\${stats.wrong}</span>
                         </div>
                     </div>
                 </div>
@@ -416,7 +536,6 @@ export const generateQuizHtml = (quizData: QuizItem[], title: string) => {
             \`;
 
             // Update Hint Box
-            const hintBox = document.getElementById('hint-box');
             const hintText = document.getElementById('hint-text');
             hintText.innerText = q.hint || 'No hint available for this question.';
             if (s.hintVisible) {
@@ -425,23 +544,96 @@ export const generateQuizHtml = (quizData: QuizItem[], title: string) => {
                 hintBox.classList.remove('active');
             }
 
-            document.getElementById('prev-btn').disabled = currentIndex === 0;
-            document.getElementById('next-btn').disabled = currentIndex === quizData.length - 1;
+            results.classList.add('hidden');
+            content.classList.remove('hidden');
+            hintBox.classList.remove('hidden');
+            nav.classList.remove('hidden');
+
+            prevBtn.disabled = currentIndex === 0;
+            nextBtn.disabled = false;
+            if (mode === 'review') {
+                nextBtn.innerText = currentIndex === quizData.length - 1 ? 'Back to Results' : 'Next';
+            } else {
+                nextBtn.innerText = currentIndex === quizData.length - 1 ? 'Finish' : 'Next';
+            }
             document.getElementById('hint-icon-arrow').innerText = s.hintVisible ? '▲' : '▼';
         }
 
         function selectOption(idx) {
+            if (mode !== 'quiz') return;
             if (state[currentIndex].selectedIndex !== null) return; // Prevent re-selection
             state[currentIndex].selectedIndex = idx;
             renderQuestion();
         }
 
         function toggleHint() {
+            if (mode === 'results') return;
             state[currentIndex].hintVisible = !state[currentIndex].hintVisible;
             renderQuestion();
         }
 
+        function renderResults() {
+            const stats = getStats();
+            const content = document.getElementById('quiz-content');
+            const results = document.getElementById('results-content');
+            const hintBox = document.getElementById('hint-box');
+            const nav = document.querySelector('.navigation');
+
+            const score = \`\${stats.correct} / \${quizData.length}\`;
+
+            results.innerHTML = \`
+                <div class="results-screen">
+                    <div>
+                        <h1 class="results-title">You did it! Quiz Complete.</h1>
+                        <p class="results-subtitle">Review your score or take another run.</p>
+                    </div>
+                    <div class="results-grid">
+                        <div class="result-card">
+                            <div class="result-label">Score</div>
+                            <div class="result-value">\${score}</div>
+                        </div>
+                        <div class="result-card">
+                            <div class="result-label">Accuracy</div>
+                            <div class="result-value">\${stats.accuracy}%</div>
+                        </div>
+                        <div class="result-card">
+                            <div class="result-metrics">
+                                <div>Right <strong>\${stats.correct}</strong></div>
+                                <div>Wrong <strong>\${stats.wrong}</strong></div>
+                                <div>Skipped <strong>\${stats.skipped}</strong></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="results-actions">
+                        <button id="review-btn" class="btn btn-ghost">Review Quiz</button>
+                        <button id="retake-btn" class="btn btn-next">Retake Quiz</button>
+                    </div>
+                </div>
+            \`;
+
+            content.classList.add('hidden');
+            results.classList.remove('hidden');
+            hintBox.classList.add('hidden');
+            nav.classList.add('hidden');
+
+            document.getElementById('review-btn').onclick = () => {
+                mode = 'review';
+                currentIndex = 0;
+                renderQuestion();
+            };
+
+            document.getElementById('retake-btn').onclick = () => {
+                mode = 'quiz';
+                currentIndex = 0;
+                shuffleQuestions();
+                shuffleAnswers();
+                resetState();
+                renderQuestion();
+            };
+        }
+
         document.getElementById('prev-btn').onclick = () => {
+            if (mode === 'results') return;
             if (currentIndex > 0) {
                 currentIndex--;
                 renderQuestion();
@@ -449,9 +641,23 @@ export const generateQuizHtml = (quizData: QuizItem[], title: string) => {
         };
 
         document.getElementById('next-btn').onclick = () => {
+            if (mode === 'results') return;
+            if (mode === 'review') {
+                if (currentIndex < quizData.length - 1) {
+                    currentIndex++;
+                    renderQuestion();
+                } else {
+                    mode = 'results';
+                    renderResults();
+                }
+                return;
+            }
             if (currentIndex < quizData.length - 1) {
                 currentIndex++;
                 renderQuestion();
+            } else {
+                mode = 'results';
+                renderResults();
             }
         };
 
