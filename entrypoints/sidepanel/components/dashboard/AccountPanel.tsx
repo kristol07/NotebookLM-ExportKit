@@ -17,6 +17,7 @@
 import React from 'react';
 import { PlusIcon, Spinner } from './Icons';
 import { useI18n } from '../../i18n/i18n';
+import { LanguageSelect } from './LanguageSelect';
 
 type AccountPanelProps = {
   email: string | null;
@@ -59,7 +60,7 @@ export const AccountPanel = ({
   onManageBilling,
   onUpgrade,
 }: AccountPanelProps) => {
-  const { t, locale, setLocale, availableLocales } = useI18n();
+  const { t } = useI18n();
   return (
     <div className="panel-overlay" role="dialog" aria-modal="true" onClick={onClose}>
       <div className="panel-card" onClick={(event) => event.stopPropagation()}>
@@ -183,22 +184,7 @@ export const AccountPanel = ({
         </div>
         <div className="panel-section">
           <div className="panel-actions-title">{t('common.settings')}</div>
-          <div className="panel-info-card">
-            <div className="panel-info-text">
-              <div className="panel-info-label">{t('common.uiLanguage')}</div>
-            </div>
-            <select
-              value={locale}
-              onChange={(event) => setLocale(event.target.value as typeof locale)}
-              className="setup-input panel-language-select"
-            >
-              {availableLocales.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </div>
+          <LanguageSelect />
         </div>
       </div>
     </div>
