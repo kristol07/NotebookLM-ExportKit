@@ -17,6 +17,9 @@
 import { ExportFormat, NormalizedExportPayload, QuizItem, validateQuizItems } from '../export-core';
 import { extractNotebookLmPayload, RawExtractResult } from './common';
 
+const SHUFFLE_QUIZ_ANSWERS = true;
+const SHUFFLE_QUIZ_DETERMINISTIC = false;
+
 export interface TypeExtractResult {
     success: boolean;
     payload?: NormalizedExportPayload<QuizItem>;
@@ -43,11 +46,51 @@ export const extractQuiz = async (tabId: number, format: ExportFormat): Promise<
         return { success: false, error: `Invalid quiz data: ${validation.errors.join('; ')}`, raw };
     }
 
+    const shuffleArray = <T,>(items: T[], seed?: number): T[] => {
+        const arr = items.slice();
+        const random = seed !== undefined
+            ? (() => {
+                let state = seed >>> 0;
+                return () => {
+                    state = (1664525 * state + 1013904223) >>> 0;
+                    return state / 0x100000000;
+                };
+            })()
+            : Math.random;
+        for (let i = arr.length - 1; i > 0; i--) {
+            const j = Math.floor(random() * (i + 1));
+            [arr[i], arr[j]] = [arr[j], arr[i]];
+        }
+        return arr;
+    };
+
+    const hashString = (value: string): number => {
+        let hash = 2166136261;
+        for (let i = 0; i < value.length; i++) {
+            hash ^= value.charCodeAt(i);
+            hash = Math.imul(hash, 16777619);
+        }
+        return hash >>> 0;
+    };
+
+    const baseQuiz = raw.data.quiz as QuizItem[];
+    const shuffledQuiz = SHUFFLE_QUIZ_ANSWERS
+        ? baseQuiz.map((item) => ({
+            ...item,
+            answerOptions: item.answerOptions.length > 1
+                ? shuffleArray(
+                    item.answerOptions,
+                    SHUFFLE_QUIZ_DETERMINISTIC ? hashString(item.question) : undefined
+                )
+                : item.answerOptions
+        }))
+        : baseQuiz;
+
     return {
         success: true,
         payload: {
             type: 'quiz',
-            items: raw.data.quiz as QuizItem[],
+            items: shuffledQuiz,
             source: 'notebooklm'
         },
         raw
