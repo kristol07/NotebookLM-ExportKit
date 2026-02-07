@@ -32,6 +32,8 @@ export default defineConfig({
     host_permissions: [
       'https://notebooklm.google.com/*',
       'https://*.usercontent.goog/*',
+      'https://*.googleusercontent.com/*',
+      'https://lh3.google.com/*',
       'https://www.googleapis.com/*',
       'https://api.notion.com/*'
     ],

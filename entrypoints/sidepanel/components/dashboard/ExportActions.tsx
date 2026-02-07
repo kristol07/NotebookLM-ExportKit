@@ -72,6 +72,7 @@ export const ExportActions = ({
     report: t('export.notionLayout.report'),
     chat: t('export.notionLayout.chat'),
     source: t('export.notionLayout.source'),
+    slidedeck: t('export.notionLayout.slidedeck'),
   }), [t]);
 
   useEffect(() => {

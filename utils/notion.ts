@@ -26,6 +26,7 @@ import type {
   NoteBlock,
   NoteInline,
   QuizItem,
+  SlideDeckItem,
   SourceItem,
 } from './export-core';
 import {
@@ -55,6 +56,7 @@ const CONTENT_TYPE_LABELS: Record<ContentType, string> = {
   report: 'Report',
   chat: 'Chat',
   source: 'Sources',
+  slidedeck: 'Slide deck',
 };
 
 export const NOTION_SUPPORTED_FORMATS_BY_TYPE: Record<ContentType, ExportFormat[]> = {
@@ -66,6 +68,7 @@ export const NOTION_SUPPORTED_FORMATS_BY_TYPE: Record<ContentType, ExportFormat[
   report: ['Markdown'],
   chat: ['Markdown', 'JSON'],
   source: ['Markdown'],
+  slidedeck: ['HTML'],
 };
 
 export type NotionExportContext = {
@@ -75,7 +78,7 @@ export type NotionExportContext = {
   sourceUrl?: string;
   notebookId?: string;
   notebookTitle?: string;
-  items?: QuizItem[] | FlashcardItem[] | MindmapNode[] | DataTableRow[] | NoteBlock[] | ChatMessage[] | SourceItem[];
+  items?: QuizItem[] | FlashcardItem[] | MindmapNode[] | DataTableRow[] | NoteBlock[] | ChatMessage[] | SourceItem[] | SlideDeckItem[];
   meta?: {
     title?: string;
     svg?: string;
@@ -299,6 +302,16 @@ const buildCalloutBlock = (text: string, children?: any[], icon = '❓') => ({
     rich_text: buildTextRichText(text),
     icon: { type: 'emoji', emoji: icon },
     ...(children && children.length > 0 ? { children } : {}),
+  },
+});
+
+const buildImageBlock = (url: string, caption?: string) => ({
+  object: 'block',
+  type: 'image',
+  image: {
+    type: 'external',
+    external: { url },
+    ...(caption?.trim() ? { caption: buildTextRichText(caption.trim()) } : {}),
   },
 });
 
@@ -604,6 +617,37 @@ const buildSourceBlocks = (items: SourceItem[]) => {
   return blocks;
 };
 
+const buildSlideDeckBlocks = (items: SlideDeckItem[]) => {
+  const blocks: any[] = [buildHeadingBlock(2, 'Slide deck')];
+  if (items.length === 0) {
+    blocks.push(buildParagraphBlock(buildTextRichText('No slides found.')));
+    return blocks;
+  }
+
+  items.forEach((item, index) => {
+    const slideTitle = `Slide ${index + 1}`;
+    blocks.push(buildHeadingBlock(3, slideTitle));
+    blocks.push(buildImageBlock(item.imageUrl, item.altText || slideTitle));
+
+    const altText = item.altText?.trim() || '';
+    const description = item.description?.trim() || '';
+    const toggleChildren: any[] = [];
+    if (altText) {
+      toggleChildren.push(buildParagraphBlock(buildTextRichText(altText)));
+    }
+    if (description) {
+      toggleChildren.push(buildParagraphBlock(buildTextRichText(description)));
+    }
+    if (toggleChildren.length > 0) {
+      blocks.push(buildToggleBlock('Alt text details', toggleChildren));
+    }
+    if (index < items.length - 1) {
+      blocks.push(buildDividerBlock());
+    }
+  });
+  return blocks;
+};
+
 const buildCodeBlocks = (content: string, format?: ExportFormat) => {
   return [buildCodeBlock(content, format)];
 };
@@ -809,6 +853,7 @@ const createDatabase = async (accessToken: string, parentPageId: string) => {
                 { name: 'Chat' },
                 { name: 'Data table' },
                 { name: 'Sources' },
+                { name: 'Slide deck' },
               ],
             },
           },
@@ -1199,6 +1244,9 @@ export const uploadToNotion = async (
         break;
       case 'source':
         blocks = buildSourceBlocks(items as SourceItem[]);
+        break;
+      case 'slidedeck':
+        blocks = buildSlideDeckBlocks(items as SlideDeckItem[]);
         break;
       default:
         blocks = [];

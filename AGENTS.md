@@ -17,6 +17,7 @@
 ## Coding Style & Naming Conventions
 - TypeScript + React with ESM (`"type": "module"`). Use 2-space indentation, semicolons, and single quotes to match existing files.
 - React components use PascalCase filenames (e.g., `Dashboard.tsx`); utilities use kebab-case or descriptive names in `utils/`.
+- For any export feature work, read `docs/EXPORT_ARCHITECTURE.md` first to align with the export pipeline design and avoid introducing inconsistent extractor/dispatch patterns.
 - Export logic is organized by content type; add new extractors in `utils/extractors/` and route via `utils/export-dispatch.ts`.
 - Add the AGPL copyright header to any new source files.
 - When doing any UI design work, always review `docs/DESIGN_SYSTEM.md` first and follow its guidance.

@@ -89,6 +89,16 @@ const buildExportSections = (t: (key: any, params?: any) => string): ExportSecti
         ],
     },
     {
+        title: t('export.section.slidedeck'),
+        contentType: 'slidedeck',
+        options: [
+            { format: 'PDF' },
+            { format: 'PPTX', label: 'PPT', isPlus: true },
+            { format: 'HTML' },
+            { format: 'ZIP', label: 'ZIP', isPlus: true },
+        ],
+    },
+    {
         title: t('export.section.note'),
         contentType: 'note',
         options: [
@@ -152,6 +162,7 @@ const NOTION_EXPORT_FORMAT_BY_TYPE: Record<ContentType, ExportFormat> = {
     report: 'Markdown',
     chat: 'Markdown',
     source: 'Markdown',
+    slidedeck: 'HTML',
 };
 
 const filterSectionsForNotion = (sections: ExportSection[]) =>
@@ -270,6 +281,8 @@ export default function Dashboard({
                 return t('content.chat');
             case 'source':
                 return t('content.source');
+            case 'slidedeck':
+                return t('content.slidedeck');
             default:
                 return t('content.datatable');
         }
@@ -697,6 +710,16 @@ export default function Dashboard({
                                 timestamp,
                                 undefined,
                                 { pdfQuality: options?.pdfQualityOverride ?? pdfQuality }
+                            );
+                            break;
+                        case 'slidedeck':
+                            result = await exportByType(
+                                'slidedeck',
+                                payload.items,
+                                format,
+                                tabTitle,
+                                timestamp,
+                                payload.meta
                             );
                             break;
                         default:
