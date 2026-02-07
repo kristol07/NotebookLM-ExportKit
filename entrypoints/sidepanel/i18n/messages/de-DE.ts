@@ -59,6 +59,7 @@ export const DE_MESSAGES: Record<string, MessageValue> = {
   'export.section.chat': 'Chat-Exporte',
   'export.section.datatable': 'Datentabellen-Exporte',
   'export.section.source': 'Quellen-Exporte',
+  'export.section.slidedeck': 'Folienexporte',
   'export.option.clipboard': 'Zwischenablage',
   'export.hint.notion': 'Notion-Exporte verwenden native Layouts.',
   'export.comingSoon': 'Kommt bald',
@@ -85,6 +86,7 @@ export const DE_MESSAGES: Record<string, MessageValue> = {
   'export.notionLayout.report': 'Rich-Report mit Überschriften, Absätzen, Tabellen und Codeblöcken',
   'export.notionLayout.chat': 'Rollenüberschriften mit Absätzen, Tabellen und Codeblöcken',
   'export.notionLayout.source': 'Quellendetail mit Zusammenfassung, Kernthemen und strukturiertem Inhalt',
+  'export.notionLayout.slidedeck': 'Einzelnes Dokument mit Folienbildern und Alt-Text-Umschaltern pro Folie',
 
   'content.quiz': 'Quiz',
   'content.flashcards': 'Karteikarten',
@@ -94,6 +96,7 @@ export const DE_MESSAGES: Record<string, MessageValue> = {
   'content.chat': 'Chat',
   'content.source': 'Quellen',
   'content.datatable': 'Datentabelle',
+  'content.slidedeck': 'Foliensatz',
 
   'drive.setup': 'Drive-Einrichtung',
   'drive.step.signIn': '1. Melde dich bei deinem Konto an',

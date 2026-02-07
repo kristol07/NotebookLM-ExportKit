@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-import { ContentType, ExportFormat, NormalizedExportPayload, QuizItem, FlashcardItem, MindmapNode, DataTableRow, NoteBlock, ChatMessage, SourceItem } from '../export-core';
+import { ContentType, ExportFormat, NormalizedExportPayload, QuizItem, FlashcardItem, MindmapNode, DataTableRow, NoteBlock, ChatMessage, SourceItem, SlideDeckItem } from '../export-core';
 import { extractQuiz } from './quiz';
 import { extractFlashcards } from './flashcards';
 import { extractMindmap } from './mindmap';
@@ -23,6 +23,7 @@ import { extractNote } from './note';
 import { extractReport } from './report';
 import { extractChat } from './chat';
 import { extractSource } from './source';
+import { extractSlideDeck } from './slidedeck';
 
 type ExtractPayload =
     | NormalizedExportPayload<QuizItem>
@@ -31,7 +32,8 @@ type ExtractPayload =
     | NormalizedExportPayload<DataTableRow>
     | NormalizedExportPayload<NoteBlock>
     | NormalizedExportPayload<ChatMessage>
-    | NormalizedExportPayload<SourceItem>;
+    | NormalizedExportPayload<SourceItem>
+    | NormalizedExportPayload<SlideDeckItem>;
 
 export type AnyExtractResult = {
     success: boolean;
@@ -59,6 +61,8 @@ export const extractByType = async (
             ? await extractChat(tabId, format)
             : type === 'source'
             ? await extractSource(tabId, format)
+            : type === 'slidedeck'
+            ? await extractSlideDeck(tabId, format)
             : await extractDatatable(tabId, format);
     if (result.success && result.payload) {
         return { success: true, payload: result.payload };
@@ -102,6 +106,11 @@ export const extractByAnyType = async (tabId: number, format: ExportFormat): Pro
         return { success: true, payload: sourceResult.payload };
     }
 
+    const slideDeckResult = await extractSlideDeck(tabId, format);
+    if (slideDeckResult.success && slideDeckResult.payload) {
+        return { success: true, payload: slideDeckResult.payload };
+    }
+
     const datatableResult = await extractDatatable(tabId, format);
     if (datatableResult.success && datatableResult.payload) {
         return { success: true, payload: datatableResult.payload };
@@ -113,6 +122,7 @@ export const extractByAnyType = async (tabId: number, format: ExportFormat): Pro
             chatResult.error ||
             reportResult.error ||
             sourceResult.error ||
+            slideDeckResult.error ||
             noteResult.error ||
             datatableResult.error ||
             mindmapResult.error ||
