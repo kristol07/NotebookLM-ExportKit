@@ -55,7 +55,7 @@ export const EN_MESSAGES: Record<string, MessageValue> = {
   'whatsNew.feature.dataTableSources': 'Improved data table export with source list',
   'whatsNew.feature.reportHtmlExport': 'Support for report export to HTML',
   'whatsNew.feature.chatHtmlExport': 'Support for chat export to HTML',
-  'whatsNew.feature.infographicExport': 'Added infographic exports to PNG, HTML, PDF, clipboard image, and Notion',
+  'whatsNew.feature.infographicExport': 'Added infographic exports to PNG, HTML, PDF, and Notion',
   'whatsNew.action.gotIt': 'Got it',
 
   'header.signOutTitle': 'Sign Out',
@@ -71,7 +71,6 @@ export const EN_MESSAGES: Record<string, MessageValue> = {
   'export.section.slidedeck': 'Slide Deck Exports',
   'export.section.infographic': 'Infographic Exports',
   'export.option.clipboard': 'Clipboard',
-  'export.option.copyImage': 'Copy Image',
   'export.hint.notion': 'Notion exports use native layouts.',
   'export.comingSoon': 'Coming soon',
   'export.comingSoonDetail': 'Video & Audio Overviews to Transcript/Slides',

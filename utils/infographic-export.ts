@@ -139,7 +139,7 @@ const buildInfographicHtml = (items: InfographicItem[], title: string) => {
         return `<figure class="infographic">
   <img src="${escapeHtml(src)}" alt="${escapeHtml(alt)}" loading="lazy" />
   <figcaption>
-    <strong>Infographic ${index + 1}</strong>
+    <strong>Infographic ${index + 1}</strong> <span class="alt-label">${escapeHtml(alt)}</span>
     ${description ? `<details><summary>description</summary><p>${escapeHtml(description)}</p></details>` : ''}
   </figcaption>
 </figure>`;
@@ -188,6 +188,11 @@ const buildInfographicHtml = (items: InfographicItem[], title: string) => {
       color: var(--muted);
       font-size: 14px;
       line-height: 1.5;
+    }
+    .infographic .alt-label {
+      margin-left: 6px;
+      color: var(--text);
+      font-weight: 500;
     }
     .infographic details { margin-top: 8px; }
     .infographic summary { cursor: pointer; color: var(--text); font-weight: 600; }

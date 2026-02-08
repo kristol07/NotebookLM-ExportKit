@@ -125,7 +125,6 @@ const buildExportSections = (t: (key: any, params?: any) => string): ExportSecti
             { format: 'PNG' },
             { format: 'PDF' },
             { format: 'HTML' },
-            { format: 'PNG', label: t('export.option.copyImage'), delivery: 'clipboard' },
         ],
     },
     {
@@ -480,16 +479,6 @@ export default function Dashboard({
         document.body.removeChild(textarea);
     };
 
-    const copyImageToClipboard = async (blob: Blob) => {
-        if (!navigator.clipboard?.write || typeof ClipboardItem === 'undefined') {
-            throw new Error('image_clipboard_not_supported');
-        }
-        if (blob.type !== 'image/png') {
-            throw new Error('unsupported_image_type');
-        }
-        await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
-    };
-
     const isPlusExport = (format: ExportFormat, contentType?: ContentType) => {
         if (!contentType) {
             return false;
@@ -840,12 +829,8 @@ export default function Dashboard({
 
                     if (exportTarget === 'download' && options?.deliveryOverride === 'clipboard') {
                         try {
-                            if (result.mimeType.startsWith('image/')) {
-                                await copyImageToClipboard(result.blob);
-                            } else {
-                                const markdownText = await result.blob.text();
-                                await copyTextToClipboard(markdownText);
-                            }
+                            const markdownText = await result.blob.text();
+                            await copyTextToClipboard(markdownText);
                             const trialMessage = await getTrialMessage();
                             showNotice('success', t('notice.copySuccess', {
                                 contentLabel,

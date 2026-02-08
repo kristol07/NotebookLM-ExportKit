@@ -17,7 +17,7 @@ For Google OAuth/Drive setup, see `docs/GOOGLE_OAUTH_SETUP.md`.
 - Note extraction details: see `docs/NOTE_EXTRACTION.md`.
 - Notes currently support Markdown, Word, and PDF exports; PDF uses HTML rendering for layout.
 - Slide decks support PDF, PPTX, HTML, and ZIP (Markdown + image files).
-- Infographics support PNG, HTML, PDF, image clipboard copy (from PNG export), and Notion native rendering.
+- Infographics support PNG, HTML, PDF, and Notion native rendering.
 - Exporters return `{ blob, filename, mimeType }` so delivery targets can decide whether to download or upload.
 
 ### Destination renderers (native layouts)

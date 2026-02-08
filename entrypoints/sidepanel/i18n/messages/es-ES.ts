@@ -55,7 +55,7 @@ export const ES_MESSAGES: Record<string, MessageValue> = {
   'whatsNew.feature.dataTableSources': 'Exportación de tablas de datos mejorada con lista de fuentes',
   'whatsNew.feature.reportHtmlExport': 'Compatibilidad con exportación de informes a HTML',
   'whatsNew.feature.chatHtmlExport': 'Compatibilidad con exportación de chat a HTML',
-  'whatsNew.feature.infographicExport': 'Nuevas exportaciones de infografías a PNG, HTML, PDF, imagen al portapapeles y Notion',
+  'whatsNew.feature.infographicExport': 'Nuevas exportaciones de infografías a PNG, HTML, PDF y Notion',
   'whatsNew.action.gotIt': 'Entendido',
 
   'header.signOutTitle': 'Cerrar sesión',
@@ -71,7 +71,6 @@ export const ES_MESSAGES: Record<string, MessageValue> = {
   'export.section.slidedeck': 'Exportaciones de diapositivas',
   'export.section.infographic': 'Exportaciones de infografías',
   'export.option.clipboard': 'Portapapeles',
-  'export.option.copyImage': 'Copiar imagen',
   'export.hint.notion': 'Las exportaciones a Notion usan diseños nativos.',
   'export.comingSoon': 'Próximamente',
   'export.comingSoonDetail': 'Resúmenes de video y audio a transcripción/diapositivas',

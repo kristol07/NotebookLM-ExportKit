@@ -54,7 +54,7 @@ export const JA_MESSAGES: Record<string, MessageValue> = {
   'whatsNew.feature.dataTableSources': 'ソース一覧付きでデータテーブルのエクスポートを改善',
   'whatsNew.feature.reportHtmlExport': 'レポートの HTML エクスポートに対応',
   'whatsNew.feature.chatHtmlExport': 'チャットの HTML エクスポートに対応',
-  'whatsNew.feature.infographicExport': 'インフォグラフィックを PNG/HTML/PDF、画像コピー、Notion へエクスポート可能に',
+  'whatsNew.feature.infographicExport': 'インフォグラフィックを PNG/HTML/PDF、Notion へエクスポート可能に',
   'whatsNew.action.gotIt': '確認しました',
 
   'header.signOutTitle': 'サインアウト',
@@ -70,7 +70,6 @@ export const JA_MESSAGES: Record<string, MessageValue> = {
   'export.section.slidedeck': 'スライドデッキのエクスポート',
   'export.section.infographic': 'インフォグラフィックのエクスポート',
   'export.option.clipboard': 'クリップボード',
-  'export.option.copyImage': '画像をコピー',
   'export.hint.notion': 'Notion のエクスポートはネイティブレイアウトを使用します。',
   'export.comingSoon': '近日公開',
   'export.comingSoonDetail': '動画・音声の概要を文字起こし/スライドへ',
