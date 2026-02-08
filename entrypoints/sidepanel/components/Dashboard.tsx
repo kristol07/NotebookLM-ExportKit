@@ -110,7 +110,7 @@ const buildExportSections = (t: (key: any, params?: any) => string): ExportSecti
         contentType: 'slidedeck',
         options: [
             { format: 'PDF' },
-            { format: 'PPTX', label: 'PPT' },
+            { format: 'PPTX', label: 'PowerPoint' },
             { format: 'HTML' },
             { format: 'ZIP', label: 'Markdown' },
         ],

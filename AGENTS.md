@@ -31,7 +31,8 @@
 ## Commit & Pull Request Guidelines
 - Commit messages follow Conventional Commits (`feat:`, `fix:`, `refactor:`). Keep scopes concise and action-oriented.
 - PRs should include: summary of changes, manual verification steps, and linked issues if applicable. Attach screenshots for UI changes in `entrypoints/popup/`.
-- Update `docs/` when changing export architecture or supported formats.
+- Update architecture docs (for example `docs/EXPORT_ARCHITECTURE.md`) when export pipeline design or supported formats change.
+- After adding a new export feature, update related marketing/docs pages in `docs/site/` (including the landing page, Terms, and Privacy Policy when affected) and refresh the feature documentation in `README.md`.
 
 ## Security & Configuration Tips
 - Configuration is loaded from `.env`; keep secrets out of the repo and update `.env.example` when adding new variables.
