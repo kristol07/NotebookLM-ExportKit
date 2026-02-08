@@ -55,6 +55,7 @@ export const ES_MESSAGES: Record<string, MessageValue> = {
   'whatsNew.feature.dataTableSources': 'Exportación de tablas de datos mejorada con lista de fuentes',
   'whatsNew.feature.reportHtmlExport': 'Compatibilidad con exportación de informes a HTML',
   'whatsNew.feature.chatHtmlExport': 'Compatibilidad con exportación de chat a HTML',
+  'whatsNew.feature.infographicExport': 'Nuevas exportaciones de infografías a PNG, HTML, PDF y Notion',
   'whatsNew.action.gotIt': 'Entendido',
 
   'header.signOutTitle': 'Cerrar sesión',
@@ -68,6 +69,7 @@ export const ES_MESSAGES: Record<string, MessageValue> = {
   'export.section.datatable': 'Exportaciones de tablas de datos',
   'export.section.source': 'Exportaciones de fuentes',
   'export.section.slidedeck': 'Exportaciones de diapositivas',
+  'export.section.infographic': 'Exportaciones de infografías',
   'export.option.clipboard': 'Portapapeles',
   'export.hint.notion': 'Las exportaciones a Notion usan diseños nativos.',
   'export.comingSoon': 'Próximamente',
@@ -94,6 +96,7 @@ export const ES_MESSAGES: Record<string, MessageValue> = {
   'export.notionLayout.chat': 'Encabezados de roles con párrafos, tablas y bloques de código',
   'export.notionLayout.source': 'Detalle de fuente con resumen, temas clave y contenido estructurado',
   'export.notionLayout.slidedeck': 'Documento único con imágenes de diapositivas y alternar texto alternativo por diapositiva',
+  'export.notionLayout.infographic': 'Documento único con imagen de infografía y alternar detalles',
 
   'content.quiz': 'Cuestionario',
   'content.flashcards': 'Tarjetas',
@@ -104,6 +107,7 @@ export const ES_MESSAGES: Record<string, MessageValue> = {
   'content.source': 'Fuentes',
   'content.datatable': 'Tabla de datos',
   'content.slidedeck': 'Presentación',
+  'content.infographic': 'Infografía',
 
   'drive.setup': 'Configuración de Drive',
   'drive.step.signIn': '1. Inicia sesión en tu cuenta',
@@ -231,7 +235,7 @@ export const ES_MESSAGES: Record<string, MessageValue> = {
   'notice.setNotionDestination': 'Establece una página de destino de Notion para continuar.',
   'notice.noActiveTab': 'No se encontró una pestaña activa.',
   'notice.copySuccess': ({ locale, contentLabel, trialMessage }) =>
-    `Se copió ${contentLabel} en Markdown al portapapeles.${trialMessage ?? ''}`,
+    `Se copió ${contentLabel} al portapapeles.${trialMessage ?? ''}`,
   'notice.copyFailed': 'Falló la copia. Intenta de nuevo.',
   'notice.exportSuccess': ({ locale, contentLabel, destination, format, trialMessage }) =>
     `Se exportó ${contentLabel} a ${destination} como ${format}.${trialMessage ?? ''}`,

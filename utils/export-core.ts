@@ -16,6 +16,7 @@
  */
 export type ExportFormat =
     | 'PDF'
+    | 'PNG'
     | 'CSV'
     | 'PPTX'
     | 'JSON'
@@ -38,7 +39,8 @@ export type ContentType =
     | 'report'
     | 'chat'
     | 'source'
-    | 'slidedeck';
+    | 'slidedeck'
+    | 'infographic';
 export type ContentSource = 'notebooklm' | 'user';
 export type PdfQualityPreference = 'size' | 'clarity';
 
@@ -87,6 +89,14 @@ export interface SlideDeckItem {
     description?: string;
     index: number;
     aspectRatio?: number;
+}
+
+export interface InfographicItem {
+    imageUrl: string;
+    imageDataUrl?: string;
+    altText?: string;
+    description?: string;
+    index: number;
 }
 
 export interface NoteInline {
@@ -391,6 +401,37 @@ export const validateSlideDeckItems = (items: unknown): ValidationResult => {
             && (typeof item.aspectRatio !== 'number' || !Number.isFinite(item.aspectRatio) || item.aspectRatio <= 0)
         ) {
             errors.push(`slidedeck.items[${index}].aspectRatio must be a positive number`);
+        }
+    });
+
+    return { valid: errors.length === 0, errors };
+};
+
+export const validateInfographicItems = (items: unknown): ValidationResult => {
+    const errors: string[] = [];
+    if (!Array.isArray(items)) {
+        return { valid: false, errors: ['infographic.items must be an array'] };
+    }
+
+    items.forEach((item, index) => {
+        if (!isRecord(item)) {
+            errors.push(`infographic.items[${index}] must be an object`);
+            return;
+        }
+        if (!isNonEmptyString(item.imageUrl)) {
+            errors.push(`infographic.items[${index}].imageUrl must be a non-empty string`);
+        }
+        if (item.imageDataUrl !== undefined && typeof item.imageDataUrl !== 'string') {
+            errors.push(`infographic.items[${index}].imageDataUrl must be a string`);
+        }
+        if (item.altText !== undefined && typeof item.altText !== 'string') {
+            errors.push(`infographic.items[${index}].altText must be a string`);
+        }
+        if (item.description !== undefined && typeof item.description !== 'string') {
+            errors.push(`infographic.items[${index}].description must be a string`);
+        }
+        if (typeof item.index !== 'number' || !Number.isFinite(item.index)) {
+            errors.push(`infographic.items[${index}].index must be a number`);
         }
     });
 

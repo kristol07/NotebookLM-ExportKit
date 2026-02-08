@@ -55,6 +55,7 @@ export const IT_MESSAGES: Record<string, MessageValue> = {
   'whatsNew.feature.dataTableSources': 'Esportazione della tabella dati migliorata con elenco fonti',
   'whatsNew.feature.reportHtmlExport': 'Supporto per l\'esportazione dei report in HTML',
   'whatsNew.feature.chatHtmlExport': 'Supporto per l\'esportazione della chat in HTML',
+  'whatsNew.feature.infographicExport': 'Nuove esportazioni infografiche in PNG, HTML, PDF e Notion',
   'whatsNew.action.gotIt': 'Ho capito',
 
   'header.signOutTitle': 'Esci',
@@ -68,6 +69,7 @@ export const IT_MESSAGES: Record<string, MessageValue> = {
   'export.section.datatable': 'Esportazioni tabelle dati',
   'export.section.source': 'Esportazioni fonti',
   'export.section.slidedeck': 'Esportazioni slide deck',
+  'export.section.infographic': 'Esportazioni infografiche',
   'export.option.clipboard': 'Appunti',
   'export.hint.notion': 'Le esportazioni su Notion usano layout nativi.',
   'export.comingSoon': 'In arrivo',
@@ -95,6 +97,7 @@ export const IT_MESSAGES: Record<string, MessageValue> = {
   'export.notionLayout.chat': 'Intestazioni di ruolo con paragrafi, tabelle e blocchi di codice',
   'export.notionLayout.source': 'Dettaglio fonte con riepilogo, temi chiave e contenuti strutturati',
   'export.notionLayout.slidedeck': 'Documento singolo con immagini delle slide e toggle testo alternativo per ogni slide',
+  'export.notionLayout.infographic': 'Documento singolo con immagine infografica e toggle dettagli',
 
   'content.quiz': 'Quiz',
   'content.flashcards': 'Flashcard',
@@ -105,6 +108,7 @@ export const IT_MESSAGES: Record<string, MessageValue> = {
   'content.source': 'Fonti',
   'content.datatable': 'Tabella dati',
   'content.slidedeck': 'Slide deck',
+  'content.infographic': 'Infografica',
 
   'drive.setup': 'Configurazione Drive',
   'drive.step.signIn': '1. Accedi al tuo account',
@@ -232,7 +236,7 @@ export const IT_MESSAGES: Record<string, MessageValue> = {
   'notice.setNotionDestination': 'Imposta una pagina di destinazione Notion per continuare.',
   'notice.noActiveTab': 'Nessuna scheda attiva trovata.',
   'notice.copySuccess': ({ locale, contentLabel, trialMessage }) =>
-    `Markdown di ${contentLabel} copiato negli appunti.${trialMessage ?? ''}`,
+    `${contentLabel} copiato negli appunti.${trialMessage ?? ''}`,
   'notice.copyFailed': 'Copia non riuscita. Riprova.',
   'notice.exportSuccess': ({ locale, contentLabel, destination, format, trialMessage }) =>
     `${contentLabel} esportato in ${destination} come ${format}.${trialMessage ?? ''}`,

@@ -55,6 +55,7 @@ export const DE_MESSAGES: Record<string, MessageValue> = {
   'whatsNew.feature.dataTableSources': 'Verbesserter Datentabellen-Export mit Quellenliste',
   'whatsNew.feature.reportHtmlExport': 'Unterstützung für den Berichtsexport als HTML',
   'whatsNew.feature.chatHtmlExport': 'Unterstützung für den Chat-Export als HTML',
+  'whatsNew.feature.infographicExport': 'Neue Infografik-Exporte als PNG, HTML, PDF und Notion',
   'whatsNew.action.gotIt': 'Verstanden',
 
   'header.signOutTitle': 'Abmelden',
@@ -68,6 +69,7 @@ export const DE_MESSAGES: Record<string, MessageValue> = {
   'export.section.datatable': 'Datentabellen-Exporte',
   'export.section.source': 'Quellen-Exporte',
   'export.section.slidedeck': 'Folienexporte',
+  'export.section.infographic': 'Infografik-Exporte',
   'export.option.clipboard': 'Zwischenablage',
   'export.hint.notion': 'Notion-Exporte verwenden native Layouts.',
   'export.comingSoon': 'Kommt bald',
@@ -95,6 +97,7 @@ export const DE_MESSAGES: Record<string, MessageValue> = {
   'export.notionLayout.chat': 'Rollenüberschriften mit Absätzen, Tabellen und Codeblöcken',
   'export.notionLayout.source': 'Quellendetail mit Zusammenfassung, Kernthemen und strukturiertem Inhalt',
   'export.notionLayout.slidedeck': 'Einzelnes Dokument mit Folienbildern und Alt-Text-Umschaltern pro Folie',
+  'export.notionLayout.infographic': 'Einzelnes Dokument mit Infografikbild und Detail-Umschalter',
 
   'content.quiz': 'Quiz',
   'content.flashcards': 'Karteikarten',
@@ -105,6 +108,7 @@ export const DE_MESSAGES: Record<string, MessageValue> = {
   'content.source': 'Quellen',
   'content.datatable': 'Datentabelle',
   'content.slidedeck': 'Foliensatz',
+  'content.infographic': 'Infografik',
 
   'drive.setup': 'Drive-Einrichtung',
   'drive.step.signIn': '1. Melde dich bei deinem Konto an',
@@ -232,7 +236,7 @@ export const DE_MESSAGES: Record<string, MessageValue> = {
   'notice.setNotionDestination': 'Lege eine Notion-Zielseite fest, um fortzufahren.',
   'notice.noActiveTab': 'Kein aktiver Tab gefunden.',
   'notice.copySuccess': ({ locale, contentLabel, trialMessage }) =>
-    `Markdown für ${contentLabel} in die Zwischenablage kopiert.${trialMessage ?? ''}`,
+    `${contentLabel} in die Zwischenablage kopiert.${trialMessage ?? ''}`,
   'notice.copyFailed': 'Kopieren fehlgeschlagen. Bitte versuche es erneut.',
   'notice.exportSuccess': ({ locale, contentLabel, destination, format, trialMessage }) =>
     `${contentLabel} nach ${destination} als ${format} exportiert.${trialMessage ?? ''}`,

@@ -55,6 +55,7 @@ export const PT_MESSAGES: Record<string, MessageValue> = {
   'whatsNew.feature.dataTableSources': 'Exportacao de tabela de dados aprimorada com lista de fontes',
   'whatsNew.feature.reportHtmlExport': 'Suporte para exportacao de relatorios em HTML',
   'whatsNew.feature.chatHtmlExport': 'Suporte para exportacao de chat em HTML',
+  'whatsNew.feature.infographicExport': 'Novas exportacoes de infograficos para PNG, HTML, PDF e Notion',
   'whatsNew.action.gotIt': 'Entendi',
 
   'header.signOutTitle': 'Sair',
@@ -68,6 +69,7 @@ export const PT_MESSAGES: Record<string, MessageValue> = {
   'export.section.datatable': 'Exportações de tabela de dados',
   'export.section.source': 'Exportações de fontes',
   'export.section.slidedeck': 'Exportações de slide deck',
+  'export.section.infographic': 'Exportações de infográficos',
   'export.option.clipboard': 'Área de transferência',
   'export.hint.notion': 'Exportações para o Notion usam layouts nativos.',
   'export.comingSoon': 'Em breve',
@@ -95,6 +97,7 @@ export const PT_MESSAGES: Record<string, MessageValue> = {
   'export.notionLayout.chat': 'Títulos de função com parágrafos, tabelas e blocos de código',
   'export.notionLayout.source': 'Detalhe da fonte com resumo, tópicos principais e conteúdo estruturado',
   'export.notionLayout.slidedeck': 'Documento único com imagens de slides e alternância de texto alternativo por slide',
+  'export.notionLayout.infographic': 'Documento único com imagem do infográfico e alternância de detalhes',
 
   'content.quiz': 'Quiz',
   'content.flashcards': 'Flashcards',
@@ -105,6 +108,7 @@ export const PT_MESSAGES: Record<string, MessageValue> = {
   'content.source': 'Fontes',
   'content.datatable': 'Tabela de dados',
   'content.slidedeck': 'Slide deck',
+  'content.infographic': 'Infográfico',
 
   'drive.setup': 'Configuração do Drive',
   'drive.step.signIn': '1. Entre na sua conta',
@@ -232,7 +236,7 @@ export const PT_MESSAGES: Record<string, MessageValue> = {
   'notice.setNotionDestination': 'Defina uma página de destino do Notion para continuar.',
   'notice.noActiveTab': 'Nenhuma aba ativa encontrada.',
   'notice.copySuccess': ({ locale, contentLabel, trialMessage }) =>
-    `Markdown de ${contentLabel} copiado para a área de transferência.${trialMessage ?? ''}`,
+    `${contentLabel} copiado para a área de transferência.${trialMessage ?? ''}`,
   'notice.copyFailed': 'Falha ao copiar. Tente novamente.',
   'notice.exportSuccess': ({ locale, contentLabel, destination, format, trialMessage }) =>
     `${contentLabel} exportado para ${destination} como ${format}.${trialMessage ?? ''}`,

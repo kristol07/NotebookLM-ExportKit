@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-import { ContentType, ExportFormat, NormalizedExportPayload, QuizItem, FlashcardItem, MindmapNode, DataTableRow, NoteBlock, ChatMessage, SourceItem, SlideDeckItem } from '../export-core';
+import { ContentType, ExportFormat, NormalizedExportPayload, QuizItem, FlashcardItem, MindmapNode, DataTableRow, NoteBlock, ChatMessage, SourceItem, SlideDeckItem, InfographicItem } from '../export-core';
 import { extractQuiz } from './quiz';
 import { extractFlashcards } from './flashcards';
 import { extractMindmap } from './mindmap';
@@ -24,6 +24,7 @@ import { extractReport } from './report';
 import { extractChat } from './chat';
 import { extractSource } from './source';
 import { extractSlideDeck } from './slidedeck';
+import { extractInfographic } from './infographic';
 
 type ExtractPayload =
     | NormalizedExportPayload<QuizItem>
@@ -33,7 +34,8 @@ type ExtractPayload =
     | NormalizedExportPayload<NoteBlock>
     | NormalizedExportPayload<ChatMessage>
     | NormalizedExportPayload<SourceItem>
-    | NormalizedExportPayload<SlideDeckItem>;
+    | NormalizedExportPayload<SlideDeckItem>
+    | NormalizedExportPayload<InfographicItem>;
 
 export type AnyExtractResult = {
     success: boolean;
@@ -63,6 +65,8 @@ export const extractByType = async (
             ? await extractSource(tabId, format)
             : type === 'slidedeck'
             ? await extractSlideDeck(tabId, format)
+            : type === 'infographic'
+            ? await extractInfographic(tabId, format)
             : await extractDatatable(tabId, format);
     if (result.success && result.payload) {
         return { success: true, payload: result.payload };
@@ -111,6 +115,11 @@ export const extractByAnyType = async (tabId: number, format: ExportFormat): Pro
         return { success: true, payload: slideDeckResult.payload };
     }
 
+    const infographicResult = await extractInfographic(tabId, format);
+    if (infographicResult.success && infographicResult.payload) {
+        return { success: true, payload: infographicResult.payload };
+    }
+
     const datatableResult = await extractDatatable(tabId, format);
     if (datatableResult.success && datatableResult.payload) {
         return { success: true, payload: datatableResult.payload };
@@ -123,6 +132,7 @@ export const extractByAnyType = async (tabId: number, format: ExportFormat): Pro
             reportResult.error ||
             sourceResult.error ||
             slideDeckResult.error ||
+            infographicResult.error ||
             noteResult.error ||
             datatableResult.error ||
             mindmapResult.error ||

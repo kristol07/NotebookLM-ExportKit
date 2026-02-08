@@ -119,6 +119,15 @@ const buildExportSections = (t: (key: any, params?: any) => string): ExportSecti
         ],
     },
     {
+        title: t('export.section.infographic'),
+        contentType: 'infographic',
+        options: [
+            { format: 'PNG' },
+            { format: 'PDF' },
+            { format: 'HTML' },
+        ],
+    },
+    {
         title: t('export.section.note'),
         contentType: 'note',
         options: [
@@ -167,6 +176,7 @@ const NOTION_EXPORT_FORMAT_BY_TYPE: Record<ContentType, ExportFormat> = {
     chat: 'Markdown',
     source: 'Markdown',
     slidedeck: 'HTML',
+    infographic: 'HTML',
 };
 
 const filterSectionsForNotion = (sections: ExportSection[]) =>
@@ -219,6 +229,9 @@ const WHATS_NEW_FEATURES_BY_VERSION: Record<string, MessageKey[]> = {
     '1.3.10': [
         'whatsNew.feature.reportHtmlExport',
         'whatsNew.feature.chatHtmlExport',
+    ],
+    '1.4.0': [
+        'whatsNew.feature.infographicExport',
     ],
 };
 
@@ -335,6 +348,8 @@ export default function Dashboard({
                 return t('content.source');
             case 'slidedeck':
                 return t('content.slidedeck');
+            case 'infographic':
+                return t('content.infographic');
             default:
                 return t('content.datatable');
         }
@@ -776,6 +791,16 @@ export default function Dashboard({
                         case 'slidedeck':
                             result = await exportByType(
                                 'slidedeck',
+                                payload.items,
+                                format,
+                                tabTitle,
+                                timestamp,
+                                payload.meta
+                            );
+                            break;
+                        case 'infographic':
+                            result = await exportByType(
+                                'infographic',
                                 payload.items,
                                 format,
                                 tabTitle,

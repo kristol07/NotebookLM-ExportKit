@@ -12,11 +12,12 @@ For Google OAuth/Drive setup, see `docs/GOOGLE_OAUTH_SETUP.md`.
 - Clipboard delivery for Markdown (select content types) is handled in the dashboard when the target is **download**, so it can bypass file saving while reusing the same export pipeline.
 
 ### Content-specific
-- `utils/quiz-export.ts`, `utils/flashcard-export.ts`, `utils/mindmap-export.ts`, `utils/datatable-export.ts`, `utils/note-export.ts`, `utils/report-export.ts`, and `utils/slidedeck-export.ts` implement per-type formats and keep HTML UIs distinct where needed.
+- `utils/quiz-export.ts`, `utils/flashcard-export.ts`, `utils/mindmap-export.ts`, `utils/datatable-export.ts`, `utils/note-export.ts`, `utils/report-export.ts`, `utils/slidedeck-export.ts`, and `utils/infographic-export.ts` implement per-type formats and keep HTML UIs distinct where needed.
 - `utils/extractors/` contains one extractor per content type (including notes and reports) and a shared `data-app-data` extraction helper.
 - Note extraction details: see `docs/NOTE_EXTRACTION.md`.
 - Notes currently support Markdown, Word, and PDF exports; PDF uses HTML rendering for layout.
 - Slide decks support PDF, PPTX, HTML, and ZIP (Markdown + image files).
+- Infographics support PNG, HTML, PDF, and Notion native rendering.
 - Exporters return `{ blob, filename, mimeType }` so delivery targets can decide whether to download or upload.
 
 ### Destination renderers (native layouts)

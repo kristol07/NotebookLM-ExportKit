@@ -55,6 +55,7 @@ export const EN_MESSAGES: Record<string, MessageValue> = {
   'whatsNew.feature.dataTableSources': 'Improved data table export with source list',
   'whatsNew.feature.reportHtmlExport': 'Support for report export to HTML',
   'whatsNew.feature.chatHtmlExport': 'Support for chat export to HTML',
+  'whatsNew.feature.infographicExport': 'Added infographic exports to PNG, HTML, PDF, and Notion',
   'whatsNew.action.gotIt': 'Got it',
 
   'header.signOutTitle': 'Sign Out',
@@ -68,6 +69,7 @@ export const EN_MESSAGES: Record<string, MessageValue> = {
   'export.section.datatable': 'Data Table Exports',
   'export.section.source': 'Source Exports',
   'export.section.slidedeck': 'Slide Deck Exports',
+  'export.section.infographic': 'Infographic Exports',
   'export.option.clipboard': 'Clipboard',
   'export.hint.notion': 'Notion exports use native layouts.',
   'export.comingSoon': 'Coming soon',
@@ -94,6 +96,7 @@ export const EN_MESSAGES: Record<string, MessageValue> = {
   'export.notionLayout.chat': 'Role headings with paragraphs, tables, and code blocks',
   'export.notionLayout.source': 'Source detail with summary, key topics, and structured content',
   'export.notionLayout.slidedeck': 'Single document with slide images and per-slide alt text toggles',
+  'export.notionLayout.infographic': 'Single document with infographic image and details toggle',
 
   'content.quiz': 'Quiz',
   'content.flashcards': 'Flashcards',
@@ -104,6 +107,7 @@ export const EN_MESSAGES: Record<string, MessageValue> = {
   'content.source': 'Sources',
   'content.datatable': 'Data table',
   'content.slidedeck': 'Slide deck',
+  'content.infographic': 'Infographic',
 
   'drive.setup': 'Drive setup',
   'drive.step.signIn': '1. Sign in to your account',
@@ -231,7 +235,7 @@ export const EN_MESSAGES: Record<string, MessageValue> = {
   'notice.setNotionDestination': 'Set a Notion destination page to continue.',
   'notice.noActiveTab': 'No active tab found.',
   'notice.copySuccess': ({ locale, contentLabel, trialMessage }) =>
-    `Copied ${contentLabel} Markdown to Clipboard.${trialMessage ?? ''}`,
+    `Copied ${contentLabel} to Clipboard.${trialMessage ?? ''}`,
   'notice.copyFailed': 'Copy failed. Please try again.',
   'notice.exportSuccess': ({ locale, contentLabel, destination, format, trialMessage }) =>
     `Exported ${contentLabel} to ${destination} as ${format}.${trialMessage ?? ''}`,
