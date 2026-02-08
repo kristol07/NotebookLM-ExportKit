@@ -48,6 +48,12 @@ export const FR_MESSAGES: Record<string, MessageValue> = {
   'common.exportDestination': 'Destination d’exportation',
   'common.exportToNotion': 'Exporter vers Notion',
   'common.copy': 'Copier',
+  'whatsNew.badge': 'Nouveau',
+  'whatsNew.title': 'Nouveautes',
+  'whatsNew.subtitle': 'Dernieres fonctionnalites de cette version',
+  'whatsNew.feature.sideDeckExport': 'Prise en charge de l\'export de diaporama',
+  'whatsNew.feature.dataTableSources': 'Export de tableau de donnees ameliore avec liste des sources',
+  'whatsNew.action.gotIt': 'Compris',
 
   'header.signOutTitle': 'Se déconnecter',
 

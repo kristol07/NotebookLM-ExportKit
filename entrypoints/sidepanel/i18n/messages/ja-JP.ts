@@ -47,6 +47,12 @@ export const JA_MESSAGES: Record<string, MessageValue> = {
   'common.exportDestination': 'エクスポート先',
   'common.exportToNotion': 'Notion にエクスポート',
   'common.copy': 'コピー',
+  'whatsNew.badge': '新機能',
+  'whatsNew.title': '新着情報',
+  'whatsNew.subtitle': 'このバージョンで追加された機能',
+  'whatsNew.feature.sideDeckExport': 'スライドデッキのエクスポートに対応',
+  'whatsNew.feature.dataTableSources': 'ソース一覧付きでデータテーブルのエクスポートを改善',
+  'whatsNew.action.gotIt': '確認しました',
 
   'header.signOutTitle': 'サインアウト',
 

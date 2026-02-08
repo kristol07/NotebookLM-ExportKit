@@ -53,7 +53,9 @@ import { SettingsPanel } from './dashboard/SettingsPanel';
 import { ToastNotice } from './dashboard/ToastNotice';
 import { UpgradeBanner } from './dashboard/UpgradeBanner';
 import { UpgradeModal } from './dashboard/UpgradeModal';
+import { WhatsNewModal } from './dashboard/WhatsNewModal';
 import { useI18n } from '../i18n/i18n';
+import type { MessageKey } from '../i18n/messages';
 
 const buildExportSections = (t: (key: any, params?: any) => string): ExportSection[] => [
     {
@@ -205,6 +207,14 @@ const withClipboardOptions = (sections: ExportSection[], clipboardLabel: string)
 
 const EXPORT_TARGET_STORAGE_KEY = 'exportkitExportTarget';
 const PDF_QUALITY_STORAGE_KEY = 'exportkitPdfQuality';
+const WHATS_NEW_STORAGE_KEY = 'exportkitWhatsNewSeenVersion';
+const WHATS_NEW_VERSION = '1.3.9';
+const WHATS_NEW_FEATURES_BY_VERSION: Record<string, MessageKey[]> = {
+    '1.3.9': [
+        'whatsNew.feature.sideDeckExport',
+        'whatsNew.feature.dataTableSources',
+    ],
+};
 const DRIVE_EXPORT_REQUIRES_PLUS = true;
 const NOTION_EXPORT_REQUIRES_PLUS = true;
 export default function Dashboard({
@@ -236,11 +246,13 @@ export default function Dashboard({
     const [showAccountPanel, setShowAccountPanel] = useState(false);
     const [showUpgradeModal, setShowUpgradeModal] = useState(false);
     const [showSettingsPanel, setShowSettingsPanel] = useState(false);
+    const [showWhatsNewModal, setShowWhatsNewModal] = useState(false);
     const [upgradeContext, setUpgradeContext] = useState<'drive' | 'notion' | 'format' | 'general' | null>(null);
     const noticeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const upgradeInFlightRef = useRef(false);
     const [exportTarget, setExportTarget] = useState<ExportTarget>('download');
     const [pdfQuality, setPdfQuality] = useState<PdfQualityPreference>('size');
+    const whatsNewFeatureKeys = WHATS_NEW_FEATURES_BY_VERSION[WHATS_NEW_VERSION] ?? [];
     const plan = getPlan(session);
     const isPlus = plan === 'plus' || plan === 'pro';
     const isSignedIn = Boolean(session?.user?.id);
@@ -324,6 +336,13 @@ export default function Dashboard({
             setPdfQuality(stored);
         }
     }, []);
+
+    useEffect(() => {
+        const seenVersion = localStorage.getItem(WHATS_NEW_STORAGE_KEY);
+        if (whatsNewFeatureKeys.length > 0 && seenVersion !== WHATS_NEW_VERSION) {
+            setShowWhatsNewModal(true);
+        }
+    }, [whatsNewFeatureKeys.length]);
 
     useEffect(() => {
         void refreshDriveState();
@@ -832,6 +851,10 @@ export default function Dashboard({
     const handleRequestLogin = () => {
         onRequestLogin?.();
     };
+    const handleCloseWhatsNewModal = () => {
+        localStorage.setItem(WHATS_NEW_STORAGE_KEY, WHATS_NEW_VERSION);
+        setShowWhatsNewModal(false);
+    };
     const visibleSections = exportTarget === 'notion'
         ? filterSectionsForNotion(exportSections)
         : exportTarget === 'download'
@@ -953,6 +976,9 @@ export default function Dashboard({
             )}
             {!isSignedIn && showSettingsPanel && (
                 <SettingsPanel onClose={() => setShowSettingsPanel(false)} />
+            )}
+            {showWhatsNewModal && (
+                <WhatsNewModal onClose={handleCloseWhatsNewModal} featureKeys={whatsNewFeatureKeys} />
             )}
         </div>
     );

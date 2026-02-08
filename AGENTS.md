@@ -18,6 +18,8 @@
 - TypeScript + React with ESM (`"type": "module"`). Use 2-space indentation, semicolons, and single quotes to match existing files.
 - React components use PascalCase filenames (e.g., `Dashboard.tsx`); utilities use kebab-case or descriptive names in `utils/`.
 - For any export feature work, read `docs/EXPORT_ARCHITECTURE.md` first to align with the export pipeline design and avoid introducing inconsistent extractor/dispatch patterns.
+- Whenever new features or improvements are shipped in a new version, read `docs/WHATS_NEW_POPUP.md` and update the version-gated "What's New" mapping flow (`WHATS_NEW_VERSION` + `WHATS_NEW_FEATURES_BY_VERSION`) in `entrypoints/sidepanel/components/Dashboard.tsx`.
+- Keep locale files lean for "What's New": remove `whatsNew.feature.*` keys that are no longer referenced by `WHATS_NEW_FEATURES_BY_VERSION` (apply removals across all locale catalogs).
 - Export logic is organized by content type; add new extractors in `utils/extractors/` and route via `utils/export-dispatch.ts`.
 - Add the AGPL copyright header to any new source files.
 - When doing any UI design work, always review `docs/DESIGN_SYSTEM.md` first and follow its guidance.
