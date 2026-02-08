@@ -26,9 +26,19 @@ export type ExportFormat =
     | 'JSONCanvas'
     | 'SVG'
     | 'Markdown'
-    | 'Word';
+    | 'Word'
+    | 'ZIP';
 export type ExportTarget = 'download' | 'drive' | 'notion';
-export type ContentType = 'quiz' | 'flashcards' | 'mindmap' | 'datatable' | 'note' | 'report' | 'chat' | 'source';
+export type ContentType =
+    | 'quiz'
+    | 'flashcards'
+    | 'mindmap'
+    | 'datatable'
+    | 'note'
+    | 'report'
+    | 'chat'
+    | 'source'
+    | 'slidedeck';
 export type ContentSource = 'notebooklm' | 'user';
 export type PdfQualityPreference = 'size' | 'clarity';
 
@@ -68,6 +78,15 @@ export interface SourceItem {
     summary?: NoteBlock[];
     keyTopics?: string[];
     content?: NoteBlock[];
+}
+
+export interface SlideDeckItem {
+    imageUrl: string;
+    imageDataUrl?: string;
+    altText?: string;
+    description?: string;
+    index: number;
+    aspectRatio?: number;
 }
 
 export interface NoteInline {
@@ -335,6 +354,43 @@ export const validateSourceItems = (items: unknown): ValidationResult => {
                     errors.push(`source.items[${index}].content invalid: ${contentValidation.errors.join('; ')}`);
                 }
             }
+        }
+    });
+
+    return { valid: errors.length === 0, errors };
+};
+
+export const validateSlideDeckItems = (items: unknown): ValidationResult => {
+    const errors: string[] = [];
+    if (!Array.isArray(items)) {
+        return { valid: false, errors: ['slidedeck.items must be an array'] };
+    }
+
+    items.forEach((item, index) => {
+        if (!isRecord(item)) {
+            errors.push(`slidedeck.items[${index}] must be an object`);
+            return;
+        }
+        if (!isNonEmptyString(item.imageUrl)) {
+            errors.push(`slidedeck.items[${index}].imageUrl must be a non-empty string`);
+        }
+        if (item.imageDataUrl !== undefined && typeof item.imageDataUrl !== 'string') {
+            errors.push(`slidedeck.items[${index}].imageDataUrl must be a string`);
+        }
+        if (item.altText !== undefined && typeof item.altText !== 'string') {
+            errors.push(`slidedeck.items[${index}].altText must be a string`);
+        }
+        if (item.description !== undefined && typeof item.description !== 'string') {
+            errors.push(`slidedeck.items[${index}].description must be a string`);
+        }
+        if (typeof item.index !== 'number' || !Number.isFinite(item.index)) {
+            errors.push(`slidedeck.items[${index}].index must be a number`);
+        }
+        if (
+            item.aspectRatio !== undefined
+            && (typeof item.aspectRatio !== 'number' || !Number.isFinite(item.aspectRatio) || item.aspectRatio <= 0)
+        ) {
+            errors.push(`slidedeck.items[${index}].aspectRatio must be a positive number`);
         }
     });
 

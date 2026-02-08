@@ -17,13 +17,13 @@ NotebookLM ExportKit - export NotebookLM content to any format
 
 ## Summary
 
-Export NotebookLM chats, quizzes, flashcards, mindmaps, notes, reports, and tables to multiple formats, with Google Drive and Notion delivery.
+Export NotebookLM chats, quizzes, flashcards, mindmaps, notes, reports, source details, data tables, and slide decks to multiple formats, with Google Drive and Notion delivery.
 
 ## Description
 
-NotebookLM Export Kit is a purpose‑built export tool for NotebookLM. 
+NotebookLM Export Kit is a purpose-built export tool for NotebookLM.
 
-It turns your quizzes, flashcards, mindmaps, notes, reports, and tables into clean, reusable files so you can keep learning, organize research, and share results outside of NotebookLM.
+It turns your chats, quizzes, flashcards, mindmaps, notes, reports, source details, data tables, and slide decks into clean, reusable files so you can keep learning, organize research, and share results outside of NotebookLM.
 
 NotebookLM ExportKit is open source (AGPLv3). Repo: https://github.com/kristol07/NotebookLM-ExportKit
 
@@ -33,7 +33,7 @@ What it does:
 
   - Export NotebookLM content to multiple formats (varies by content type).
   - Preserve structure for quizzes, flashcards, and mindmaps so exports stay readable and ready to use.
-  - One‑click exports designed for common workflows in Excel/Sheets, Anki, Obsidian, Notion, Word, and mind‑mapping tools.
+  - One-click exports designed for common workflows in Excel/Sheets, Anki, Obsidian, Notion, Word, PDF, PowerPoint (PPTX), and mind-mapping tools.
   - Send exports directly to Google Drive or Notion, or keep the default local download flow.
 
 Why install:
@@ -49,7 +49,6 @@ Who it’s for:
 How to use:
   Simply open the content you want to export in NotebookLM first, then click button in the extension for the format you would like to receive, and you'll get it exported finally. That's all.
 
-More content types and export formats are coming soon.
 
 ## Open Source Usage
 

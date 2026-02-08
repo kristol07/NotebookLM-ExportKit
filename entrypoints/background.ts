@@ -15,6 +15,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 export default defineBackground(() => {
+  const BG_LOG = '[SLIDE_BG_FETCH]';
   const sidePanel = (browser as any).sidePanel;
 
   if (sidePanel?.setPanelBehavior) {
@@ -30,5 +31,53 @@ export default defineBackground(() => {
       }
     });
   }
+
+  browser.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+    if (message?.type !== 'fetch-image-data-url' || typeof message?.url !== 'string') {
+      return undefined;
+    }
+
+    const run = async () => {
+      try {
+        const url = message.url as string;
+        const response = await fetch(url, {
+          method: 'GET',
+          credentials: 'include',
+          redirect: 'follow',
+          cache: 'no-store',
+        });
+
+        const finalUrl = response.url || url;
+        if (!response.ok) {
+          console.warn(`${BG_LOG} http_error`, { url, finalUrl, status: response.status });
+          sendResponse({ success: false, error: `http_${response.status}`, finalUrl });
+          return;
+        }
+        if (finalUrl.includes('accounts.google.com/ServiceLogin')) {
+          console.warn(`${BG_LOG} auth_redirect`, { url, finalUrl });
+          sendResponse({ success: false, error: 'auth_redirect', finalUrl });
+          return;
+        }
+
+        const blob = await response.blob();
+        const reader = new FileReader();
+        reader.onload = () => {
+          const dataUrl = String(reader.result || '');
+          sendResponse({ success: true, dataUrl, mimeType: blob.type, finalUrl, bytes: blob.size });
+        };
+        reader.onerror = () => {
+          console.warn(`${BG_LOG} file_reader_error`, { url, finalUrl });
+          sendResponse({ success: false, error: 'file_reader_error', finalUrl });
+        };
+        reader.readAsDataURL(blob);
+      } catch (error) {
+        console.warn(`${BG_LOG} exception`, { error });
+        sendResponse({ success: false, error: 'fetch_failed' });
+      }
+    };
+
+    run();
+    return true;
+  });
 });
 

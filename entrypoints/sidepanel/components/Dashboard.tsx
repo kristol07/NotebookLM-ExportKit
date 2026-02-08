@@ -83,14 +83,22 @@ const buildExportSections = (t: (key: any, params?: any) => string): ExportSecti
             { format: 'SVG' },
             { format: 'HTML', label: 'HTML' },
             { format: 'FreeMind', label: 'FreeMind' },
-            { format: 'Markdown', label: 'Markdown', isPlus: true, apps: ['Whimsical', 'Obsidian'] },
             { format: 'JSONCanvas', label: 'JSONCanvas', isPlus: true, apps: ['Obsidian'] },
             { format: 'OPML', label: 'OPML', isPlus: true, apps: ['XMind', 'MindMeister'] },
+            { format: 'Markdown', label: 'Markdown', isPlus: true, apps: ['Whimsical', 'Obsidian'] },
         ],
     },
     {
-        title: t('export.section.note'),
-        contentType: 'note',
+        title: t('export.section.datatable'),
+        contentType: 'datatable',
+        options: [
+            { format: 'CSV', label: 'Excel' },
+            { format: 'Markdown' },
+        ],
+    },
+    {
+        title: t('export.section.report'),
+        contentType: 'report',
         options: [
             { format: 'PDF' },
             { format: 'Word', label: 'Word', isPlus: true },
@@ -98,8 +106,18 @@ const buildExportSections = (t: (key: any, params?: any) => string): ExportSecti
         ],
     },
     {
-        title: t('export.section.report'),
-        contentType: 'report',
+        title: t('export.section.slidedeck'),
+        contentType: 'slidedeck',
+        options: [
+            { format: 'PDF' },
+            { format: 'PPTX', label: 'PowerPoint' },
+            { format: 'HTML' },
+            { format: 'ZIP', label: 'Markdown' },
+        ],
+    },
+    {
+        title: t('export.section.note'),
+        contentType: 'note',
         options: [
             { format: 'PDF' },
             { format: 'Word', label: 'Word', isPlus: true },
@@ -114,14 +132,6 @@ const buildExportSections = (t: (key: any, params?: any) => string): ExportSecti
             { format: 'JSON' },
             { format: 'Word', label: 'Word', isPlus: true },
             { format: 'Markdown', isPlus: true },
-        ],
-    },
-    {
-        title: t('export.section.datatable'),
-        contentType: 'datatable',
-        options: [
-            { format: 'CSV', label: 'Excel' },
-            { format: 'Markdown' },
         ],
     },
     {
@@ -152,6 +162,7 @@ const NOTION_EXPORT_FORMAT_BY_TYPE: Record<ContentType, ExportFormat> = {
     report: 'Markdown',
     chat: 'Markdown',
     source: 'Markdown',
+    slidedeck: 'HTML',
 };
 
 const filterSectionsForNotion = (sections: ExportSection[]) =>
@@ -270,6 +281,8 @@ export default function Dashboard({
                 return t('content.chat');
             case 'source':
                 return t('content.source');
+            case 'slidedeck':
+                return t('content.slidedeck');
             default:
                 return t('content.datatable');
         }
@@ -697,6 +710,16 @@ export default function Dashboard({
                                 timestamp,
                                 undefined,
                                 { pdfQuality: options?.pdfQualityOverride ?? pdfQuality }
+                            );
+                            break;
+                        case 'slidedeck':
+                            result = await exportByType(
+                                'slidedeck',
+                                payload.items,
+                                format,
+                                tabTitle,
+                                timestamp,
+                                payload.meta
                             );
                             break;
                         default:
