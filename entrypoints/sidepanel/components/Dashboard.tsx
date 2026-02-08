@@ -83,24 +83,22 @@ const buildExportSections = (t: (key: any, params?: any) => string): ExportSecti
             { format: 'SVG' },
             { format: 'HTML', label: 'HTML' },
             { format: 'FreeMind', label: 'FreeMind' },
-            { format: 'Markdown', label: 'Markdown', isPlus: true, apps: ['Whimsical', 'Obsidian'] },
             { format: 'JSONCanvas', label: 'JSONCanvas', isPlus: true, apps: ['Obsidian'] },
             { format: 'OPML', label: 'OPML', isPlus: true, apps: ['XMind', 'MindMeister'] },
+            { format: 'Markdown', label: 'Markdown', isPlus: true, apps: ['Whimsical', 'Obsidian'] },
         ],
     },
     {
-        title: t('export.section.slidedeck'),
-        contentType: 'slidedeck',
+        title: t('export.section.datatable'),
+        contentType: 'datatable',
         options: [
-            { format: 'PDF' },
-            { format: 'PPTX', label: 'PPT', isPlus: true },
-            { format: 'HTML' },
-            { format: 'ZIP', label: 'ZIP', isPlus: true },
+            { format: 'CSV', label: 'Excel' },
+            { format: 'Markdown' },
         ],
     },
     {
-        title: t('export.section.note'),
-        contentType: 'note',
+        title: t('export.section.report'),
+        contentType: 'report',
         options: [
             { format: 'PDF' },
             { format: 'Word', label: 'Word', isPlus: true },
@@ -108,8 +106,18 @@ const buildExportSections = (t: (key: any, params?: any) => string): ExportSecti
         ],
     },
     {
-        title: t('export.section.report'),
-        contentType: 'report',
+        title: t('export.section.slidedeck'),
+        contentType: 'slidedeck',
+        options: [
+            { format: 'PDF' },
+            { format: 'PPTX', label: 'PPT' },
+            { format: 'HTML' },
+            { format: 'ZIP', label: 'Markdown' },
+        ],
+    },
+    {
+        title: t('export.section.note'),
+        contentType: 'note',
         options: [
             { format: 'PDF' },
             { format: 'Word', label: 'Word', isPlus: true },
@@ -124,14 +132,6 @@ const buildExportSections = (t: (key: any, params?: any) => string): ExportSecti
             { format: 'JSON' },
             { format: 'Word', label: 'Word', isPlus: true },
             { format: 'Markdown', isPlus: true },
-        ],
-    },
-    {
-        title: t('export.section.datatable'),
-        contentType: 'datatable',
-        options: [
-            { format: 'CSV', label: 'Excel' },
-            { format: 'Markdown' },
         ],
     },
     {

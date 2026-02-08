@@ -184,16 +184,31 @@ const fitToBox = (
     };
 };
 
+const buildAltTextLabel = (slide: SlideDeckItem, index: number) => {
+    const alt = slide.altText?.trim() || `Slide ${index + 1}`;
+    return `${alt}`;
+};
+
+const buildPptSpeakerNotes = (slide: SlideDeckItem, index: number) => {
+    const lines: string[] = [buildAltTextLabel(slide, index)];
+    const description = slide.description?.trim();
+    if (description) {
+        lines.push('', 'Description:', ` ${description}`);
+    }
+    return lines.join('\n');
+};
+
 const buildSlideDeckHtml = (slides: SlideDeckItem[], title: string) => {
     const figures = slides.map((slide, index) => {
         const alt = slide.altText?.trim() || `Slide ${index + 1}`;
+        const altLabel = buildAltTextLabel(slide, index);
         const description = slide.description?.trim() || '';
         const src = slide.imageDataUrl?.startsWith('data:') ? slide.imageDataUrl : slide.imageUrl;
         return `<figure class="slide">
   <img src="${escapeHtml(src)}" alt="${escapeHtml(alt)}" loading="lazy" />
   <figcaption>
-    <strong>Slide ${index + 1}</strong>
-    ${description ? `<details><summary>Slide notes</summary><p>${escapeHtml(description)}</p></details>` : ''}
+    <strong>Slide ${index + 1}</strong> <span class="alt-label">${escapeHtml(altLabel)}</span>
+    ${description ? `<details><summary>notes</summary><p>${escapeHtml(description)}</p></details>` : ''}
   </figcaption>
 </figure>`;
     }).join('\n');
@@ -243,6 +258,7 @@ const buildSlideDeckHtml = (slides: SlideDeckItem[], title: string) => {
       font-size: 14px;
       line-height: 1.5;
     }
+    .slide .alt-label { margin-left: 8px; color: var(--text); }
     .slide details { margin-top: 8px; }
     .slide summary { cursor: pointer; color: var(--text); font-weight: 600; }
     .slide p { margin: 8px 0 0; }
@@ -261,9 +277,12 @@ const buildSlideDeckHtml = (slides: SlideDeckItem[], title: string) => {
 
 const exportSlideDeckPdf = async (slides: SlideDeckItem[]) => {
     const ratio = getDeckAspectRatio(slides);
-    const pageWidth = 1280;
-    const pageHeight = Math.round(pageWidth / ratio);
+    const basePageWidth = 1280;
+    const rawPageHeight = Math.round(basePageWidth / ratio);
+    const pageWidth = Math.max(basePageWidth, rawPageHeight);
+    const pageHeight = Math.min(basePageWidth, rawPageHeight);
     const pdf = new jsPDF({
+        orientation: 'landscape',
         unit: 'pt',
         format: [pageWidth, pageHeight]
     });
@@ -271,7 +290,7 @@ const exportSlideDeckPdf = async (slides: SlideDeckItem[]) => {
     for (let i = 0; i < slides.length; i += 1) {
         const slide = slides[i];
         if (i > 0) {
-            pdf.addPage([pageWidth, pageHeight], pageWidth >= pageHeight ? 'landscape' : 'portrait');
+            pdf.addPage([pageWidth, pageHeight], 'landscape');
         }
         try {
             const image = await resolveSlideImage(slide);
@@ -309,6 +328,7 @@ const exportSlideDeckPptx = async (slides: SlideDeckItem[]) => {
     for (let i = 0; i < slides.length; i += 1) {
         const slideData = slides[i];
         const slide = pptx.addSlide();
+        slide.addNotes(buildPptSpeakerNotes(slideData, i));
         try {
             const image = await resolveSlideImage(slideData);
             const dataUrl = image.dataUrl;
@@ -371,18 +391,22 @@ const exportSlideDeckZip = async (slides: SlideDeckItem[], title: string) => {
             markdownLines.push(`## Slide ${index}`);
             markdownLines.push('');
             markdownLines.push(`![${escapeMarkdown(slide.altText?.trim() || `Slide ${index}`)}](images/${imageName})`);
+            markdownLines.push('');
+            markdownLines.push(`${escapeMarkdown(buildAltTextLabel(slide, i))}`);
         } catch (error) {
             console.warn(`${EXPORT_LOG} zip_slide_image_failed`, { index: i, sourceUrl: slide.imageUrl, error });
             markdownLines.push(`## Slide ${index}`);
             markdownLines.push('');
             markdownLines.push(`![${escapeMarkdown(slide.altText?.trim() || `Slide ${index}`)}](${slide.imageUrl})`);
             markdownLines.push('');
+            markdownLines.push(`${escapeMarkdown(buildAltTextLabel(slide, i))}`);
+            markdownLines.push('');
             markdownLines.push(`_Local image file unavailable due cross-origin restrictions. Source URL kept above._`);
         }
         if (slide.description?.trim()) {
             markdownLines.push('');
             markdownLines.push('<details>');
-            markdownLines.push('<summary>Alt text details</summary>');
+            markdownLines.push('<summary>notes</summary>');
             markdownLines.push('');
             markdownLines.push(slide.description.trim());
             markdownLines.push('');

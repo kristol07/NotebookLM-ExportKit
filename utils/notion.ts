@@ -639,7 +639,7 @@ const buildSlideDeckBlocks = (items: SlideDeckItem[]) => {
       toggleChildren.push(buildParagraphBlock(buildTextRichText(description)));
     }
     if (toggleChildren.length > 0) {
-      blocks.push(buildToggleBlock('Alt text details', toggleChildren));
+      blocks.push(buildToggleBlock('Notes', toggleChildren));
     }
     if (index < items.length - 1) {
       blocks.push(buildDividerBlock());
