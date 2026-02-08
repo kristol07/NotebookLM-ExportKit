@@ -696,7 +696,7 @@ export default function Dashboard({
                             );
                             break;
                         default:
-                            result = await exportByType('datatable', payload.items, format, tabTitle, timestamp);
+                            result = await exportByType('datatable', payload.items, format, tabTitle, timestamp, payload.meta);
                             break;
                     }
                     const getTrialMessage = async () => {

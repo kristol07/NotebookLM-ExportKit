@@ -79,6 +79,7 @@ export type NotionExportContext = {
   meta?: {
     title?: string;
     svg?: string;
+    sources?: string[];
   };
 };
 
@@ -482,7 +483,7 @@ const buildMindmapBlocks = (items: MindmapNode[]) => {
   return blocks;
 };
 
-const buildDataTableBlocks = (items: DataTableRow[]) => {
+const buildDataTableBlocks = (items: DataTableRow[], sources?: string[]) => {
   const blocks: any[] = [buildHeadingBlock(2, 'Data table')];
   if (items.length === 0) {
     blocks.push(buildParagraphBlock(buildTextRichText('No rows found.')));
@@ -494,6 +495,15 @@ const buildDataTableBlocks = (items: DataTableRow[]) => {
   const table = buildTableBlock(rows, { hasColumnHeader: items.length > 1 });
   if (table) {
     blocks.push(table);
+  }
+  if (sources && sources.length > 0) {
+    blocks.push(buildHeadingBlock(3, 'Sources'));
+    sources.forEach((source) => {
+      const cleaned = source?.trim();
+      if (cleaned) {
+        blocks.push(buildBulletedItem(cleaned));
+      }
+    });
   }
   return blocks;
 };
@@ -1176,7 +1186,7 @@ export const uploadToNotion = async (
         blocks = buildMindmapBlocks(items as MindmapNode[]);
         break;
       case 'datatable':
-        blocks = buildDataTableBlocks(items as DataTableRow[]);
+        blocks = buildDataTableBlocks(items as DataTableRow[], context?.meta?.sources);
         break;
       case 'note':
         blocks = buildNoteBlocks(items as NoteBlock[], 'Note');

@@ -37,7 +37,8 @@ export const exportDatatable = (
     rows: DataTableRow[],
     format: ExportFormat,
     tabTitle: string,
-    timestamp: string
+    timestamp: string,
+    sources?: string[]
 ): ExportResult => {
     if (rows.length === 0) {
         return { success: false, error: 'No data table rows found.' };
@@ -52,6 +53,20 @@ export const exportDatatable = (
         const ws = XLSX.utils.aoa_to_sheet(normalizedRows);
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, ws, 'Data Table');
+        if (sources && sources.length > 0) {
+            const sourceRows = sources.map((entry) => {
+                const match = entry.match(/^\[(\d+)\]\s*(.+)$/);
+                if (match) {
+                    return [match[1], match[2]];
+                }
+                return ['', entry];
+            });
+            const sourceSheet = XLSX.utils.aoa_to_sheet([
+                ['Index', 'Source'],
+                ...sourceRows,
+            ]);
+            XLSX.utils.book_append_sheet(wb, sourceSheet, 'Sources');
+        }
         const filename = `notebooklm_datatable_${tabTitle}_${timestamp}.xlsx`;
         const buffer = XLSX.write(wb, { type: 'array', bookType: 'xlsx' });
         const blob = new Blob([buffer], {
@@ -66,7 +81,11 @@ export const exportDatatable = (
         const separator = Array.from({ length: columnCount }, () => '---');
         const body = bodyRows.map((row) => row.map(escapeMarkdownCell));
         const toLine = (cells: string[]) => `| ${cells.join(' | ')} |`;
-        const markdown = [toLine(header), toLine(separator), ...body.map(toLine)].join('\n');
+        const tableMarkdown = [toLine(header), toLine(separator), ...body.map(toLine)].join('\n');
+        const sourceLines = sources && sources.length > 0
+            ? ['\n## Sources', ...sources.map((source) => `- ${escapeMarkdownCell(source)}`)].join('\n')
+            : '';
+        const markdown = `${tableMarkdown}${sourceLines}`;
         const filename = `notebooklm_datatable_${tabTitle}_${timestamp}.md`;
         const blob = new Blob([markdown], { type: 'text/markdown' });
         return { success: true, count: normalizedRows.length, filename, mimeType: blob.type, blob };

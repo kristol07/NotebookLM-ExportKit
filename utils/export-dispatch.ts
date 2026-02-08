@@ -53,7 +53,7 @@ export const exportByType = async (
     format: ExportFormat,
     tabTitle: string,
     timestamp: string,
-    meta?: { svg?: string; title?: string },
+    meta?: { svg?: string; title?: string; sources?: string[] },
     options?: ExportOptions
 ): Promise<ExportResult> => {
     const supported = supportedFormatsByType[type] || [];
@@ -89,6 +89,6 @@ export const exportByType = async (
         return exportSources(items as SourceItem[], format, tabTitle, timestamp, options);
     }
 
-    return exportDatatable(items as DataTableRow[], format, tabTitle, timestamp);
+    return exportDatatable(items as DataTableRow[], format, tabTitle, timestamp, meta?.sources);
 };
 

@@ -145,6 +145,7 @@ export interface NormalizedExportPayload<TItems> {
     meta?: {
         svg?: string;
         title?: string;
+        sources?: string[];
     };
 }
 

@@ -15,7 +15,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import type { ContentType, ExportFormat, ExportTarget, PdfQualityPreference } from '../../../utils/export-core';
+import type { ContentType, ExportFormat, ExportTarget, PdfQualityPreference } from '../../../../utils/export-core';
 import { PlusIcon, Spinner } from './Icons';
 import { useI18n } from '../../i18n/i18n';
 
@@ -63,7 +63,7 @@ export const ExportActions = ({
   const pdfQualityRef = useRef<HTMLDivElement | null>(null);
   const isNotionTarget = exportTarget === 'notion';
   const isFileTarget = exportTarget === 'download' || exportTarget === 'drive';
-  const notionLayoutByType = useMemo(() => ({
+  const notionLayoutByType = useMemo<Record<ContentType, string>>(() => ({
     quiz: t('export.notionLayout.quiz'),
     flashcards: t('export.notionLayout.flashcards'),
     mindmap: t('export.notionLayout.mindmap'),
@@ -197,7 +197,7 @@ export const ExportActions = ({
       <div className="section-label">{section.title}</div>
       <div className="section-grid notion-grid">
         <button
-          onClick={() => handleExportClick(notionExportFormatByType[section.contentType], section.contentType)}
+          onClick={() => onExport(notionExportFormatByType[section.contentType], section.contentType)}
           disabled={!!loadingAction}
           className="export-btn notion-export-btn"
         >

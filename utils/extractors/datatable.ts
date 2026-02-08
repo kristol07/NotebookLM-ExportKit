@@ -45,6 +45,43 @@ export const extractDatatable = async (tabId: number, format: ExportFormat): Pro
                         return rows;
                     };
 
+                    const parseSourceList = (root: Document | Element) => {
+                        const container = root.querySelector('table-viewer') ?? root;
+                        const sources: string[] = [];
+
+                        const elements = Array.from(container.querySelectorAll('span, div, p, li'))
+                            .filter((element) => !element.closest('table'));
+                        elements.forEach((element) => {
+                            const text = normalize(element.textContent || '');
+                            if (/^\[\d+\]\s*\S+/.test(text)) {
+                                sources.push(text);
+                            }
+                        });
+
+                        if (sources.length === 0) {
+                            const clone = container.cloneNode(true) as Element;
+                            clone.querySelectorAll('table').forEach((table) => table.remove());
+                            const normalizedText = normalize(clone.textContent || '');
+                            const matches = normalizedText.match(/\[\d+\][\s\S]*?(?=\[\d+\]|$)/g) || [];
+                            matches.forEach((match) => {
+                                const normalized = normalize(match);
+                                if (/^\[\d+\]\s*\S+/.test(normalized)) {
+                                    sources.push(normalized);
+                                }
+                            });
+                        }
+
+                        const seen = new Set<string>();
+                        const deduped = sources.filter((source) => {
+                            if (seen.has(source)) {
+                                return false;
+                            }
+                            seen.add(source);
+                            return true;
+                        });
+                        return deduped;
+                    };
+
                     const pickBestTable = (tables: HTMLTableElement[]) => {
                         let best: { rows: string[][]; score: number } | null = null;
                         for (const table of tables) {
@@ -67,7 +104,8 @@ export const extractDatatable = async (tabId: number, format: ExportFormat): Pro
                             if (viewerTable) {
                                 const rows = parseTable(viewerTable);
                                 if (rows.length > 0) {
-                                    return { success: true, data: { datatable: rows }, frameUrl: doc.URL };
+                                    const sources = parseSourceList(doc);
+                                    return { success: true, data: { datatable: rows, sources }, frameUrl: doc.URL };
                                 }
                             }
 
@@ -75,7 +113,8 @@ export const extractDatatable = async (tabId: number, format: ExportFormat): Pro
                             if (tables.length > 0) {
                                 const rows = pickBestTable(tables);
                                 if (rows.length > 0) {
-                                    return { success: true, data: { datatable: rows }, frameUrl: doc.URL };
+                                    const sources = parseSourceList(doc);
+                                    return { success: true, data: { datatable: rows, sources }, frameUrl: doc.URL };
                                 }
                             }
                         }
@@ -108,14 +147,40 @@ export const extractDatatable = async (tabId: number, format: ExportFormat): Pro
             }
         });
 
-        const success = results.find((result) => result.result?.success);
-        if (success?.result?.success) {
-            const raw: RawExtractResult = success.result;
+        const successfulResults = results
+            .map((result) => result.result)
+            .filter((result): result is RawExtractResult => !!result?.success);
+        const rankedSuccesses = successfulResults
+            .map((result) => {
+                const rows = Array.isArray(result.data?.datatable) ? result.data.datatable : [];
+                const rowCount = rows.length;
+                const columnCount = rows.reduce((max: number, row: unknown) => {
+                    return Array.isArray(row) ? Math.max(max, row.length) : max;
+                }, 0);
+                const areaScore = rowCount * Math.max(columnCount, 1);
+                const sources = Array.isArray(result.data?.sources) ? result.data.sources : [];
+                const sourceCount = sources.filter((source: unknown) => typeof source === 'string' && source.trim().length > 0).length;
+                return {
+                    result,
+                    sourceCount,
+                    areaScore
+                };
+            })
+            .sort((a, b) => {
+                if (a.sourceCount !== b.sourceCount) return b.sourceCount - a.sourceCount;
+                return b.areaScore - a.areaScore;
+            });
+
+        if (rankedSuccesses.length > 0) {
+            const raw = rankedSuccesses[0].result;
             if (!raw.data || !Array.isArray(raw.data.datatable)) {
                 return { success: false, error: 'datatable_not_found', raw };
             }
 
             const items = raw.data.datatable.map((cells: string[]) => ({ cells }));
+            const sources = Array.isArray(raw.data.sources)
+                ? raw.data.sources.filter((source: unknown) => typeof source === 'string' && source.trim().length > 0)
+                : [];
             const validation = validateDataTableItems(items);
             if (!validation.valid) {
                 return {
@@ -130,7 +195,8 @@ export const extractDatatable = async (tabId: number, format: ExportFormat): Pro
                 payload: {
                     type: 'datatable',
                     items,
-                    source: 'notebooklm'
+                    source: 'notebooklm',
+                    meta: sources.length > 0 ? { sources } : undefined
                 },
                 raw
             };
