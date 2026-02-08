@@ -44,8 +44,8 @@ export const supportedFormatsByType: Record<ContentType, ExportFormat[]> = {
     mindmap: ['HTML', 'OPML', 'FreeMind', 'JSONCanvas', 'SVG', 'Markdown'],
     datatable: ['CSV', 'Markdown'],
     note: ['Word', 'Markdown', 'PDF'],
-    report: ['Word', 'Markdown', 'PDF'],
-    chat: ['PDF', 'Word', 'JSON', 'Markdown'],
+    report: ['Word', 'Markdown', 'PDF', 'HTML'],
+    chat: ['PDF', 'Word', 'JSON', 'Markdown', 'HTML'],
     source: ['Word', 'Markdown', 'PDF'],
     slidedeck: ['PDF', 'PPTX', 'HTML', 'ZIP']
 };

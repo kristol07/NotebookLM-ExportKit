@@ -51,8 +51,8 @@ export const DE_MESSAGES: Record<string, MessageValue> = {
   'whatsNew.badge': 'Neu',
   'whatsNew.title': 'Neuigkeiten',
   'whatsNew.subtitle': 'Neueste Funktionen in dieser Version',
-  'whatsNew.feature.sideDeckExport': 'Unterstützung für den Folienexport',
-  'whatsNew.feature.dataTableSources': 'Verbesserter Datentabellen-Export mit Quellenliste',
+  'whatsNew.feature.reportHtmlExport': 'Unterstützung für den Berichtsexport als HTML',
+  'whatsNew.feature.chatHtmlExport': 'Unterstützung für den Chat-Export als HTML',
   'whatsNew.action.gotIt': 'Verstanden',
 
   'header.signOutTitle': 'Abmelden',

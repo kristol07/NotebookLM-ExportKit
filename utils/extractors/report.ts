@@ -32,7 +32,7 @@ export const extractReport = async (tabId: number, format: ExportFormat): Promis
             args: [format],
             func: (formatArg: ExportFormat) => {
                 try {
-                    if (formatArg !== 'Markdown' && formatArg !== 'Word' && formatArg !== 'PDF') {
+                    if (formatArg !== 'Markdown' && formatArg !== 'Word' && formatArg !== 'PDF' && formatArg !== 'HTML') {
                         return { success: false, error: 'unsupported_format', frameUrl: window.location.href };
                     }
 

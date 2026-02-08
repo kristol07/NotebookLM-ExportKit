@@ -251,6 +251,48 @@ const renderReferencesHtml = (references: Map<string, string>, referenceOrder: s
     return `<h2>References</h2><ol class="chat-references">${items}</ol>`;
 };
 
+const buildChatHtmlDocument = (title: string, messages: ChatMessage[]) => {
+    const references = new Map<string, string>();
+    const referenceOrder: string[] = [];
+    const body = messages
+        .map((message) => {
+            const chunksHtml = message.chunks
+                .map((chunk) => renderMessageChunkHtml(chunk, references, referenceOrder))
+                .join('');
+            return `<section class="chat-message ${message.role}"><h2>${PDF_ROLE_LABELS[message.role]}</h2>${chunksHtml}</section>`;
+        })
+        .join('');
+    const referencesHtml = renderReferencesHtml(references, referenceOrder);
+    return `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <title>${escapeHtml(title)}</title>
+    <style>
+        body { font-family: "Times New Roman", serif; font-size: 12pt; line-height: 1.5; color: #1a1a1a; margin: 24px; }
+        h1 { font-size: 22pt; margin: 0 0 16pt; }
+        h2 { font-size: 14pt; margin: 0 0 8pt; }
+        .chat-message { border: 1px solid #c9c9c9; border-radius: 10pt; padding: 12pt 14pt; margin: 0 0 10pt; }
+        .chat-message.user { background: #f5f1ff; border-color: #d6c9ff; }
+        .chat-message.assistant { background: #f3f7f5; border-color: #bfd9d1; }
+        p { margin: 0 0 8pt; }
+        table { border-collapse: collapse; width: 100%; margin: 8pt 0; }
+        td, th { border: 1px solid #999; padding: 6pt; vertical-align: top; }
+        pre { background: #f5f5f5; border: 1px solid #ddd; padding: 10pt; border-radius: 4pt; font-family: "Consolas", "Courier New", monospace; font-size: 10.5pt; white-space: pre-wrap; margin: 0 0 8pt; }
+        .chat-citation { font-size: 9pt; vertical-align: super; }
+        .chat-references { margin: 0; padding-left: 18pt; }
+        .chat-references li { margin: 0 0 6pt; }
+    </style>
+</head>
+<body>
+    <h1>${escapeHtml(title)}</h1>
+    ${body}
+    ${referencesHtml}
+</body>
+</html>`;
+};
+
 const buildReferenceBlocks = (references: Map<string, string>, referenceOrder: string[]): PdfRenderBlock[] => {
     if (referenceOrder.length === 0) {
         return [];
@@ -997,6 +1039,13 @@ export const exportChat = async (
         const content = parts.join('\n');
         const filename = `notebooklm_chat_${tabTitle}_${timestamp}.md`;
         const blob = new Blob([content], { type: 'text/markdown' });
+        return { success: true, count: messages.length, filename, mimeType: blob.type, blob };
+    }
+
+    if (format === 'HTML') {
+        const html = buildChatHtmlDocument(title, messages);
+        const filename = `notebooklm_chat_${tabTitle}_${timestamp}.html`;
+        const blob = new Blob([html], { type: 'text/html' });
         return { success: true, count: messages.length, filename, mimeType: blob.type, blob };
     }
 

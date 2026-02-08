@@ -105,6 +105,7 @@ const buildExportSections = (t: (key: any, params?: any) => string): ExportSecti
             { format: 'PDF' },
             { format: 'Word', label: 'Word', isPlus: true },
             { format: 'Markdown', isPlus: true },
+            { format: 'HTML', isPlus: true },
         ],
     },
     {
@@ -134,6 +135,7 @@ const buildExportSections = (t: (key: any, params?: any) => string): ExportSecti
             { format: 'JSON' },
             { format: 'Word', label: 'Word', isPlus: true },
             { format: 'Markdown', isPlus: true },
+            { format: 'HTML', isPlus: true },
         ],
     },
     {
@@ -208,11 +210,11 @@ const withClipboardOptions = (sections: ExportSection[], clipboardLabel: string)
 const EXPORT_TARGET_STORAGE_KEY = 'exportkitExportTarget';
 const PDF_QUALITY_STORAGE_KEY = 'exportkitPdfQuality';
 const WHATS_NEW_STORAGE_KEY = 'exportkitWhatsNewSeenVersion';
-const WHATS_NEW_VERSION = '1.3.9';
+const WHATS_NEW_VERSION = '1.3.10';
 const WHATS_NEW_FEATURES_BY_VERSION: Record<string, MessageKey[]> = {
-    '1.3.9': [
-        'whatsNew.feature.sideDeckExport',
-        'whatsNew.feature.dataTableSources',
+    '1.3.10': [
+        'whatsNew.feature.reportHtmlExport',
+        'whatsNew.feature.chatHtmlExport',
     ],
 };
 const DRIVE_EXPORT_REQUIRES_PLUS = true;

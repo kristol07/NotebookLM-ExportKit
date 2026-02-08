@@ -801,6 +801,13 @@ export const exportNote = async (
         return { success: true, count: blocks.length, filename, mimeType: blob.type, blob };
     }
 
+    if (format === 'HTML') {
+        const html = generateLegacyDocHtml(title, blocks);
+        const filename = `${filenamePrefix}_${tabTitle}_${timestamp}.html`;
+        const blob = new Blob([html], { type: 'text/html' });
+        return { success: true, count: blocks.length, filename, mimeType: blob.type, blob };
+    }
+
     if (format === 'PDF') {
         try {
             const blob = await exportNotePdf(title, blocks, options?.pdfQuality);

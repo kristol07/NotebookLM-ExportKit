@@ -33,7 +33,7 @@ What it does:
 
   - Export NotebookLM content to multiple formats (varies by content type).
   - Preserve structure for quizzes, flashcards, and mindmaps so exports stay readable and ready to use.
-  - One-click exports designed for common workflows in Excel/Sheets, Anki, Obsidian, Notion, Word, PDF, PowerPoint (PPTX), and mind-mapping tools.
+  - One-click exports designed for common workflows in Excel/Sheets, Anki, Obsidian, Notion, Word, PDF, HTML, PowerPoint (PPTX), and mind-mapping tools.
   - Send exports directly to Google Drive or Notion, or keep the default local download flow.
 
 Why install:

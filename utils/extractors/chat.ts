@@ -38,7 +38,13 @@ export const extractChat = async (tabId: number, format: ExportFormat): Promise<
             args: [format],
             func: (formatArg: ExportFormat) => {
                 try {
-                    if (formatArg !== 'JSON' && formatArg !== 'PDF' && formatArg !== 'Word' && formatArg !== 'Markdown') {
+                    if (
+                        formatArg !== 'JSON'
+                        && formatArg !== 'PDF'
+                        && formatArg !== 'Word'
+                        && formatArg !== 'Markdown'
+                        && formatArg !== 'HTML'
+                    ) {
                         return { success: false, error: 'unsupported_format', frameUrl: window.location.href };
                     }
 

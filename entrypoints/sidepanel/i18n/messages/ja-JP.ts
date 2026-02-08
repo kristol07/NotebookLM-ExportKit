@@ -50,8 +50,8 @@ export const JA_MESSAGES: Record<string, MessageValue> = {
   'whatsNew.badge': '新機能',
   'whatsNew.title': '新着情報',
   'whatsNew.subtitle': 'このバージョンで追加された機能',
-  'whatsNew.feature.sideDeckExport': 'スライドデッキのエクスポートに対応',
-  'whatsNew.feature.dataTableSources': 'ソース一覧付きでデータテーブルのエクスポートを改善',
+  'whatsNew.feature.reportHtmlExport': 'レポートの HTML エクスポートに対応',
+  'whatsNew.feature.chatHtmlExport': 'チャットの HTML エクスポートに対応',
   'whatsNew.action.gotIt': '確認しました',
 
   'header.signOutTitle': 'サインアウト',
