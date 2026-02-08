@@ -73,6 +73,7 @@ export const ExportActions = ({
     chat: t('export.notionLayout.chat'),
     source: t('export.notionLayout.source'),
     slidedeck: t('export.notionLayout.slidedeck'),
+    infographic: t('export.notionLayout.infographic'),
   }), [t]);
 
   useEffect(() => {
@@ -220,7 +221,9 @@ export const ExportActions = ({
     <div key={section.contentType} className="export-section">
       <div className="section-label">{section.title}</div>
       <div className="section-grid">
-        {section.options.map((option) => renderFileOption(section, option))}
+        {section.options
+          .filter((option) => exportTarget === 'download' || option.delivery !== 'clipboard')
+          .map((option) => renderFileOption(section, option))}
       </div>
     </div>
   );

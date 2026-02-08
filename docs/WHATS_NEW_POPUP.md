@@ -3,12 +3,13 @@
 This document describes how the sidepanel "What's New" popup works and how to update it for each release.
 
 ## Behavior
-- The popup is version-gated and shown once per version.
+- The popup is version-gated and shown once per extension version.
 - Storage key: `exportkitWhatsNewSeenVersion`
 - Current version gate and mapping live in:
   - `entrypoints/sidepanel/components/Dashboard.tsx`
   - `WHATS_NEW_VERSION`
   - `WHATS_NEW_FEATURES_BY_VERSION`
+- `WHATS_NEW_VERSION` is read from `browser.runtime.getManifest().version`.
 - On sidepanel load:
   - It collects feature keys for all mapped versions where `seenVersion < version <= WHATS_NEW_VERSION`.
   - If no unseen keys are found, popup does not show.
@@ -24,19 +25,17 @@ This document describes how the sidepanel "What's New" popup works and how to up
 ## Release Checklist
 For each new release that should show a popup:
 
-1. Update version gate:
-   - `WHATS_NEW_VERSION = '<new version>'`
-2. Add version item list:
+1. Add version item list:
    - `WHATS_NEW_FEATURES_BY_VERSION['<new version>'] = ['whatsNew.feature.xxx', ...]`
    - Keep prior version entries that still need to appear for users upgrading from older versions.
-3. Add new i18n keys (if needed) across all locale files:
+2. Add new i18n keys (if needed) across all locale files:
    - `entrypoints/sidepanel/i18n/messages/*.ts`
-4. Remove stale i18n keys only when they are no longer referenced by any kept version entry:
+3. Remove stale i18n keys only when they are no longer referenced by any kept version entry:
    - Delete `whatsNew.feature.*` keys that are no longer referenced by any entry in `WHATS_NEW_FEATURES_BY_VERSION`.
    - Keep locale catalogs aligned (remove the same keys in all locale files).
-5. Validate:
+4. Validate:
    - `pnpm compile`
 
 If a release should not show popup, either:
-- Keep `WHATS_NEW_VERSION` unchanged, or
-- Set no list for that version in `WHATS_NEW_FEATURES_BY_VERSION`.
+- Do not add a version entry to `WHATS_NEW_FEATURES_BY_VERSION`, or
+- Add an empty list for that version.

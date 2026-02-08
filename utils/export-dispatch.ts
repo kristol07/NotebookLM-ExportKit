@@ -26,6 +26,7 @@ import {
     NoteBlock,
     QuizItem,
     SlideDeckItem,
+    InfographicItem,
     SourceItem
 } from './export-core';
 import { exportDatatable } from './datatable-export';
@@ -37,6 +38,7 @@ import { exportQuiz } from './quiz-export';
 import { exportChat } from './chat-export';
 import { exportSources } from './source-export';
 import { exportSlideDeck } from './slidedeck-export';
+import { exportInfographic } from './infographic-export';
 
 export const supportedFormatsByType: Record<ContentType, ExportFormat[]> = {
     quiz: ['CSV', 'JSON', 'HTML', 'Anki'],
@@ -47,12 +49,13 @@ export const supportedFormatsByType: Record<ContentType, ExportFormat[]> = {
     report: ['Word', 'Markdown', 'PDF', 'HTML'],
     chat: ['PDF', 'Word', 'JSON', 'Markdown', 'HTML'],
     source: ['Word', 'Markdown', 'PDF'],
-    slidedeck: ['PDF', 'PPTX', 'HTML', 'ZIP']
+    slidedeck: ['PDF', 'PPTX', 'HTML', 'ZIP'],
+    infographic: ['PNG', 'HTML', 'PDF']
 };
 
 export const exportByType = async (
     type: ContentType,
-    items: QuizItem[] | FlashcardItem[] | MindmapNode[] | DataTableRow[] | NoteBlock[] | ChatMessage[] | SourceItem[] | SlideDeckItem[],
+    items: QuizItem[] | FlashcardItem[] | MindmapNode[] | DataTableRow[] | NoteBlock[] | ChatMessage[] | SourceItem[] | SlideDeckItem[] | InfographicItem[],
     format: ExportFormat,
     tabTitle: string,
     timestamp: string,
@@ -94,6 +97,10 @@ export const exportByType = async (
 
     if (type === 'slidedeck') {
         return exportSlideDeck(items as SlideDeckItem[], format, tabTitle, timestamp);
+    }
+
+    if (type === 'infographic') {
+        return exportInfographic(items as InfographicItem[], format, tabTitle, timestamp);
     }
 
     return exportDatatable(items as DataTableRow[], format, tabTitle, timestamp, meta?.sources);

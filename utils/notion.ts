@@ -27,6 +27,7 @@ import type {
   NoteInline,
   QuizItem,
   SlideDeckItem,
+  InfographicItem,
   SourceItem,
 } from './export-core';
 import {
@@ -57,6 +58,7 @@ const CONTENT_TYPE_LABELS: Record<ContentType, string> = {
   chat: 'Chat',
   source: 'Sources',
   slidedeck: 'Slide deck',
+  infographic: 'Infographic',
 };
 
 export const NOTION_SUPPORTED_FORMATS_BY_TYPE: Record<ContentType, ExportFormat[]> = {
@@ -69,6 +71,7 @@ export const NOTION_SUPPORTED_FORMATS_BY_TYPE: Record<ContentType, ExportFormat[
   chat: ['Markdown', 'JSON'],
   source: ['Markdown'],
   slidedeck: ['HTML'],
+  infographic: ['HTML'],
 };
 
 export type NotionExportContext = {
@@ -78,7 +81,7 @@ export type NotionExportContext = {
   sourceUrl?: string;
   notebookId?: string;
   notebookTitle?: string;
-  items?: QuizItem[] | FlashcardItem[] | MindmapNode[] | DataTableRow[] | NoteBlock[] | ChatMessage[] | SourceItem[] | SlideDeckItem[];
+  items?: QuizItem[] | FlashcardItem[] | MindmapNode[] | DataTableRow[] | NoteBlock[] | ChatMessage[] | SourceItem[] | SlideDeckItem[] | InfographicItem[];
   meta?: {
     title?: string;
     svg?: string;
@@ -648,6 +651,35 @@ const buildSlideDeckBlocks = (items: SlideDeckItem[]) => {
   return blocks;
 };
 
+const buildInfographicBlocks = (items: InfographicItem[]) => {
+  const blocks: any[] = [buildHeadingBlock(2, 'Infographic')];
+  if (items.length === 0) {
+    blocks.push(buildParagraphBlock(buildTextRichText('No infographic found.')));
+    return blocks;
+  }
+
+  items.forEach((item, index) => {
+    const label = `Infographic ${index + 1}`;
+    blocks.push(buildHeadingBlock(3, label));
+    blocks.push(buildImageBlock(item.imageUrl, item.altText || label));
+    const notes: any[] = [];
+    if (item.altText?.trim()) {
+      notes.push(buildParagraphBlock(buildTextRichText(item.altText.trim())));
+    }
+    if (item.description?.trim()) {
+      notes.push(buildParagraphBlock(buildTextRichText(item.description.trim())));
+    }
+    if (notes.length > 0) {
+      blocks.push(buildToggleBlock('Details', notes));
+    }
+    if (index < items.length - 1) {
+      blocks.push(buildDividerBlock());
+    }
+  });
+
+  return blocks;
+};
+
 const buildCodeBlocks = (content: string, format?: ExportFormat) => {
   return [buildCodeBlock(content, format)];
 };
@@ -854,6 +886,7 @@ const createDatabase = async (accessToken: string, parentPageId: string) => {
                 { name: 'Data table' },
                 { name: 'Sources' },
                 { name: 'Slide deck' },
+                { name: 'Infographic' },
               ],
             },
           },
@@ -864,6 +897,8 @@ const createDatabase = async (accessToken: string, parentPageId: string) => {
                 { name: 'JSON' },
                 { name: 'HTML' },
                 { name: 'Markdown' },
+                { name: 'PDF' },
+                { name: 'PNG' },
               ],
             },
           },
@@ -1247,6 +1282,9 @@ export const uploadToNotion = async (
         break;
       case 'slidedeck':
         blocks = buildSlideDeckBlocks(items as SlideDeckItem[]);
+        break;
+      case 'infographic':
+        blocks = buildInfographicBlocks(items as InfographicItem[]);
         break;
       default:
         blocks = [];

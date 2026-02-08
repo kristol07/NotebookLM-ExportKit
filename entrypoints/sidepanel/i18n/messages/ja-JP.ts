@@ -54,6 +54,7 @@ export const JA_MESSAGES: Record<string, MessageValue> = {
   'whatsNew.feature.dataTableSources': 'ソース一覧付きでデータテーブルのエクスポートを改善',
   'whatsNew.feature.reportHtmlExport': 'レポートの HTML エクスポートに対応',
   'whatsNew.feature.chatHtmlExport': 'チャットの HTML エクスポートに対応',
+  'whatsNew.feature.infographicExport': 'インフォグラフィックを PNG/HTML/PDF、画像コピー、Notion へエクスポート可能に',
   'whatsNew.action.gotIt': '確認しました',
 
   'header.signOutTitle': 'サインアウト',
@@ -67,7 +68,9 @@ export const JA_MESSAGES: Record<string, MessageValue> = {
   'export.section.datatable': 'データテーブルのエクスポート',
   'export.section.source': 'ソースのエクスポート',
   'export.section.slidedeck': 'スライドデッキのエクスポート',
+  'export.section.infographic': 'インフォグラフィックのエクスポート',
   'export.option.clipboard': 'クリップボード',
+  'export.option.copyImage': '画像をコピー',
   'export.hint.notion': 'Notion のエクスポートはネイティブレイアウトを使用します。',
   'export.comingSoon': '近日公開',
   'export.comingSoonDetail': '動画・音声の概要を文字起こし/スライドへ',
@@ -93,6 +96,7 @@ export const JA_MESSAGES: Record<string, MessageValue> = {
   'export.notionLayout.chat': '役割見出しと段落、テーブル、コードブロック',
   'export.notionLayout.source': '概要、主要トピック、構造化コンテンツを含むソース詳細',
   'export.notionLayout.slidedeck': '各スライドの代替テキストトグル付き、画像を1つのドキュメントに配置',
+  'export.notionLayout.infographic': 'インフォグラフィック画像と詳細トグルを1つのドキュメントに配置',
 
   'content.quiz': 'クイズ',
   'content.flashcards': 'フラッシュカード',
@@ -103,6 +107,7 @@ export const JA_MESSAGES: Record<string, MessageValue> = {
   'content.source': 'ソース',
   'content.datatable': 'データテーブル',
   'content.slidedeck': 'スライドデッキ',
+  'content.infographic': 'インフォグラフィック',
 
   'drive.setup': 'Drive のセットアップ',
   'drive.step.signIn': '1. アカウントにサインイン',
@@ -226,7 +231,7 @@ export const JA_MESSAGES: Record<string, MessageValue> = {
   'notice.setNotionDestination': '続行するには Notion の保存先ページを設定してください。',
   'notice.noActiveTab': 'アクティブなタブが見つかりません。',
   'notice.copySuccess': ({ contentLabel, trialMessage }) =>
-    `${contentLabel} の Markdown をクリップボードにコピーしました。${trialMessage ?? ''}`,
+    `${contentLabel} をクリップボードにコピーしました。${trialMessage ?? ''}`,
   'notice.copyFailed': 'コピーに失敗しました。もう一度お試しください。',
   'notice.exportSuccess': ({ contentLabel, destination, format, trialMessage }) =>
     `${destination} に ${format} 形式で ${contentLabel} をエクスポートしました。${trialMessage ?? ''}`,

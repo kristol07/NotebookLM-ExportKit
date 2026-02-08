@@ -55,6 +55,7 @@ export const FR_MESSAGES: Record<string, MessageValue> = {
   'whatsNew.feature.dataTableSources': 'Export de tableau de donnees ameliore avec liste des sources',
   'whatsNew.feature.reportHtmlExport': 'Prise en charge de l\'export de rapport en HTML',
   'whatsNew.feature.chatHtmlExport': 'Prise en charge de l\'export de chat en HTML',
+  'whatsNew.feature.infographicExport': 'Nouveaux exports d\'infographies vers PNG, HTML, PDF, image presse-papiers et Notion',
   'whatsNew.action.gotIt': 'Compris',
 
   'header.signOutTitle': 'Se déconnecter',
@@ -68,7 +69,9 @@ export const FR_MESSAGES: Record<string, MessageValue> = {
   'export.section.datatable': 'Exports de tableaux de données',
   'export.section.source': 'Exports de sources',
   'export.section.slidedeck': 'Exports de diaporamas',
+  'export.section.infographic': 'Exports d’infographies',
   'export.option.clipboard': 'Presse-papiers',
+  'export.option.copyImage': 'Copier l’image',
   'export.hint.notion': 'Les exports Notion utilisent des mises en page natives.',
   'export.comingSoon': 'Bientôt disponible',
   'export.comingSoonDetail': 'Aperçus vidéo et audio en transcription/diapositives',
@@ -95,6 +98,7 @@ export const FR_MESSAGES: Record<string, MessageValue> = {
   'export.notionLayout.chat': 'Titres de rôle avec paragraphes, tableaux et blocs de code',
   'export.notionLayout.source': 'Détail de la source avec résumé, sujets clés et contenu structuré',
   'export.notionLayout.slidedeck': 'Document unique avec images de diapositives et bascules de texte alternatif par diapositive',
+  'export.notionLayout.infographic': 'Document unique avec image infographique et bascule des détails',
 
   'content.quiz': 'Quiz',
   'content.flashcards': 'Fiches',
@@ -105,6 +109,7 @@ export const FR_MESSAGES: Record<string, MessageValue> = {
   'content.source': 'Sources',
   'content.datatable': 'Tableau de données',
   'content.slidedeck': 'Diaporama',
+  'content.infographic': 'Infographie',
 
   'drive.setup': 'Configuration Drive',
   'drive.step.signIn': '1. Connecte-toi à ton compte',
@@ -232,7 +237,7 @@ export const FR_MESSAGES: Record<string, MessageValue> = {
   'notice.setNotionDestination': 'Définis une page de destination Notion pour continuer.',
   'notice.noActiveTab': 'Aucun onglet actif trouvé.',
   'notice.copySuccess': ({ locale, contentLabel, trialMessage }) =>
-    `Markdown de ${contentLabel} copié dans le presse-papiers.${trialMessage ?? ''}`,
+    `${contentLabel} copié dans le presse-papiers.${trialMessage ?? ''}`,
   'notice.copyFailed': 'Échec de la copie. Réessaie.',
   'notice.exportSuccess': ({ locale, contentLabel, destination, format, trialMessage }) =>
     `${contentLabel} exporté vers ${destination} au format ${format}.${trialMessage ?? ''}`,

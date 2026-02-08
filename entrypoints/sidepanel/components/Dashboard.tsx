@@ -119,6 +119,16 @@ const buildExportSections = (t: (key: any, params?: any) => string): ExportSecti
         ],
     },
     {
+        title: t('export.section.infographic'),
+        contentType: 'infographic',
+        options: [
+            { format: 'PNG' },
+            { format: 'PDF' },
+            { format: 'HTML' },
+            { format: 'PNG', label: t('export.option.copyImage'), delivery: 'clipboard' },
+        ],
+    },
+    {
         title: t('export.section.note'),
         contentType: 'note',
         options: [
@@ -167,6 +177,7 @@ const NOTION_EXPORT_FORMAT_BY_TYPE: Record<ContentType, ExportFormat> = {
     chat: 'Markdown',
     source: 'Markdown',
     slidedeck: 'HTML',
+    infographic: 'HTML',
 };
 
 const filterSectionsForNotion = (sections: ExportSection[]) =>
@@ -219,6 +230,9 @@ const WHATS_NEW_FEATURES_BY_VERSION: Record<string, MessageKey[]> = {
     '1.3.10': [
         'whatsNew.feature.reportHtmlExport',
         'whatsNew.feature.chatHtmlExport',
+    ],
+    '1.4.0': [
+        'whatsNew.feature.infographicExport',
     ],
 };
 
@@ -335,6 +349,8 @@ export default function Dashboard({
                 return t('content.source');
             case 'slidedeck':
                 return t('content.slidedeck');
+            case 'infographic':
+                return t('content.infographic');
             default:
                 return t('content.datatable');
         }
@@ -462,6 +478,16 @@ export default function Dashboard({
         textarea.select();
         document.execCommand('copy');
         document.body.removeChild(textarea);
+    };
+
+    const copyImageToClipboard = async (blob: Blob) => {
+        if (!navigator.clipboard?.write || typeof ClipboardItem === 'undefined') {
+            throw new Error('image_clipboard_not_supported');
+        }
+        if (blob.type !== 'image/png') {
+            throw new Error('unsupported_image_type');
+        }
+        await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
     };
 
     const isPlusExport = (format: ExportFormat, contentType?: ContentType) => {
@@ -783,6 +809,16 @@ export default function Dashboard({
                                 payload.meta
                             );
                             break;
+                        case 'infographic':
+                            result = await exportByType(
+                                'infographic',
+                                payload.items,
+                                format,
+                                tabTitle,
+                                timestamp,
+                                payload.meta
+                            );
+                            break;
                         default:
                             result = await exportByType('datatable', payload.items, format, tabTitle, timestamp, payload.meta);
                             break;
@@ -804,8 +840,12 @@ export default function Dashboard({
 
                     if (exportTarget === 'download' && options?.deliveryOverride === 'clipboard') {
                         try {
-                            const markdownText = await result.blob.text();
-                            await copyTextToClipboard(markdownText);
+                            if (result.mimeType.startsWith('image/')) {
+                                await copyImageToClipboard(result.blob);
+                            } else {
+                                const markdownText = await result.blob.text();
+                                await copyTextToClipboard(markdownText);
+                            }
                             const trialMessage = await getTrialMessage();
                             showNotice('success', t('notice.copySuccess', {
                                 contentLabel,
