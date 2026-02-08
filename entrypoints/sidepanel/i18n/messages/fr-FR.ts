@@ -51,6 +51,8 @@ export const FR_MESSAGES: Record<string, MessageValue> = {
   'whatsNew.badge': 'Nouveau',
   'whatsNew.title': 'Nouveautes',
   'whatsNew.subtitle': 'Dernieres fonctionnalites de cette version',
+  'whatsNew.feature.sideDeckExport': 'Prise en charge de l\'export de diaporama',
+  'whatsNew.feature.dataTableSources': 'Export de tableau de donnees ameliore avec liste des sources',
   'whatsNew.feature.reportHtmlExport': 'Prise en charge de l\'export de rapport en HTML',
   'whatsNew.feature.chatHtmlExport': 'Prise en charge de l\'export de chat en HTML',
   'whatsNew.action.gotIt': 'Compris',

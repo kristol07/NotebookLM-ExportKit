@@ -210,12 +210,50 @@ const withClipboardOptions = (sections: ExportSection[], clipboardLabel: string)
 const EXPORT_TARGET_STORAGE_KEY = 'exportkitExportTarget';
 const PDF_QUALITY_STORAGE_KEY = 'exportkitPdfQuality';
 const WHATS_NEW_STORAGE_KEY = 'exportkitWhatsNewSeenVersion';
-const WHATS_NEW_VERSION = '1.3.10';
+const WHATS_NEW_VERSION = browser.runtime.getManifest().version;
 const WHATS_NEW_FEATURES_BY_VERSION: Record<string, MessageKey[]> = {
+    '1.3.9': [
+        'whatsNew.feature.sideDeckExport',
+        'whatsNew.feature.dataTableSources',
+    ],
     '1.3.10': [
         'whatsNew.feature.reportHtmlExport',
         'whatsNew.feature.chatHtmlExport',
     ],
+};
+
+const compareSemver = (a: string, b: string) => {
+    const aParts = a.split('.').map((part) => Number.parseInt(part, 10) || 0);
+    const bParts = b.split('.').map((part) => Number.parseInt(part, 10) || 0);
+    const maxLen = Math.max(aParts.length, bParts.length);
+    for (let index = 0; index < maxLen; index += 1) {
+        const aPart = aParts[index] ?? 0;
+        const bPart = bParts[index] ?? 0;
+        if (aPart > bPart) return 1;
+        if (aPart < bPart) return -1;
+    }
+    return 0;
+};
+
+const getUnseenWhatsNewFeatureKeys = (seenVersion: string | null): MessageKey[] => {
+    const unseenVersions = Object.keys(WHATS_NEW_FEATURES_BY_VERSION)
+        .filter((version) => compareSemver(version, WHATS_NEW_VERSION) <= 0)
+        .filter((version) => !seenVersion || compareSemver(version, seenVersion) > 0)
+        .sort(compareSemver);
+
+    const dedupedKeys: MessageKey[] = [];
+    const seenKeys = new Set<MessageKey>();
+    unseenVersions.forEach((version) => {
+        const keys = WHATS_NEW_FEATURES_BY_VERSION[version] ?? [];
+        keys.forEach((key) => {
+            if (seenKeys.has(key)) {
+                return;
+            }
+            seenKeys.add(key);
+            dedupedKeys.push(key);
+        });
+    });
+    return dedupedKeys;
 };
 const DRIVE_EXPORT_REQUIRES_PLUS = true;
 const NOTION_EXPORT_REQUIRES_PLUS = true;
@@ -254,7 +292,7 @@ export default function Dashboard({
     const upgradeInFlightRef = useRef(false);
     const [exportTarget, setExportTarget] = useState<ExportTarget>('download');
     const [pdfQuality, setPdfQuality] = useState<PdfQualityPreference>('size');
-    const whatsNewFeatureKeys = WHATS_NEW_FEATURES_BY_VERSION[WHATS_NEW_VERSION] ?? [];
+    const [whatsNewFeatureKeys, setWhatsNewFeatureKeys] = useState<MessageKey[]>([]);
     const plan = getPlan(session);
     const isPlus = plan === 'plus' || plan === 'pro';
     const isSignedIn = Boolean(session?.user?.id);
@@ -341,10 +379,12 @@ export default function Dashboard({
 
     useEffect(() => {
         const seenVersion = localStorage.getItem(WHATS_NEW_STORAGE_KEY);
-        if (whatsNewFeatureKeys.length > 0 && seenVersion !== WHATS_NEW_VERSION) {
+        const unseenKeys = getUnseenWhatsNewFeatureKeys(seenVersion);
+        setWhatsNewFeatureKeys(unseenKeys);
+        if (unseenKeys.length > 0 && seenVersion !== WHATS_NEW_VERSION) {
             setShowWhatsNewModal(true);
         }
-    }, [whatsNewFeatureKeys.length]);
+    }, []);
 
     useEffect(() => {
         void refreshDriveState();
