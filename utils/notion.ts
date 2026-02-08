@@ -448,7 +448,7 @@ const buildFlashcardBlocks = (items: FlashcardItem[]) => {
   return blocks;
 };
 
-const buildMindmapBulletedItems = (nodes: MindmapNode[]) => {
+const buildMindmapBulletedItems = (nodes: MindmapNode[]): any[] => {
   return nodes.map((node) => {
     const title = node.title?.trim() || 'Untitled';
     const children = node.children && node.children.length > 0
@@ -940,7 +940,7 @@ const findDatabaseUnderPage = async (accessToken: string, parentPageId: string) 
   return null;
 };
 
-const isNotebookExportDatabase = (database: NotionDatabaseInfo | null) =>
+const isNotebookExportDatabase = (database: NotionDatabaseInfo | null): database is NotionDatabaseInfo =>
   Boolean(database && database.title === DEFAULT_DATABASE_TITLE);
 
 const isDatabaseUnderPage = (database: NotionDatabaseInfo | null, pageId: string) =>

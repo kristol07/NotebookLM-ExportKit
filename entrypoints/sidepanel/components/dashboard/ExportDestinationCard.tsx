@@ -15,7 +15,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 import React from 'react';
-import type { ExportTarget } from '../../../utils/export-core';
+import type { ExportTarget } from '../../../../utils/export-core';
 import { useI18n } from '../../i18n/i18n';
 
 type ExportDestinationCardProps = {

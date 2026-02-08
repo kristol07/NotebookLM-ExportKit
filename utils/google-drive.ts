@@ -23,6 +23,7 @@ const DRIVE_FOLDER_STORAGE_KEY = 'exportkitDriveFolderId';
 const RESUMABLE_UPLOAD_THRESHOLD_BYTES = 10 * 1024 * 1024;
 type UploadProgress = { loaded: number; total: number; percent: number };
 export type UploadProgressCallback = (progress: UploadProgress) => void;
+type SuccessfulExportResult = Extract<ExportResult, { success: true }>;
 const getFolderStorageKey = (email?: string | null) => (
     email ? `${DRIVE_FOLDER_STORAGE_KEY}:${email}` : DRIVE_FOLDER_STORAGE_KEY
 );
@@ -95,7 +96,7 @@ const parseXhrHeaders = (value: string) => {
 const xhrUpload = (
     url: string,
     method: 'POST' | 'PUT',
-    body: BodyInit,
+    body: XMLHttpRequestBodyInit,
     headers: Record<string, string>,
     onProgress?: UploadProgressCallback,
     fallbackTotal?: number
@@ -180,7 +181,7 @@ const ensureDriveFolder = async (accessToken: string) => {
 
 const performUpload = async (
     accessToken: string,
-    exportResult: ExportResult,
+    exportResult: SuccessfulExportResult,
     folderId: string,
     onProgress?: UploadProgressCallback
 ) => {
@@ -205,7 +206,7 @@ const performUpload = async (
 
 const performResumableUpload = async (
     accessToken: string,
-    exportResult: ExportResult,
+    exportResult: SuccessfulExportResult,
     folderId: string,
     onProgress?: UploadProgressCallback
 ) => {
@@ -249,7 +250,7 @@ const performResumableUpload = async (
 
 const performUploadWithMode = async (
     accessToken: string,
-    exportResult: ExportResult,
+    exportResult: SuccessfulExportResult,
     folderId: string,
     onProgress?: UploadProgressCallback
 ) => {

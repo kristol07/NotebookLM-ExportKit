@@ -403,6 +403,7 @@ const createPdfStyleElement = () => {
 type PdfRenderBlock =
     | { type: 'message'; role: ChatMessage['role']; chunks: ChatMessageChunk[]; showRole: boolean; segment: 'single' | 'start' | 'middle' | 'end' }
     | { type: 'html'; html: string };
+type PdfMessageRenderBlock = Extract<PdfRenderBlock, { type: 'message' }>;
 
 const renderMessageHtml = (
     role: ChatMessage['role'],
@@ -570,7 +571,7 @@ const paginatePdfBlocks = (
         chunks: ChatMessageChunk[],
         showRole: boolean,
         segment: 'single' | 'start' | 'middle' | 'end' = 'middle'
-    ): PdfRenderBlock => ({
+    ): PdfMessageRenderBlock => ({
         type: 'message',
         role,
         chunks,
@@ -692,7 +693,7 @@ const paginatePdfBlocks = (
         }
 
         let isFirstChunk = true;
-        const messageSegments: PdfRenderBlock[] = [];
+        const messageSegments: PdfMessageRenderBlock[] = [];
         block.chunks.forEach((chunk) => {
             if (chunk.type === 'table') {
                 if (chunk.rows.length <= 1) {
@@ -859,7 +860,7 @@ const exportChatPdf = async (title: string, messages: ChatMessage[], pdfQuality:
     const preset = PDF_PRESETS[pdfQuality] || PDF_PRESETS.size;
     const pdfBlocks: PdfRenderBlock[] = [
         { type: 'html', html: `<h1 class="chat-title">${escapeHtml(title)}</h1>` },
-        ...messages.map((message) => ({
+        ...messages.map((message): PdfMessageRenderBlock => ({
             type: 'message',
             role: message.role,
             chunks: message.chunks,

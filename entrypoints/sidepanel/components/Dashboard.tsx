@@ -492,6 +492,10 @@ export default function Dashboard({
         setLoadingAction('notion-destination');
         try {
             const database = await configureNotionDestination(token, value);
+            if (!database) {
+                showNotice('error', t('notice.notionDestinationError'));
+                return;
+            }
             setNotionDatabaseId(database.id);
             showNotice(
                 'success',
@@ -699,6 +703,10 @@ export default function Dashboard({
                             result = await exportByType('datatable', payload.items, format, tabTitle, timestamp, payload.meta);
                             break;
                     }
+                    if (!result.success) {
+                        showNotice('error', result.error || t('notice.exportFailed'));
+                        return;
+                    }
                     const getTrialMessage = async () => {
                         if (requiresPlus && !isPlus) {
                             const trialResult = await consumeTrial(true);
@@ -742,7 +750,7 @@ export default function Dashboard({
                                 format,
                                 sourceTitle: rawTabTitle,
                                 sourceUrl: tabs[0].url,
-                                notebookId: getNotebookIdFromUrl(tabs[0].url),
+                                notebookId: getNotebookIdFromUrl(tabs[0].url) ?? undefined,
                                 notebookTitle: rawTabTitle,
                                 items: payload.items,
                                 meta: payload.meta,
