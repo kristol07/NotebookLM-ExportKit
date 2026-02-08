@@ -43,6 +43,7 @@ const inMemoryStorage = (() => {
 const notionAuthClient = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_DEFAULT_KEY, {
   auth: {
     storage: inMemoryStorage,
+    storageKey: 'sb-notion-oauth-token',
     autoRefreshToken: false,
     persistSession: false,
     detectSessionInUrl: false,
