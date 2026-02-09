@@ -51,12 +51,13 @@ export const IT_MESSAGES: Record<string, MessageValue> = {
   'whatsNew.badge': 'Nuovo',
   'whatsNew.title': 'Novita',
   'whatsNew.subtitle': 'Ultime funzionalita in questa versione',
-  'whatsNew.feature.sideDeckExport': 'Supporto per l\'esportazione di slide deck',
-  'whatsNew.feature.dataTableSources': 'Esportazione della tabella dati migliorata con elenco fonti',
-  'whatsNew.feature.reportHtmlExport': 'Supporto per l\'esportazione dei report in HTML',
-  'whatsNew.feature.chatHtmlExport': 'Supporto per l\'esportazione della chat in HTML',
+  'whatsNew.feature.sideDeckExport': 'Aggiunte esportazioni di slide deck',
+  'whatsNew.feature.dataTableSources': 'Migliorate le esportazioni delle tabelle dati con elenco fonti',
+  'whatsNew.feature.reportHtmlExport': 'Aggiunta esportazione HTML per i report',
+  'whatsNew.feature.chatHtmlExport': 'Aggiunta esportazione HTML per le chat',
   'whatsNew.feature.infographicExport': 'Nuove esportazioni infografiche in PNG, HTML, PDF e Notion',
   'whatsNew.feature.videoOverviewExport': 'Nuove esportazioni video overview in MP4, audio WAV ed esportazioni storyboard (ZIP, PDF, PowerPoint, HTML)',
+  'whatsNew.feature.exportActionsDiscovery': 'Ricerca delle azioni di esportazione migliorata con schede per tipo di contenuto e percorsi recenti per destinazione',
   'whatsNew.action.gotIt': 'Ho capito',
 
   'header.signOutTitle': 'Esci',
@@ -73,6 +74,8 @@ export const IT_MESSAGES: Record<string, MessageValue> = {
   'export.section.infographic': 'Esportazioni infografiche',
   'export.section.videoOverview': 'Esportazioni video overview',
   'export.option.clipboard': 'Appunti',
+  'export.recent': 'Recenti',
+  'export.contentTypes': 'Tipi di contenuto',
   'export.hint.notion': 'Le esportazioni su Notion usano layout nativi.',
   'export.comingSoon': 'In arrivo',
   'export.comingSoonDetail': 'Panoramiche video e audio in trascrizione',
@@ -262,4 +265,3 @@ export const IT_MESSAGES: Record<string, MessageValue> = {
   'destination.notionRequiresPlus': 'Le esportazioni su Notion richiedono una connessione Notion e un abbonamento Plus.',
   'destination.localInstant': 'Le esportazioni locali sono istantanee. I formati avanzati si sbloccano con Plus.',
 };
-

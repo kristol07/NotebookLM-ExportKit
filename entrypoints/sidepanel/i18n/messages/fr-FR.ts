@@ -51,12 +51,13 @@ export const FR_MESSAGES: Record<string, MessageValue> = {
   'whatsNew.badge': 'Nouveau',
   'whatsNew.title': 'Nouveautes',
   'whatsNew.subtitle': 'Dernieres fonctionnalites de cette version',
-  'whatsNew.feature.sideDeckExport': 'Prise en charge de l\'export de diaporama',
-  'whatsNew.feature.dataTableSources': 'Export de tableau de donnees ameliore avec liste des sources',
-  'whatsNew.feature.reportHtmlExport': 'Prise en charge de l\'export de rapport en HTML',
-  'whatsNew.feature.chatHtmlExport': 'Prise en charge de l\'export de chat en HTML',
+  'whatsNew.feature.sideDeckExport': 'Ajout des exports de diaporamas',
+  'whatsNew.feature.dataTableSources': 'Amelioration des exports de tableaux de donnees avec une liste des sources',
+  'whatsNew.feature.reportHtmlExport': 'Ajout de l\'export HTML pour les rapports',
+  'whatsNew.feature.chatHtmlExport': 'Ajout de l\'export HTML pour les chats',
   'whatsNew.feature.infographicExport': 'Nouveaux exports d\'infographies vers PNG, HTML, PDF et Notion',
   'whatsNew.feature.videoOverviewExport': 'Nouveaux exports d\'aperçu vidéo en MP4, audio WAV et exports storyboard (ZIP, PDF, PowerPoint, HTML)',
+  'whatsNew.feature.exportActionsDiscovery': 'Découverte des actions d’export améliorée avec des onglets par type de contenu et des parcours récents par destination',
   'whatsNew.action.gotIt': 'Compris',
 
   'header.signOutTitle': 'Se déconnecter',
@@ -73,6 +74,8 @@ export const FR_MESSAGES: Record<string, MessageValue> = {
   'export.section.infographic': 'Exports d’infographies',
   'export.section.videoOverview': 'Exports d’aperçu vidéo',
   'export.option.clipboard': 'Presse-papiers',
+  'export.recent': 'Récents',
+  'export.contentTypes': 'Types de contenu',
   'export.hint.notion': 'Les exports Notion utilisent des mises en page natives.',
   'export.comingSoon': 'Bientôt disponible',
   'export.comingSoonDetail': 'Aperçus vidéo et audio en transcription',
@@ -262,4 +265,3 @@ export const FR_MESSAGES: Record<string, MessageValue> = {
   'destination.notionRequiresPlus': 'Les exports Notion nécessitent une connexion Notion et un abonnement Plus.',
   'destination.localInstant': 'Les exports locaux sont instantanés. Les formats avancés se débloquent avec Plus.',
 };
-

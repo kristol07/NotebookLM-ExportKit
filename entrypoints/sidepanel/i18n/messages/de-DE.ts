@@ -51,12 +51,13 @@ export const DE_MESSAGES: Record<string, MessageValue> = {
   'whatsNew.badge': 'Neu',
   'whatsNew.title': 'Neuigkeiten',
   'whatsNew.subtitle': 'Neueste Funktionen in dieser Version',
-  'whatsNew.feature.sideDeckExport': 'Unterstützung für den Folienexport',
-  'whatsNew.feature.dataTableSources': 'Verbesserter Datentabellen-Export mit Quellenliste',
-  'whatsNew.feature.reportHtmlExport': 'Unterstützung für den Berichtsexport als HTML',
-  'whatsNew.feature.chatHtmlExport': 'Unterstützung für den Chat-Export als HTML',
+  'whatsNew.feature.sideDeckExport': 'Folienexporte hinzugefügt',
+  'whatsNew.feature.dataTableSources': 'Datentabellen-Exporte mit Quellenliste verbessert',
+  'whatsNew.feature.reportHtmlExport': 'HTML-Export für Berichte hinzugefügt',
+  'whatsNew.feature.chatHtmlExport': 'HTML-Export für Chats hinzugefügt',
   'whatsNew.feature.infographicExport': 'Neue Infografik-Exporte als PNG, HTML, PDF und Notion',
   'whatsNew.feature.videoOverviewExport': 'Neue Video-Overview-Exporte als MP4, WAV-Audio und Storyboard-Exporte (ZIP, PDF, PowerPoint, HTML)',
+  'whatsNew.feature.exportActionsDiscovery': 'Verbesserte Auffindbarkeit von Exportaktionen mit Inhaltstyp-Tabs und zielbasierten zuletzt genutzten Routen',
   'whatsNew.action.gotIt': 'Verstanden',
 
   'header.signOutTitle': 'Abmelden',
@@ -73,6 +74,8 @@ export const DE_MESSAGES: Record<string, MessageValue> = {
   'export.section.infographic': 'Infografik-Exporte',
   'export.section.videoOverview': 'Video-Overview-Exporte',
   'export.option.clipboard': 'Zwischenablage',
+  'export.recent': 'Zuletzt verwendet',
+  'export.contentTypes': 'Inhaltstypen',
   'export.hint.notion': 'Notion-Exporte verwenden native Layouts.',
   'export.comingSoon': 'Kommt bald',
   'export.comingSoonDetail': 'Video- und Audio-Overviews zu Transkript',
@@ -262,4 +265,3 @@ export const DE_MESSAGES: Record<string, MessageValue> = {
   'destination.notionRequiresPlus': 'Notion-Exporte erfordern eine Notion-Verbindung und ein Plus-Abo.',
   'destination.localInstant': 'Lokale Exporte sind sofort verfügbar. Erweiterte Formate werden mit Plus freigeschaltet.',
 };
-

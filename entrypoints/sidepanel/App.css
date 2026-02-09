@@ -826,6 +826,109 @@
   gap: var(--space-5);
 }
 
+.content-type-tabs {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  flex-wrap: wrap;
+}
+
+.content-type-tab {
+  border: 1px solid var(--stroke);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--muted);
+  font-size: var(--size-xxs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+  padding: 6px var(--space-2);
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.content-type-tab:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 14px rgba(23, 23, 23, 0.1);
+}
+
+.content-type-tab.active {
+  background: linear-gradient(90deg, var(--accent), var(--accent-light));
+  color: #fff;
+  border-color: transparent;
+}
+
+.content-type-tab:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+  box-shadow: none;
+  transform: none;
+}
+
+.recent-exports {
+  background: #fff;
+  border: 1px solid var(--stroke);
+  border-radius: var(--radius-lg);
+  padding: var(--space-3);
+}
+
+.recent-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-2);
+}
+
+.recent-export-btn {
+  width: 100%;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  min-height: 56px;
+  padding: var(--space-1) var(--space-2);
+}
+
+.recent-export-route {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-1);
+  line-height: 1.2;
+}
+
+.recent-chip {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  border: 1px solid var(--stroke);
+  padding: 3px 8px;
+  font-size: var(--size-xxs);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.recent-chip-type {
+  background: rgba(31, 111, 120, 0.1);
+  color: var(--teal);
+  border-color: rgba(31, 111, 120, 0.24);
+}
+
+.recent-chip-format {
+  background: rgba(211, 84, 44, 0.12);
+  color: var(--accent-dark);
+  border-color: rgba(211, 84, 44, 0.28);
+}
+
+.recent-route-arrow {
+  color: var(--muted);
+  font-size: var(--size-xs);
+  line-height: 1;
+}
+
 .notion-hint {
   font-size: var(--size-xs);
   color: var(--muted);

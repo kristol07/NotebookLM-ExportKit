@@ -17,7 +17,7 @@
 import { corsHeaders } from '../_shared/cors.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
-const TRIAL_LIMIT = 5;
+const TRIAL_LIMIT = 15;
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {

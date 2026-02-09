@@ -51,12 +51,13 @@ export const EN_MESSAGES: Record<string, MessageValue> = {
   'whatsNew.badge': 'New',
   'whatsNew.title': 'What is new',
   'whatsNew.subtitle': 'Latest features in this version',
-  'whatsNew.feature.sideDeckExport': 'Support for slide deck export',
-  'whatsNew.feature.dataTableSources': 'Improved data table export with source list',
-  'whatsNew.feature.reportHtmlExport': 'Support for report export to HTML',
-  'whatsNew.feature.chatHtmlExport': 'Support for chat export to HTML',
+  'whatsNew.feature.sideDeckExport': 'Added slide deck exports',
+  'whatsNew.feature.dataTableSources': 'Improved data table exports with a source list',
+  'whatsNew.feature.reportHtmlExport': 'Added HTML export for reports',
+  'whatsNew.feature.chatHtmlExport': 'Added HTML export for chats',
   'whatsNew.feature.infographicExport': 'Added infographic exports to PNG, HTML, PDF, and Notion',
   'whatsNew.feature.videoOverviewExport': 'Added video overview exports to MP4, WAV audio, and storyboard exports (ZIP, PDF, PowerPoint, HTML)',
+  'whatsNew.feature.exportActionsDiscovery': 'Improved export action discovery with content-type tabs and destination-based recent routes',
   'whatsNew.action.gotIt': 'Got it',
 
   'header.signOutTitle': 'Sign Out',
@@ -73,6 +74,8 @@ export const EN_MESSAGES: Record<string, MessageValue> = {
   'export.section.infographic': 'Infographic Exports',
   'export.section.videoOverview': 'Video Overview Exports',
   'export.option.clipboard': 'Clipboard',
+  'export.recent': 'Recent',
+  'export.contentTypes': 'Content types',
   'export.hint.notion': 'Notion exports use native layouts.',
   'export.comingSoon': 'Coming soon',
   'export.comingSoonDetail': 'Video & Audio Overviews to Transcript',
@@ -261,4 +264,3 @@ export const EN_MESSAGES: Record<string, MessageValue> = {
   'destination.notionRequiresPlus': 'Notion exports require a Notion connection and a Plus subscription.',
   'destination.localInstant': 'Local exports are instant. Advanced formats unlock with Plus.',
 };
-

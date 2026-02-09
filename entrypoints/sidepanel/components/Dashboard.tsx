@@ -251,6 +251,9 @@ const WHATS_NEW_FEATURES_BY_VERSION: Record<string, MessageKey[]> = {
     '1.4.2': [
         'whatsNew.feature.videoOverviewExport',
     ],
+    '1.4.3': [
+        'whatsNew.feature.exportActionsDiscovery',
+    ],
 };
 
 const compareSemver = (a: string, b: string) => {
