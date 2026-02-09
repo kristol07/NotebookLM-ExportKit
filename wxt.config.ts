@@ -22,7 +22,7 @@ export default defineConfig({
   }),
   manifest: {
     key: 'MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA6M+BovxqB3FYHfdK3Icy4aMGog3cJba3luDcJoO9LyRfNDuG4cbBr68meSVTuzK0iLdwUL1krA84Cj+S+9zp5cMQxF6K3CW4VmbD0aq3X7r+7Q0VdRIVhyRAn6o2z942q5fkuQY4ED7hTHw+nMynjqii1wGVNNyBjgEy4qZyCi4tX6+pqPo1swDhFG0nPDG37iO/tVILe1iWybuTP9Tac2+YhKcyDXCC81tUsiaZ0EiC/AFRbkXmYMMzSylfH107bfsLN8kxbaGLsHPnN4A0GVo3RJXrmdSX4UoY9Z11OplmReBfcXUhHDYkyZKljKVTgujni5khyZE7KCWarcvWLQIDAQAB',
-    permissions: ['activeTab', 'scripting', 'identity', 'storage'],
+    permissions: ['activeTab', 'scripting', 'identity', 'storage', 'downloads'],
     oauth2: {
       client_id: process.env.VITE_GOOGLE_DRIVE_CLIENT_ID ?? 'required for Google Drive integration',
       scopes: [

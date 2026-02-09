@@ -53,7 +53,7 @@ export const supportedFormatsByType: Record<ContentType, ExportFormat[]> = {
     source: ['Word', 'Markdown', 'PDF'],
     slidedeck: ['PDF', 'PPTX', 'HTML', 'ZIP'],
     infographic: ['PNG', 'HTML', 'PDF'],
-    videooverview: ['MP4', 'ZIP']
+    videooverview: ['MP4', 'WAV', 'ZIP']
 };
 
 export const exportByType = async (

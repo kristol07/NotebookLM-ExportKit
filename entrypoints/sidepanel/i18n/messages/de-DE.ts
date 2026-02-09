@@ -56,7 +56,7 @@ export const DE_MESSAGES: Record<string, MessageValue> = {
   'whatsNew.feature.reportHtmlExport': 'Unterstützung für den Berichtsexport als HTML',
   'whatsNew.feature.chatHtmlExport': 'Unterstützung für den Chat-Export als HTML',
   'whatsNew.feature.infographicExport': 'Neue Infografik-Exporte als PNG, HTML, PDF und Notion',
-  'whatsNew.feature.videoOverviewExport': 'Neue Video-Overview-Exporte als MP4 und ZIP-Bundle (Video, Frames, Audio, Transkript)',
+  'whatsNew.feature.videoOverviewExport': 'Neue Video-Overview-Exporte als MP4, WAV-Audio und ZIP-Frames',
   'whatsNew.action.gotIt': 'Verstanden',
 
   'header.signOutTitle': 'Abmelden',

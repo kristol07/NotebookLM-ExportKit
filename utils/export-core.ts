@@ -18,6 +18,7 @@ export type ExportFormat =
     | 'PDF'
     | 'PNG'
     | 'MP4'
+    | 'WAV'
     | 'CSV'
     | 'PPTX'
     | 'JSON'

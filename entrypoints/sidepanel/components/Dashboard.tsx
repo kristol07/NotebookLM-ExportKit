@@ -132,7 +132,8 @@ const buildExportSections = (t: (key: any, params?: any) => string): ExportSecti
         contentType: 'videooverview',
         options: [
             { format: 'MP4', label: 'MP4' },
-            { format: 'ZIP', label: 'Bundle ZIP' },
+            { format: 'WAV', label: 'Audio (WAV)' },
+            { format: 'ZIP', label: 'Frames ZIP' },
         ],
     },
     {
@@ -743,10 +744,56 @@ export default function Dashboard({
             const tabTitle = sanitizeFilename(rawTabTitle);
             const timestamp = getTimestamp();
             if (contentType) {
+                const extractStart = performance.now();
                 const response = await extractByType(contentType, tabs[0].id, format);
+                if (contentType === 'videooverview') {
+                    console.info('[VIDEO_OVERVIEW_EXPORT] extract_complete', {
+                        format,
+                        elapsedMs: Math.round(performance.now() - extractStart),
+                        success: Boolean(response?.success)
+                    });
+                }
                 if (response && response.success && response.payload) {
                     const payload = response.payload;
                     const contentLabel = getContentLabel(payload.type);
+                    if (payload.type === 'videooverview' && format === 'MP4' && exportTarget === 'download') {
+                        const videoItem = payload.items[0] as { videoUrl?: string } | undefined;
+                        const videoUrl = videoItem?.videoUrl;
+                        if (!videoUrl) {
+                            showNotice('error', t('notice.exportFailed'));
+                            return;
+                        }
+                        const filename = `notebooklm_video_overview_${tabTitle}_${timestamp}.mp4`;
+                        const downloadStart = performance.now();
+                        const bgDownload = await browser.runtime.sendMessage({
+                            type: 'download-video-file',
+                            url: videoUrl,
+                            filename
+                        });
+                        console.info('[VIDEO_OVERVIEW_EXPORT] bg_download_complete', {
+                            elapsedMs: Math.round(performance.now() - downloadStart),
+                            mode: bgDownload?.mode,
+                            bytes: bgDownload?.bytes,
+                            success: Boolean(bgDownload?.success)
+                        });
+                        if (!bgDownload?.success) {
+                            showNotice('error', t('notice.exportFailed'));
+                            return;
+                        }
+                        if (requiresPlus && !isPlus) {
+                            const trialResult = await consumeTrial(true);
+                            if (typeof trialResult.remaining === 'number') {
+                                setTrialRemaining(trialResult.remaining);
+                            }
+                        }
+                        showNotice('success', t('notice.exportSuccess', {
+                            contentLabel,
+                            destination: t('common.downloads'),
+                            format: formatName(format),
+                            trialMessage: '',
+                        }));
+                        return;
+                    }
                     let result;
                     switch (payload.type) {
                         case 'quiz':

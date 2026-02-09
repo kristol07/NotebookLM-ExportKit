@@ -16,6 +16,7 @@
  */
 export default defineBackground(() => {
   const BG_LOG = '[SLIDE_BG_FETCH]';
+  const now = () => Math.round(performance.now());
   const sidePanel = (browser as any).sidePanel;
 
   if (sidePanel?.setPanelBehavior) {
@@ -35,18 +36,53 @@ export default defineBackground(() => {
   browser.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     const isImageRequest = message?.type === 'fetch-image-data-url' && typeof message?.url === 'string';
     const isBinaryRequest = message?.type === 'fetch-binary-blob' && typeof message?.url === 'string';
-    if (!isImageRequest && !isBinaryRequest) {
+    const isVideoDownloadRequest =
+      message?.type === 'download-video-file'
+      && typeof message?.url === 'string'
+      && typeof message?.filename === 'string';
+    if (!isImageRequest && !isBinaryRequest && !isVideoDownloadRequest) {
       return undefined;
     }
 
     const run = async () => {
       try {
         const url = message.url as string;
+
+        if (isVideoDownloadRequest) {
+          const filename = String(message.filename || 'video.mp4');
+          const directStart = now();
+          try {
+            const downloadId = await browser.downloads.download({
+              url,
+              filename,
+              saveAs: false
+            });
+            console.info(`${BG_LOG} video_download_direct_ok`, {
+              filename,
+              elapsedMs: now() - directStart
+            });
+            sendResponse({ success: true, downloadId, finalUrl: url, mode: 'direct' });
+            return;
+          } catch (directError) {
+            console.warn(`${BG_LOG} video_download_direct_failed`, {
+              filename,
+              elapsedMs: now() - directStart,
+              error: directError
+            });
+          }
+        }
+
+        const fetchStart = now();
         const response = await fetch(url, {
           method: 'GET',
           credentials: 'include',
           redirect: 'follow',
           cache: 'no-store',
+        });
+        console.info(`${BG_LOG} fetch_complete`, {
+          requestType: message?.type,
+          elapsedMs: now() - fetchStart,
+          status: response.status
         });
 
         const finalUrl = response.url || url;
@@ -61,7 +97,34 @@ export default defineBackground(() => {
           return;
         }
 
+        const blobStart = now();
         const blob = await response.blob();
+        console.info(`${BG_LOG} blob_buffered`, {
+          requestType: message?.type,
+          bytes: blob.size,
+          elapsedMs: now() - blobStart
+        });
+        if (isVideoDownloadRequest) {
+          const objectUrl = URL.createObjectURL(blob);
+          try {
+            const downloadStart = now();
+            const downloadId = await browser.downloads.download({
+              url: objectUrl,
+              filename: String(message.filename || 'video.mp4'),
+              saveAs: false
+            });
+            console.info(`${BG_LOG} video_download_blob_ok`, {
+              filename: String(message.filename || 'video.mp4'),
+              bytes: blob.size,
+              elapsedMs: now() - downloadStart
+            });
+            sendResponse({ success: true, downloadId, finalUrl, bytes: blob.size, mode: 'blob' });
+          } finally {
+            setTimeout(() => URL.revokeObjectURL(objectUrl), 60_000);
+          }
+          return;
+        }
+
         if (isBinaryRequest) {
           const arrayBuffer = await blob.arrayBuffer();
           sendResponse({

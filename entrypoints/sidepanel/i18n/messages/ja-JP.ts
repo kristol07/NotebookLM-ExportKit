@@ -55,7 +55,7 @@ export const JA_MESSAGES: Record<string, MessageValue> = {
   'whatsNew.feature.reportHtmlExport': 'レポートの HTML エクスポートに対応',
   'whatsNew.feature.chatHtmlExport': 'チャットの HTML エクスポートに対応',
   'whatsNew.feature.infographicExport': 'インフォグラフィックを PNG/HTML/PDF、Notion へエクスポート可能に',
-  'whatsNew.feature.videoOverviewExport': '動画概要を MP4 と ZIP バンドル（動画・フレーム・音声・文字起こし）でエクスポート可能に',
+  'whatsNew.feature.videoOverviewExport': '動画概要を MP4、WAV 音声、フレーム ZIP でエクスポート可能に',
   'whatsNew.action.gotIt': '確認しました',
 
   'header.signOutTitle': 'サインアウト',

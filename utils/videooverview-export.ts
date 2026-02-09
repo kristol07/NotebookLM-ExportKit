@@ -19,6 +19,7 @@ import { browser } from 'wxt/browser';
 import { ExportFormat, ExportResult, VideoOverviewItem } from './export-core';
 
 const EXPORT_LOG = '[VIDEO_OVERVIEW_EXPORT]';
+const now = () => Math.round(performance.now());
 const PREVIEW_WIDTH = 48;
 const PREVIEW_HEIGHT = 27;
 const MAX_CANDIDATE_SAMPLES = 240;
@@ -26,31 +27,8 @@ const MAX_EXTRACTED_FRAMES = 96;
 
 type ExtractedFrame = {
     index: number;
-    timeSeconds: number;
     blob: Blob;
 };
-
-type TranscriptEntry = {
-    start: number;
-    end?: number;
-    text: string;
-    source: 'caption' | 'speech-segment' | 'fallback';
-};
-
-const pad = (value: number) => String(Math.max(0, Math.floor(value))).padStart(2, '0');
-
-const formatTimestamp = (value: number) => {
-    const totalSeconds = Math.max(0, Math.floor(value));
-    const hours = Math.floor(totalSeconds / 3600);
-    const minutes = Math.floor((totalSeconds % 3600) / 60);
-    const seconds = totalSeconds % 60;
-    if (hours > 0) {
-        return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
-    }
-    return `${pad(minutes)}:${pad(seconds)}`;
-};
-
-const sanitizeLine = (value: string) => value.replace(/\s+/g, ' ').trim();
 
 const toBlob = (canvas: HTMLCanvasElement, quality = 0.86) =>
     new Promise<Blob>((resolve, reject) => {
@@ -177,23 +155,23 @@ const extractFramesSmart = async (video: HTMLVideoElement) => {
             console.warn(`${EXPORT_LOG} frame_seek_failed`, { time, error });
             continue;
         }
+
         previewCtx.drawImage(video, 0, 0, previewCanvas.width, previewCanvas.height);
         const fingerprint = buildFingerprint(previewCtx, previewCanvas);
         const diff = lastKeptFingerprint ? fingerprintDiff(fingerprint, lastKeptFingerprint) : 1;
-        const isFirst = frames.length === 0;
-        const isLastSample = i === sampleTimes.length - 1;
-        const dueToGap = time - lastKeptTime >= forcedGap;
-        const dueToChange = diff >= 0.09;
-        const shouldKeep = isFirst || isLastSample || dueToGap || dueToChange;
+        const shouldKeep =
+            frames.length === 0
+            || i === sampleTimes.length - 1
+            || time - lastKeptTime >= forcedGap
+            || diff >= 0.09;
         if (!shouldKeep) {
             continue;
         }
+
         frameCtx.drawImage(video, 0, 0, frameCanvas.width, frameCanvas.height);
-        const blob = await toBlob(frameCanvas);
         frames.push({
             index: frames.length + 1,
-            timeSeconds: time,
-            blob
+            blob: await toBlob(frameCanvas)
         });
         lastKeptFingerprint = fingerprint;
         lastKeptTime = time;
@@ -205,7 +183,7 @@ const extractFramesSmart = async (video: HTMLVideoElement) => {
     if (frames.length === 0) {
         await seekVideo(video, 0);
         frameCtx.drawImage(video, 0, 0, frameCanvas.width, frameCanvas.height);
-        frames.push({ index: 1, timeSeconds: 0, blob: await toBlob(frameCanvas) });
+        frames.push({ index: 1, blob: await toBlob(frameCanvas) });
     }
     return frames;
 };
@@ -218,8 +196,7 @@ const decodeAudioBuffer = async (videoBlob: Blob) => {
     const context = new AudioCtx();
     try {
         const arrayBuffer = await videoBlob.arrayBuffer();
-        const audioBuffer = await context.decodeAudioData(arrayBuffer.slice(0));
-        return audioBuffer;
+        return await context.decodeAudioData(arrayBuffer.slice(0));
     } catch (error) {
         console.warn(`${EXPORT_LOG} decode_audio_failed`, { error });
         return null;
@@ -268,141 +245,12 @@ const audioBufferToWavBlob = (audioBuffer: AudioBuffer) => {
             offset += 2;
         }
     }
+
     return new Blob([buffer], { type: 'audio/wav' });
 };
 
-const detectSpeechSegments = (audioBuffer: AudioBuffer) => {
-    const sampleRate = audioBuffer.sampleRate;
-    const windowSeconds = 0.5;
-    const windowSize = Math.max(1, Math.floor(sampleRate * windowSeconds));
-    const channelCount = audioBuffer.numberOfChannels;
-    const channels = Array.from({ length: channelCount }, (_, index) => audioBuffer.getChannelData(index));
-    const windows: Array<{ start: number; end: number; rms: number }> = [];
-    for (let start = 0; start < audioBuffer.length; start += windowSize) {
-        const end = Math.min(audioBuffer.length, start + windowSize);
-        let sumSquares = 0;
-        const frameCount = Math.max(1, end - start);
-        for (let i = start; i < end; i += 1) {
-            let mixed = 0;
-            for (let ch = 0; ch < channels.length; ch += 1) {
-                mixed += channels[ch][i] || 0;
-            }
-            mixed /= channelCount;
-            sumSquares += mixed * mixed;
-        }
-        const rms = Math.sqrt(sumSquares / frameCount);
-        windows.push({
-            start: start / sampleRate,
-            end: end / sampleRate,
-            rms
-        });
-    }
-    if (windows.length === 0) {
-        return [] as Array<{ start: number; end: number }>;
-    }
-    const sortedRms = windows.map((item) => item.rms).sort((a, b) => a - b);
-    const floor = sortedRms[Math.floor(sortedRms.length * 0.35)] || 0;
-    const threshold = Math.max(0.008, floor * 2.2);
-
-    const segments: Array<{ start: number; end: number }> = [];
-    let active: { start: number; end: number } | null = null;
-    windows.forEach((window) => {
-        if (window.rms >= threshold) {
-            if (!active) {
-                active = { start: window.start, end: window.end };
-            } else {
-                active.end = window.end;
-            }
-            return;
-        }
-        if (active) {
-            segments.push(active);
-            active = null;
-        }
-    });
-    if (active) {
-        segments.push(active);
-    }
-
-    const merged: Array<{ start: number; end: number }> = [];
-    segments.forEach((segment) => {
-        const previous = merged[merged.length - 1];
-        if (previous && segment.start - previous.end <= 1) {
-            previous.end = segment.end;
-            return;
-        }
-        merged.push({ ...segment });
-    });
-
-    return merged.filter((segment) => segment.end - segment.start >= 1);
-};
-
-const readCaptionTracks = (video: HTMLVideoElement) => {
-    const entries: TranscriptEntry[] = [];
-    const seen = new Set<string>();
-    for (let i = 0; i < video.textTracks.length; i += 1) {
-        const track = video.textTracks[i];
-        track.mode = 'hidden';
-        const cues = track.cues;
-        if (!cues) {
-            continue;
-        }
-        for (let cueIndex = 0; cueIndex < cues.length; cueIndex += 1) {
-            const cue = cues[cueIndex] as TextTrackCue;
-            const text = sanitizeLine((cue as any).text || '');
-            if (!text) {
-                continue;
-            }
-            const key = `${cue.startTime}:${cue.endTime}:${text}`;
-            if (seen.has(key)) {
-                continue;
-            }
-            seen.add(key);
-            entries.push({
-                start: cue.startTime,
-                end: cue.endTime,
-                text,
-                source: 'caption'
-            });
-        }
-    }
-    entries.sort((a, b) => a.start - b.start);
-    return entries;
-};
-
-const buildTranscript = (
-    captionEntries: TranscriptEntry[],
-    speechSegments: Array<{ start: number; end: number }>
-) => {
-    if (captionEntries.length > 0) {
-        const txt = captionEntries
-            .map((entry) => `[${formatTimestamp(entry.start)}] ${entry.text}`)
-            .join('\n');
-        return { entries: captionEntries, txt };
-    }
-
-    if (speechSegments.length > 0) {
-        const entries = speechSegments.map((segment) => ({
-            start: segment.start,
-            end: segment.end,
-            text: '(Speech detected; text transcript unavailable in this browser session.)',
-            source: 'speech-segment' as const
-        }));
-        const txt = entries
-            .map((entry) => `[${formatTimestamp(entry.start)} - ${formatTimestamp(entry.end || entry.start)}] ${entry.text}`)
-            .join('\n');
-        return { entries, txt };
-    }
-
-    const fallbackEntry: TranscriptEntry = {
-        start: 0,
-        text: 'No captions or speech segments could be extracted from this video in-browser.',
-        source: 'fallback'
-    };
-    return { entries: [fallbackEntry], txt: fallbackEntry.text };
-};
-
 const fetchVideoBlobViaBackground = async (videoUrl: string) => {
+    const start = now();
     const response = await browser.runtime.sendMessage({
         type: 'fetch-binary-blob',
         url: videoUrl
@@ -410,10 +258,15 @@ const fetchVideoBlobViaBackground = async (videoUrl: string) => {
     if (!response?.success || !(response.arrayBuffer instanceof ArrayBuffer)) {
         throw new Error(`Background fetch failed: ${response?.error || 'unknown_error'}`);
     }
+    console.info(`${EXPORT_LOG} fetch_background_ok`, {
+        elapsedMs: now() - start,
+        bytes: response.bytes
+    });
     return new Blob([response.arrayBuffer], { type: response.mimeType || 'video/mp4' });
 };
 
 const fetchVideoBlob = async (videoUrl: string) => {
+    const directStart = now();
     try {
         const response = await fetch(videoUrl, {
             method: 'GET',
@@ -422,8 +275,18 @@ const fetchVideoBlob = async (videoUrl: string) => {
             cache: 'no-store'
         });
         if (response.ok) {
-            return await response.blob();
+            const blob = await response.blob();
+            console.info(`${EXPORT_LOG} fetch_direct_ok`, {
+                elapsedMs: now() - directStart,
+                bytes: blob.size,
+                status: response.status
+            });
+            return blob;
         }
+        console.warn(`${EXPORT_LOG} fetch_direct_http_error`, {
+            elapsedMs: now() - directStart,
+            status: response.status
+        });
     } catch (error) {
         console.warn(`${EXPORT_LOG} direct_fetch_failed`, { videoUrl, error });
     }
@@ -455,42 +318,30 @@ const loadVideoElement = (videoBlob: Blob) =>
         video.addEventListener('error', onError, { once: true });
     });
 
-const exportVideoOverviewZip = async (item: VideoOverviewItem, title: string, timestamp: string) => {
-    const videoBlob = await fetchVideoBlob(item.videoUrl);
+const exportFramesZip = async (videoBlob: Blob) => {
     const { video, objectUrl } = await loadVideoElement(videoBlob);
     try {
+        const framesStart = now();
         const frames = await extractFramesSmart(video);
-        const captions = readCaptionTracks(video);
-        const decodedAudio = await decodeAudioBuffer(videoBlob);
-        const speechSegments = decodedAudio ? detectSpeechSegments(decodedAudio) : [];
-        const transcript = buildTranscript(captions, speechSegments);
-
+        console.info(`${EXPORT_LOG} extract_frames_complete`, {
+            elapsedMs: now() - framesStart,
+            count: frames.length
+        });
         const zip = new JSZip();
-        zip.file('video.mp4', videoBlob);
         const framesFolder = zip.folder('frames');
         if (framesFolder) {
             frames.forEach((frame) => {
                 framesFolder.file(`frame_${String(frame.index).padStart(4, '0')}.jpg`, frame.blob);
             });
         }
-        if (decodedAudio) {
-            zip.file('audio.wav', audioBufferToWavBlob(decodedAudio));
-        } else {
-            zip.file('audio.txt', 'Audio extraction failed in this browser session.');
-        }
-        zip.file('transcript.txt', transcript.txt);
-        zip.file('transcript.json', JSON.stringify(transcript.entries, null, 2));
-        zip.file('manifest.json', JSON.stringify({
-            title,
-            sourceVideoUrl: item.videoUrl,
-            durationSeconds: Number.isFinite(video.duration) ? video.duration : null,
-            generatedAt: new Date().toISOString(),
-            frameCount: frames.length,
-            transcriptSource: transcript.entries[0]?.source || 'fallback'
-        }, null, 2));
-        const blob = await zip.generateAsync({ type: 'blob' });
+        const zipStart = now();
+        const zipBlob = await zip.generateAsync({ type: 'blob' });
+        console.info(`${EXPORT_LOG} zip_generate_complete`, {
+            elapsedMs: now() - zipStart,
+            bytes: zipBlob.size
+        });
         return {
-            blob,
+            blob: zipBlob,
             count: frames.length
         };
     } finally {
@@ -499,6 +350,19 @@ const exportVideoOverviewZip = async (item: VideoOverviewItem, title: string, ti
         video.load();
         URL.revokeObjectURL(objectUrl);
     }
+};
+
+const exportAudioWav = async (videoBlob: Blob) => {
+    const decodeStart = now();
+    const audioBuffer = await decodeAudioBuffer(videoBlob);
+    if (!audioBuffer) {
+        throw new Error('Failed to decode audio stream.');
+    }
+    console.info(`${EXPORT_LOG} decode_audio_complete`, { elapsedMs: now() - decodeStart });
+    const wavStart = now();
+    const wavBlob = audioBufferToWavBlob(audioBuffer);
+    console.info(`${EXPORT_LOG} wav_encode_complete`, { elapsedMs: now() - wavStart, bytes: wavBlob.size });
+    return wavBlob;
 };
 
 export const exportVideoOverview = async (
@@ -517,12 +381,13 @@ export const exportVideoOverview = async (
 
     if (format === 'MP4') {
         try {
+            const fetchStart = now();
             const blob = await fetchVideoBlob(item.videoUrl);
-            const filename = `notebooklm_video_overview_${tabTitle}_${timestamp}.mp4`;
+            console.info(`${EXPORT_LOG} mp4_blob_ready`, { elapsedMs: now() - fetchStart, bytes: blob.size });
             return {
                 success: true,
                 count: 1,
-                filename,
+                filename: `notebooklm_video_overview_${tabTitle}_${timestamp}.mp4`,
                 mimeType: 'video/mp4',
                 blob
             };
@@ -532,21 +397,37 @@ export const exportVideoOverview = async (
         }
     }
 
-    if (format === 'ZIP') {
+    const videoBlob = await fetchVideoBlob(item.videoUrl);
+
+    if (format === 'WAV') {
         try {
-            const title = item.title?.trim() || tabTitle || 'video_overview';
-            const bundle = await exportVideoOverviewZip(item, title, timestamp);
-            const filename = `notebooklm_video_overview_bundle_${tabTitle}_${timestamp}.zip`;
+            const audioBlob = await exportAudioWav(videoBlob);
             return {
                 success: true,
-                count: bundle.count,
-                filename,
+                count: 1,
+                filename: `notebooklm_video_overview_audio_${tabTitle}_${timestamp}.wav`,
+                mimeType: 'audio/wav',
+                blob: audioBlob
+            };
+        } catch (error) {
+            console.error(`${EXPORT_LOG} wav_export_failed`, error);
+            return { success: false, error: 'Failed to export audio WAV.' };
+        }
+    }
+
+    if (format === 'ZIP') {
+        try {
+            const frames = await exportFramesZip(videoBlob);
+            return {
+                success: true,
+                count: frames.count,
+                filename: `notebooklm_video_overview_frames_${tabTitle}_${timestamp}.zip`,
                 mimeType: 'application/zip',
-                blob: bundle.blob
+                blob: frames.blob
             };
         } catch (error) {
             console.error(`${EXPORT_LOG} zip_export_failed`, error);
-            return { success: false, error: 'Failed to build video overview bundle.' };
+            return { success: false, error: 'Failed to export frame ZIP.' };
         }
     }
 
