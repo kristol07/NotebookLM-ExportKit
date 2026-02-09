@@ -79,6 +79,10 @@ export const FR_MESSAGES: Record<string, MessageValue> = {
   'export.pdfQualityTitle': 'Qualité PDF',
   'export.pdfQualitySize': 'Taille d’abord',
   'export.pdfQualityClarity': 'Clarté d’abord',
+  'export.notionVideoTitle': 'Mode vidéo Notion',
+  'export.notionVideoExternal': 'URL externe seule (Plus rapide)',
+  'export.notionVideoUpload': 'Vidéo + images (Plus lent)',
+  'export.notionVideoHint': 'Le mode URL externe ignore l\'extraction des images pour accélérer l\'export.',
   'export.supportedBy': ({ locale, apps }) => {
     if (!apps || typeof apps !== 'string') {
       return 'Pris en charge par';
@@ -100,7 +104,7 @@ export const FR_MESSAGES: Record<string, MessageValue> = {
   'export.notionLayout.source': 'Détail de la source avec résumé, sujets clés et contenu structuré',
   'export.notionLayout.slidedeck': 'Document unique avec images de diapositives et bascules de texte alternatif par diapositive',
   'export.notionLayout.infographic': 'Document unique avec image infographique et bascule des détails',
-  'export.notionLayout.videoOverview': 'La livraison Notion n’est pas prise en charge pour les bundles d’aperçu vidéo',
+  'export.notionLayout.videoOverview': 'Vidéo dans une page Notion native, avec images storyboard en option',
 
   'content.quiz': 'Quiz',
   'content.flashcards': 'Fiches',

@@ -42,12 +42,15 @@ import {
   setNotionDatabaseId,
   setNotionWorkspaceName,
 } from './notion-auth';
+import { extractVideoOverviewFrames } from './videooverview-export';
 
 const NOTION_API_BASE = 'https://api.notion.com/v1';
 const NOTION_VERSION = '2025-09-03';
 const DEFAULT_DATABASE_TITLE = 'NotebookLM ExportKit';
 const MAX_RICH_TEXT_CHARS = 1800;
 const MAX_BLOCKS_PER_PAGE = 100;
+const MAX_NOTION_VIDEO_FRAMES = 24;
+const NOTION_SINGLE_PART_FILE_LIMIT_BYTES = 20 * 1024 * 1024;
 
 const CONTENT_TYPE_LABELS: Record<ContentType, string> = {
   quiz: 'Quiz',
@@ -74,12 +77,13 @@ export const NOTION_SUPPORTED_FORMATS_BY_TYPE: Record<ContentType, ExportFormat[
   source: ['Markdown'],
   slidedeck: ['HTML'],
   infographic: ['HTML'],
-  videooverview: [],
+  videooverview: ['MP4'],
 };
 
 export type NotionExportContext = {
   contentType?: ContentType;
   format?: ExportFormat;
+  notionVideoMode?: 'external' | 'upload';
   sourceTitle?: string;
   sourceUrl?: string;
   notebookId?: string;
@@ -108,12 +112,15 @@ type NotionDatabaseInfo = {
 };
 
 const notionFetch = async (accessToken: string, path: string, init?: RequestInit) => {
+  const hasContentType = init?.headers
+    ? new Headers(init.headers as HeadersInit).has('Content-Type')
+    : false;
   return fetch(`${NOTION_API_BASE}${path}`, {
     ...init,
     headers: {
       Authorization: `Bearer ${accessToken}`,
       'Notion-Version': NOTION_VERSION,
-      'Content-Type': 'application/json',
+      ...(!hasContentType && !(init?.body instanceof FormData) ? { 'Content-Type': 'application/json' } : {}),
       ...(init?.headers || {}),
     },
   });
@@ -317,6 +324,36 @@ const buildImageBlock = (url: string, caption?: string) => ({
   image: {
     type: 'external',
     external: { url },
+    ...(caption?.trim() ? { caption: buildTextRichText(caption.trim()) } : {}),
+  },
+});
+
+const buildImageUploadBlock = (fileUploadId: string, caption?: string) => ({
+  object: 'block',
+  type: 'image',
+  image: {
+    type: 'file_upload',
+    file_upload: { id: fileUploadId },
+    ...(caption?.trim() ? { caption: buildTextRichText(caption.trim()) } : {}),
+  },
+});
+
+const buildVideoExternalBlock = (url: string, caption?: string) => ({
+  object: 'block',
+  type: 'video',
+  video: {
+    type: 'external',
+    external: { url },
+    ...(caption?.trim() ? { caption: buildTextRichText(caption.trim()) } : {}),
+  },
+});
+
+const buildVideoUploadBlock = (fileUploadId: string, caption?: string) => ({
+  object: 'block',
+  type: 'video',
+  video: {
+    type: 'file_upload',
+    file_upload: { id: fileUploadId },
     ...(caption?.trim() ? { caption: buildTextRichText(caption.trim()) } : {}),
   },
 });
@@ -679,6 +716,137 @@ const buildInfographicBlocks = (items: InfographicItem[]) => {
       blocks.push(buildDividerBlock());
     }
   });
+
+  return blocks;
+};
+
+const uploadBlobToNotionFile = async (
+  accessToken: string,
+  blob: Blob,
+  filename: string
+) => {
+  const createResponse = await notionFetch(accessToken, '/file_uploads', {
+    method: 'POST',
+    body: JSON.stringify({
+      mode: 'single_part',
+      filename,
+    }),
+  });
+  if (!createResponse.ok) {
+    throw new Error(await createResponse.text());
+  }
+  const createData = await createResponse.json();
+  const uploadId = typeof createData?.id === 'string' ? createData.id : '';
+  if (!uploadId) {
+    throw new Error('File upload initialization failed.');
+  }
+
+  const formData = new FormData();
+  formData.append('file', blob, filename);
+  const sendResponse = await notionFetch(accessToken, `/file_uploads/${uploadId}/send`, {
+    method: 'POST',
+    body: formData,
+  });
+  if (!sendResponse.ok) {
+    throw new Error(await sendResponse.text());
+  }
+
+  return uploadId;
+};
+
+const sanitizeMediaLabel = (value: string) =>
+  value.replace(/[^\w.-]+/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '');
+
+const buildVideoOverviewBlocks = async (
+  accessToken: string,
+  item: VideoOverviewItem | undefined,
+  videoBlob: Blob | null,
+  notionVideoMode?: 'external' | 'upload'
+) => {
+  const blocks: any[] = [buildHeadingBlock(2, 'Video overview')];
+  if (!item?.videoUrl?.trim()) {
+    blocks.push(buildParagraphBlock(buildTextRichText('Video URL is not available.')));
+    return blocks;
+  }
+
+  const title = item.title?.trim() || 'Video overview';
+  const details: string[] = [];
+  if (item.durationLabel?.trim()) {
+    details.push(`Duration: ${item.durationLabel.trim()}`);
+  } else if (typeof item.durationSeconds === 'number' && Number.isFinite(item.durationSeconds)) {
+    details.push(`Duration: ${Math.round(item.durationSeconds)}s`);
+  }
+  if (details.length > 0) {
+    blocks.push(buildParagraphBlock(buildTextRichText(details.join(' • '))));
+  }
+
+  const sanitizedBase = sanitizeMediaLabel(title.toLowerCase()) || 'video_overview';
+  const shouldTryUpload = notionVideoMode === 'upload';
+  if (shouldTryUpload && videoBlob && videoBlob.size > 0 && videoBlob.size <= NOTION_SINGLE_PART_FILE_LIMIT_BYTES) {
+    try {
+      const videoUploadId = await uploadBlobToNotionFile(accessToken, videoBlob, `${sanitizedBase}.mp4`);
+      blocks.push(buildVideoUploadBlock(videoUploadId, title));
+    } catch (error) {
+      console.warn('Notion video upload failed, falling back to external URL.', error);
+      blocks.push(buildVideoExternalBlock(item.videoUrl, title));
+      blocks.push(
+        buildParagraphBlock(
+          buildTextRichText('Video upload failed. Added external URL fallback instead.')
+        )
+      );
+    }
+  } else {
+    blocks.push(buildVideoExternalBlock(item.videoUrl, title));
+    if (shouldTryUpload && videoBlob && videoBlob.size > NOTION_SINGLE_PART_FILE_LIMIT_BYTES) {
+      blocks.push(
+        buildParagraphBlock(
+          buildTextRichText('Video exceeds single-part upload size limit. Added external URL fallback.')
+        )
+      );
+    }
+  }
+
+  if (!videoBlob || videoBlob.size === 0) {
+    if (notionVideoMode === 'external') {
+      blocks.push(
+        buildParagraphBlock(
+          buildTextRichText('Frames skipped in external URL mode for faster export.')
+        )
+      );
+    }
+    return blocks;
+  }
+
+  try {
+    const frames = await extractVideoOverviewFrames(videoBlob, {
+      cacheKey: `videooverview:notion:${item.videoUrl.trim()}`,
+      maxFrames: MAX_NOTION_VIDEO_FRAMES,
+    });
+    if (frames.length === 0) {
+      return blocks;
+    }
+    blocks.push(buildDividerBlock());
+    blocks.push(buildHeadingBlock(3, `Frames (${frames.length})`));
+    for (const frame of frames) {
+      const frameUploadId = await uploadBlobToNotionFile(
+        accessToken,
+        frame.blob,
+        `${sanitizedBase}_frame_${String(frame.index).padStart(3, '0')}.jpg`
+      );
+      blocks.push(buildImageUploadBlock(frameUploadId, `Frame ${frame.index}`));
+      if (blocks.length >= MAX_BLOCKS_PER_PAGE - 1) {
+        blocks.push(buildParagraphBlock(buildTextRichText('Frames truncated due to Notion block limits.')));
+        break;
+      }
+    }
+  } catch (error) {
+    console.warn('Notion frame extraction/upload failed.', error);
+    blocks.push(
+      buildParagraphBlock(
+        buildTextRichText('Frame extraction or upload failed for this video overview.')
+      )
+    );
+  }
 
   return blocks;
 };
@@ -1291,7 +1459,12 @@ export const uploadToNotion = async (
         blocks = buildInfographicBlocks(items as InfographicItem[]);
         break;
       case 'videooverview':
-        blocks = [];
+        blocks = await buildVideoOverviewBlocks(
+          accessToken,
+          (items as VideoOverviewItem[])[0],
+          exportResult.blob,
+          context?.notionVideoMode
+        );
         break;
       default:
         blocks = [];

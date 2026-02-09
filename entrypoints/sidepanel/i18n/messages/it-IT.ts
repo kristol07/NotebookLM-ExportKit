@@ -79,6 +79,10 @@ export const IT_MESSAGES: Record<string, MessageValue> = {
   'export.pdfQualityTitle': 'Qualità PDF',
   'export.pdfQualitySize': 'Dimensione prima',
   'export.pdfQualityClarity': 'Chiarezza prima',
+  'export.notionVideoTitle': 'Modalità video Notion',
+  'export.notionVideoExternal': 'Solo URL esterno (Più veloce)',
+  'export.notionVideoUpload': 'Video + frame (Più lento)',
+  'export.notionVideoHint': 'La modalità URL esterno salta l\'estrazione dei frame per velocizzare l\'export.',
   'export.supportedBy': ({ locale, apps }) => {
     if (!apps || typeof apps !== 'string') {
       return 'Supportato da';
@@ -100,7 +104,7 @@ export const IT_MESSAGES: Record<string, MessageValue> = {
   'export.notionLayout.source': 'Dettaglio fonte con riepilogo, temi chiave e contenuti strutturati',
   'export.notionLayout.slidedeck': 'Documento singolo con immagini delle slide e toggle testo alternativo per ogni slide',
   'export.notionLayout.infographic': 'Documento singolo con immagine infografica e toggle dettagli',
-  'export.notionLayout.videoOverview': 'La consegna su Notion non è supportata per i bundle video overview',
+  'export.notionLayout.videoOverview': 'Video in una pagina nativa di Notion, con frame storyboard opzionali',
 
   'content.quiz': 'Quiz',
   'content.flashcards': 'Flashcard',

@@ -33,6 +33,8 @@ type ExtractedFrame = {
     blob: Blob;
 };
 
+export type VideoOverviewExtractedFrame = ExtractedFrame;
+
 type FrameExportResult = {
     blob: Blob;
     count: number;
@@ -432,8 +434,37 @@ const getOrExtractFrames = (videoBlob: Blob, cacheKey: string) => {
     return promise;
 };
 
-const exportFramesZip = async (videoBlob: Blob, cacheKey: string): Promise<FrameExportResult> => {
+const pickFramesEvenly = <T>(items: T[], maxItems: number) => {
+    if (maxItems <= 0 || items.length <= maxItems) {
+        return items;
+    }
+    const picked: T[] = [];
+    const lastIndex = items.length - 1;
+    for (let i = 0; i < maxItems; i += 1) {
+        const index = Math.round((i / (maxItems - 1 || 1)) * lastIndex);
+        const item = items[index];
+        if (item) {
+            picked.push(item);
+        }
+    }
+    return picked;
+};
+
+export const extractVideoOverviewFrames = async (
+    videoBlob: Blob,
+    options?: { cacheKey?: string; maxFrames?: number }
+): Promise<VideoOverviewExtractedFrame[]> => {
+    const cacheKey = options?.cacheKey
+        || `videooverview:${videoBlob.size}:${videoBlob.type || 'video/mp4'}`;
+    const maxFrames = Number.isFinite(options?.maxFrames)
+        ? Math.max(1, Math.floor(options?.maxFrames as number))
+        : MAX_EXTRACTED_FRAMES;
     const frames = await getOrExtractFrames(videoBlob, cacheKey);
+    return pickFramesEvenly(frames, maxFrames);
+};
+
+const exportFramesZip = async (videoBlob: Blob, cacheKey: string): Promise<FrameExportResult> => {
+    const frames = await extractVideoOverviewFrames(videoBlob, { cacheKey });
     const zip = new JSZip();
     const framesFolder = zip.folder('frames');
     if (framesFolder) {
@@ -454,7 +485,7 @@ const exportFramesZip = async (videoBlob: Blob, cacheKey: string): Promise<Frame
 };
 
 const exportFramesPdf = async (videoBlob: Blob, cacheKey: string): Promise<FrameExportResult> => {
-    const frames = await getOrExtractFrames(videoBlob, cacheKey);
+    const frames = await extractVideoOverviewFrames(videoBlob, { cacheKey });
     const firstFrameDataUrl = await blobToDataUrl(frames[0].blob);
     const firstSize = await getImageDimensions(firstFrameDataUrl);
     const orientation = firstSize.width >= firstSize.height ? 'landscape' : 'portrait';
@@ -489,7 +520,7 @@ const exportFramesPdf = async (videoBlob: Blob, cacheKey: string): Promise<Frame
 };
 
 const exportFramesPptx = async (videoBlob: Blob, cacheKey: string): Promise<FrameExportResult> => {
-    const frames = await getOrExtractFrames(videoBlob, cacheKey);
+    const frames = await extractVideoOverviewFrames(videoBlob, { cacheKey });
     const firstFrameDataUrl = await blobToDataUrl(frames[0].blob);
     const firstSize = await getImageDimensions(firstFrameDataUrl);
     const ratio = firstSize.width / firstSize.height;
@@ -592,7 +623,7 @@ const buildFramesHtml = async (frames: ExtractedFrame[], title: string) => {
 };
 
 const exportFramesHtml = async (videoBlob: Blob, cacheKey: string, title: string): Promise<FrameExportResult> => {
-    const frames = await getOrExtractFrames(videoBlob, cacheKey);
+    const frames = await extractVideoOverviewFrames(videoBlob, { cacheKey });
     const html = await buildFramesHtml(frames, title);
     return {
         blob: new Blob([html], { type: 'text/html' }),

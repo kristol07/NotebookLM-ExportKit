@@ -78,6 +78,10 @@ export const JA_MESSAGES: Record<string, MessageValue> = {
   'export.pdfQualityTitle': 'PDF 品質',
   'export.pdfQualitySize': 'サイズ優先',
   'export.pdfQualityClarity': '画質優先',
+  'export.notionVideoTitle': 'Notion 動画モード',
+  'export.notionVideoExternal': '外部 URL のみ（高速）',
+  'export.notionVideoUpload': '動画 + フレーム（低速）',
+  'export.notionVideoHint': '外部 URL モードではフレーム抽出を省略し、エクスポートを高速化します。',
   'export.supportedBy': ({ apps }) => {
     if (!apps || typeof apps !== 'string') {
       return '対応';
@@ -98,7 +102,7 @@ export const JA_MESSAGES: Record<string, MessageValue> = {
   'export.notionLayout.source': '概要、主要トピック、構造化コンテンツを含むソース詳細',
   'export.notionLayout.slidedeck': '各スライドの代替テキストトグル付き、画像を1つのドキュメントに配置',
   'export.notionLayout.infographic': 'インフォグラフィック画像と詳細トグルを1つのドキュメントに配置',
-  'export.notionLayout.videoOverview': '動画概要バンドルは Notion 配信に対応していません',
+  'export.notionLayout.videoOverview': 'Notion ネイティブページに動画を出力（ストーリーボード画像は任意）',
 
   'content.quiz': 'クイズ',
   'content.flashcards': 'フラッシュカード',

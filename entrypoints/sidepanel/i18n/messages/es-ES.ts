@@ -79,6 +79,10 @@ export const ES_MESSAGES: Record<string, MessageValue> = {
   'export.pdfQualityTitle': 'Calidad de PDF',
   'export.pdfQualitySize': 'Priorizar tamaño',
   'export.pdfQualityClarity': 'Priorizar claridad',
+  'export.notionVideoTitle': 'Modo de video en Notion',
+  'export.notionVideoExternal': 'Solo URL externa (Más rápido)',
+  'export.notionVideoUpload': 'Video + fotogramas (Más lento)',
+  'export.notionVideoHint': 'El modo URL externa omite la extracción de fotogramas para acelerar la exportación.',
   'export.supportedBy': ({ locale, apps }) => {
     if (!apps || typeof apps !== 'string') {
       return 'Compatible con';
@@ -99,7 +103,7 @@ export const ES_MESSAGES: Record<string, MessageValue> = {
   'export.notionLayout.source': 'Detalle de fuente con resumen, temas clave y contenido estructurado',
   'export.notionLayout.slidedeck': 'Documento único con imágenes de diapositivas y alternar texto alternativo por diapositiva',
   'export.notionLayout.infographic': 'Documento único con imagen de infografía y alternar detalles',
-  'export.notionLayout.videoOverview': 'La entrega en Notion no está disponible para paquetes de resumen de video',
+  'export.notionLayout.videoOverview': 'Video en una página nativa de Notion, con fotogramas opcionales del storyboard',
 
   'content.quiz': 'Cuestionario',
   'content.flashcards': 'Tarjetas',

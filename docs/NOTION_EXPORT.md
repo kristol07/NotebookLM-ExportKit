@@ -41,7 +41,7 @@ We use the Notion 2025-09-03 API model where **databases** are containers and **
 - Name: Notebook title
 - Properties:
   - `Name` (title)
-  - `Type` (select: Quiz, Flashcards, Mindmap, Note, Report, Chat, Data table, Sources, Slide deck)
+  - `Type` (select: Quiz, Flashcards, Mindmap, Note, Report, Chat, Data table, Sources, Slide deck, Infographic, Video overview)
   - `Format` (select: CSV, JSON, HTML, Markdown)
   - `Source` (rich_text)
   - `Exported` (date)
@@ -83,7 +83,7 @@ Store these in extension storage to avoid re-creating destinations:
 - `POST /v1/pages` uses `parent: { data_source_id }` for inserts.
 
 ## Supported Formats
-Notion exports are stored as native blocks. Only text-based formats are supported.
+Notion exports are stored as native blocks. Most are text-based, and video overview uses uploaded media blocks.
 
 | Content type | Supported formats |
 | --- | --- |
@@ -96,8 +96,9 @@ Notion exports are stored as native blocks. Only text-based formats are supporte
 | Data table | CSV, Markdown |
 | Sources | Markdown |
 | Slide deck | HTML |
+| Video overview | MP4 (native video; optional extracted frames) |
 
-If you need a non-text export (PDF, Word, SVG, etc.), use the Download or Google Drive destinations.
+If you need a non-Notion-native export (PDF, Word, SVG, etc.), use the Download or Google Drive destinations.
 
 ## Archived Destination Gotcha
 If the `NotebookLM ExportKit` database is deleted in Notion, it is **archived** (moved to trash), not permanently removed.
