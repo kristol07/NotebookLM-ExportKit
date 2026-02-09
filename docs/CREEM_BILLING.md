@@ -2,6 +2,7 @@
 
 This project uses Creem for checkout and Supabase Edge Functions for secure entitlement updates.
 Client code never writes plan fields directly.
+For future reliability hardening tasks, see `docs/todo/SUBSCRIPTION_ENTITLEMENT_HARDENING.md`.
 
 ## Supabase SQL
 
