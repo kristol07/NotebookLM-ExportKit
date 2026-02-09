@@ -56,6 +56,7 @@ export const DE_MESSAGES: Record<string, MessageValue> = {
   'whatsNew.feature.reportHtmlExport': 'Unterstützung für den Berichtsexport als HTML',
   'whatsNew.feature.chatHtmlExport': 'Unterstützung für den Chat-Export als HTML',
   'whatsNew.feature.infographicExport': 'Neue Infografik-Exporte als PNG, HTML, PDF und Notion',
+  'whatsNew.feature.videoOverviewExport': 'Neue Video-Overview-Exporte als MP4 und ZIP-Bundle (Video, Frames, Audio, Transkript)',
   'whatsNew.action.gotIt': 'Verstanden',
 
   'header.signOutTitle': 'Abmelden',
@@ -70,6 +71,7 @@ export const DE_MESSAGES: Record<string, MessageValue> = {
   'export.section.source': 'Quellen-Exporte',
   'export.section.slidedeck': 'Folienexporte',
   'export.section.infographic': 'Infografik-Exporte',
+  'export.section.videoOverview': 'Video-Overview-Exporte',
   'export.option.clipboard': 'Zwischenablage',
   'export.hint.notion': 'Notion-Exporte verwenden native Layouts.',
   'export.comingSoon': 'Kommt bald',
@@ -98,6 +100,7 @@ export const DE_MESSAGES: Record<string, MessageValue> = {
   'export.notionLayout.source': 'Quellendetail mit Zusammenfassung, Kernthemen und strukturiertem Inhalt',
   'export.notionLayout.slidedeck': 'Einzelnes Dokument mit Folienbildern und Alt-Text-Umschaltern pro Folie',
   'export.notionLayout.infographic': 'Einzelnes Dokument mit Infografikbild und Detail-Umschalter',
+  'export.notionLayout.videoOverview': 'Notion-Zustellung wird für Video-Overview-Bundles nicht unterstützt',
 
   'content.quiz': 'Quiz',
   'content.flashcards': 'Karteikarten',
@@ -109,6 +112,7 @@ export const DE_MESSAGES: Record<string, MessageValue> = {
   'content.datatable': 'Datentabelle',
   'content.slidedeck': 'Foliensatz',
   'content.infographic': 'Infografik',
+  'content.videoOverview': 'Video-Overview',
 
   'drive.setup': 'Drive-Einrichtung',
   'drive.step.signIn': '1. Melde dich bei deinem Konto an',

@@ -56,6 +56,7 @@ export const PT_MESSAGES: Record<string, MessageValue> = {
   'whatsNew.feature.reportHtmlExport': 'Suporte para exportacao de relatorios em HTML',
   'whatsNew.feature.chatHtmlExport': 'Suporte para exportacao de chat em HTML',
   'whatsNew.feature.infographicExport': 'Novas exportacoes de infograficos para PNG, HTML, PDF e Notion',
+  'whatsNew.feature.videoOverviewExport': 'Novas exportacoes de visao geral de video para MP4 e pacote ZIP (video, quadros, audio e transcricao)',
   'whatsNew.action.gotIt': 'Entendi',
 
   'header.signOutTitle': 'Sair',
@@ -70,6 +71,7 @@ export const PT_MESSAGES: Record<string, MessageValue> = {
   'export.section.source': 'Exportações de fontes',
   'export.section.slidedeck': 'Exportações de slide deck',
   'export.section.infographic': 'Exportações de infográficos',
+  'export.section.videoOverview': 'Exportações de visão geral de vídeo',
   'export.option.clipboard': 'Área de transferência',
   'export.hint.notion': 'Exportações para o Notion usam layouts nativos.',
   'export.comingSoon': 'Em breve',
@@ -98,6 +100,7 @@ export const PT_MESSAGES: Record<string, MessageValue> = {
   'export.notionLayout.source': 'Detalhe da fonte com resumo, tópicos principais e conteúdo estruturado',
   'export.notionLayout.slidedeck': 'Documento único com imagens de slides e alternância de texto alternativo por slide',
   'export.notionLayout.infographic': 'Documento único com imagem do infográfico e alternância de detalhes',
+  'export.notionLayout.videoOverview': 'A entrega no Notion não é compatível com pacotes de visão geral de vídeo',
 
   'content.quiz': 'Quiz',
   'content.flashcards': 'Flashcards',
@@ -109,6 +112,7 @@ export const PT_MESSAGES: Record<string, MessageValue> = {
   'content.datatable': 'Tabela de dados',
   'content.slidedeck': 'Slide deck',
   'content.infographic': 'Infográfico',
+  'content.videoOverview': 'Visão geral de vídeo',
 
   'drive.setup': 'Configuração do Drive',
   'drive.step.signIn': '1. Entre na sua conta',

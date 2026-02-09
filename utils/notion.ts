@@ -28,6 +28,7 @@ import type {
   QuizItem,
   SlideDeckItem,
   InfographicItem,
+  VideoOverviewItem,
   SourceItem,
 } from './export-core';
 import {
@@ -59,6 +60,7 @@ const CONTENT_TYPE_LABELS: Record<ContentType, string> = {
   source: 'Sources',
   slidedeck: 'Slide deck',
   infographic: 'Infographic',
+  videooverview: 'Video overview',
 };
 
 export const NOTION_SUPPORTED_FORMATS_BY_TYPE: Record<ContentType, ExportFormat[]> = {
@@ -72,6 +74,7 @@ export const NOTION_SUPPORTED_FORMATS_BY_TYPE: Record<ContentType, ExportFormat[
   source: ['Markdown'],
   slidedeck: ['HTML'],
   infographic: ['HTML'],
+  videooverview: [],
 };
 
 export type NotionExportContext = {
@@ -81,7 +84,7 @@ export type NotionExportContext = {
   sourceUrl?: string;
   notebookId?: string;
   notebookTitle?: string;
-  items?: QuizItem[] | FlashcardItem[] | MindmapNode[] | DataTableRow[] | NoteBlock[] | ChatMessage[] | SourceItem[] | SlideDeckItem[] | InfographicItem[];
+  items?: QuizItem[] | FlashcardItem[] | MindmapNode[] | DataTableRow[] | NoteBlock[] | ChatMessage[] | SourceItem[] | SlideDeckItem[] | InfographicItem[] | VideoOverviewItem[];
   meta?: {
     title?: string;
     svg?: string;
@@ -887,6 +890,7 @@ const createDatabase = async (accessToken: string, parentPageId: string) => {
                 { name: 'Sources' },
                 { name: 'Slide deck' },
                 { name: 'Infographic' },
+                { name: 'Video overview' },
               ],
             },
           },
@@ -1285,6 +1289,9 @@ export const uploadToNotion = async (
         break;
       case 'infographic':
         blocks = buildInfographicBlocks(items as InfographicItem[]);
+        break;
+      case 'videooverview':
+        blocks = [];
         break;
       default:
         blocks = [];

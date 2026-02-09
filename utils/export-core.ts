@@ -17,6 +17,7 @@
 export type ExportFormat =
     | 'PDF'
     | 'PNG'
+    | 'MP4'
     | 'CSV'
     | 'PPTX'
     | 'JSON'
@@ -40,7 +41,8 @@ export type ContentType =
     | 'chat'
     | 'source'
     | 'slidedeck'
-    | 'infographic';
+    | 'infographic'
+    | 'videooverview';
 export type ContentSource = 'notebooklm' | 'user';
 export type PdfQualityPreference = 'size' | 'clarity';
 
@@ -97,6 +99,13 @@ export interface InfographicItem {
     altText?: string;
     description?: string;
     index: number;
+}
+
+export interface VideoOverviewItem {
+    videoUrl: string;
+    title?: string;
+    durationSeconds?: number;
+    durationLabel?: string;
 }
 
 export interface NoteInline {
@@ -432,6 +441,37 @@ export const validateInfographicItems = (items: unknown): ValidationResult => {
         }
         if (typeof item.index !== 'number' || !Number.isFinite(item.index)) {
             errors.push(`infographic.items[${index}].index must be a number`);
+        }
+    });
+
+    return { valid: errors.length === 0, errors };
+};
+
+export const validateVideoOverviewItems = (items: unknown): ValidationResult => {
+    const errors: string[] = [];
+    if (!Array.isArray(items)) {
+        return { valid: false, errors: ['videooverview.items must be an array'] };
+    }
+
+    items.forEach((item, index) => {
+        if (!isRecord(item)) {
+            errors.push(`videooverview.items[${index}] must be an object`);
+            return;
+        }
+        if (!isNonEmptyString(item.videoUrl)) {
+            errors.push(`videooverview.items[${index}].videoUrl must be a non-empty string`);
+        }
+        if (item.title !== undefined && typeof item.title !== 'string') {
+            errors.push(`videooverview.items[${index}].title must be a string`);
+        }
+        if (
+            item.durationSeconds !== undefined
+            && (typeof item.durationSeconds !== 'number' || !Number.isFinite(item.durationSeconds) || item.durationSeconds < 0)
+        ) {
+            errors.push(`videooverview.items[${index}].durationSeconds must be a non-negative number`);
+        }
+        if (item.durationLabel !== undefined && typeof item.durationLabel !== 'string') {
+            errors.push(`videooverview.items[${index}].durationLabel must be a string`);
         }
     });
 

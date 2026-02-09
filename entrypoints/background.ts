@@ -33,7 +33,9 @@ export default defineBackground(() => {
   }
 
   browser.runtime.onMessage.addListener((message, _sender, sendResponse) => {
-    if (message?.type !== 'fetch-image-data-url' || typeof message?.url !== 'string') {
+    const isImageRequest = message?.type === 'fetch-image-data-url' && typeof message?.url === 'string';
+    const isBinaryRequest = message?.type === 'fetch-binary-blob' && typeof message?.url === 'string';
+    if (!isImageRequest && !isBinaryRequest) {
       return undefined;
     }
 
@@ -60,6 +62,18 @@ export default defineBackground(() => {
         }
 
         const blob = await response.blob();
+        if (isBinaryRequest) {
+          const arrayBuffer = await blob.arrayBuffer();
+          sendResponse({
+            success: true,
+            arrayBuffer,
+            mimeType: blob.type,
+            finalUrl,
+            bytes: blob.size
+          });
+          return;
+        }
+
         const reader = new FileReader();
         reader.onload = () => {
           const dataUrl = String(reader.result || '');

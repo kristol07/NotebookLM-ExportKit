@@ -55,6 +55,7 @@ export const JA_MESSAGES: Record<string, MessageValue> = {
   'whatsNew.feature.reportHtmlExport': 'レポートの HTML エクスポートに対応',
   'whatsNew.feature.chatHtmlExport': 'チャットの HTML エクスポートに対応',
   'whatsNew.feature.infographicExport': 'インフォグラフィックを PNG/HTML/PDF、Notion へエクスポート可能に',
+  'whatsNew.feature.videoOverviewExport': '動画概要を MP4 と ZIP バンドル（動画・フレーム・音声・文字起こし）でエクスポート可能に',
   'whatsNew.action.gotIt': '確認しました',
 
   'header.signOutTitle': 'サインアウト',
@@ -69,6 +70,7 @@ export const JA_MESSAGES: Record<string, MessageValue> = {
   'export.section.source': 'ソースのエクスポート',
   'export.section.slidedeck': 'スライドデッキのエクスポート',
   'export.section.infographic': 'インフォグラフィックのエクスポート',
+  'export.section.videoOverview': '動画概要のエクスポート',
   'export.option.clipboard': 'クリップボード',
   'export.hint.notion': 'Notion のエクスポートはネイティブレイアウトを使用します。',
   'export.comingSoon': '近日公開',
@@ -96,6 +98,7 @@ export const JA_MESSAGES: Record<string, MessageValue> = {
   'export.notionLayout.source': '概要、主要トピック、構造化コンテンツを含むソース詳細',
   'export.notionLayout.slidedeck': '各スライドの代替テキストトグル付き、画像を1つのドキュメントに配置',
   'export.notionLayout.infographic': 'インフォグラフィック画像と詳細トグルを1つのドキュメントに配置',
+  'export.notionLayout.videoOverview': '動画概要バンドルは Notion 配信に対応していません',
 
   'content.quiz': 'クイズ',
   'content.flashcards': 'フラッシュカード',
@@ -107,6 +110,7 @@ export const JA_MESSAGES: Record<string, MessageValue> = {
   'content.datatable': 'データテーブル',
   'content.slidedeck': 'スライドデッキ',
   'content.infographic': 'インフォグラフィック',
+  'content.videoOverview': '動画概要',
 
   'drive.setup': 'Drive のセットアップ',
   'drive.step.signIn': '1. アカウントにサインイン',

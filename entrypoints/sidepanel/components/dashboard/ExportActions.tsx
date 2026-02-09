@@ -74,6 +74,7 @@ export const ExportActions = ({
     source: t('export.notionLayout.source'),
     slidedeck: t('export.notionLayout.slidedeck'),
     infographic: t('export.notionLayout.infographic'),
+    videooverview: t('export.notionLayout.videoOverview'),
   }), [t]);
 
   useEffect(() => {

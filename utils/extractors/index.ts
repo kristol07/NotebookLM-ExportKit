@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-import { ContentType, ExportFormat, NormalizedExportPayload, QuizItem, FlashcardItem, MindmapNode, DataTableRow, NoteBlock, ChatMessage, SourceItem, SlideDeckItem, InfographicItem } from '../export-core';
+import { ContentType, ExportFormat, NormalizedExportPayload, QuizItem, FlashcardItem, MindmapNode, DataTableRow, NoteBlock, ChatMessage, SourceItem, SlideDeckItem, InfographicItem, VideoOverviewItem } from '../export-core';
 import { extractQuiz } from './quiz';
 import { extractFlashcards } from './flashcards';
 import { extractMindmap } from './mindmap';
@@ -25,6 +25,7 @@ import { extractChat } from './chat';
 import { extractSource } from './source';
 import { extractSlideDeck } from './slidedeck';
 import { extractInfographic } from './infographic';
+import { extractVideoOverview } from './videooverview';
 
 type ExtractPayload =
     | NormalizedExportPayload<QuizItem>
@@ -35,7 +36,8 @@ type ExtractPayload =
     | NormalizedExportPayload<ChatMessage>
     | NormalizedExportPayload<SourceItem>
     | NormalizedExportPayload<SlideDeckItem>
-    | NormalizedExportPayload<InfographicItem>;
+    | NormalizedExportPayload<InfographicItem>
+    | NormalizedExportPayload<VideoOverviewItem>;
 
 export type AnyExtractResult = {
     success: boolean;
@@ -67,6 +69,8 @@ export const extractByType = async (
             ? await extractSlideDeck(tabId, format)
             : type === 'infographic'
             ? await extractInfographic(tabId, format)
+            : type === 'videooverview'
+            ? await extractVideoOverview(tabId, format)
             : await extractDatatable(tabId, format);
     if (result.success && result.payload) {
         return { success: true, payload: result.payload };
@@ -120,6 +124,11 @@ export const extractByAnyType = async (tabId: number, format: ExportFormat): Pro
         return { success: true, payload: infographicResult.payload };
     }
 
+    const videoOverviewResult = await extractVideoOverview(tabId, format);
+    if (videoOverviewResult.success && videoOverviewResult.payload) {
+        return { success: true, payload: videoOverviewResult.payload };
+    }
+
     const datatableResult = await extractDatatable(tabId, format);
     if (datatableResult.success && datatableResult.payload) {
         return { success: true, payload: datatableResult.payload };
@@ -133,6 +142,7 @@ export const extractByAnyType = async (tabId: number, format: ExportFormat): Pro
             sourceResult.error ||
             slideDeckResult.error ||
             infographicResult.error ||
+            videoOverviewResult.error ||
             noteResult.error ||
             datatableResult.error ||
             mindmapResult.error ||

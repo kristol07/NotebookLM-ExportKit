@@ -34,6 +34,7 @@ export default defineConfig({
       'https://*.usercontent.goog/*',
       'https://*.googleusercontent.com/*',
       'https://lh3.google.com/*',
+      'https://*.googlevideo.com/*',
       'https://www.googleapis.com/*',
       'https://api.notion.com/*'
     ],
