@@ -128,6 +128,19 @@ const buildExportSections = (t: (key: any, params?: any) => string): ExportSecti
         ],
     },
     {
+        title: t('export.section.videoOverview'),
+        contentType: 'videooverview',
+        options: [
+            { format: 'MP4', label: 'MP4' },
+            { format: 'WAV', label: 'Audio (WAV)' },
+            { format: 'PDF', label: 'PDF' },
+            { format: 'Markdown', label: 'Markdown', isPlus: true },
+            { format: 'ZIP', label: 'Frames ZIP', isPlus: true },
+            { format: 'PPTX', label: 'PowerPoint', isPlus: true },
+            { format: 'HTML', label: 'HTML', isPlus: true },
+        ],
+    },
+    {
         title: t('export.section.note'),
         contentType: 'note',
         options: [
@@ -177,6 +190,7 @@ const NOTION_EXPORT_FORMAT_BY_TYPE: Record<ContentType, ExportFormat> = {
     source: 'Markdown',
     slidedeck: 'HTML',
     infographic: 'HTML',
+    videooverview: 'MP4',
 };
 
 const filterSectionsForNotion = (sections: ExportSection[]) =>
@@ -219,6 +233,7 @@ const withClipboardOptions = (sections: ExportSection[], clipboardLabel: string)
 
 const EXPORT_TARGET_STORAGE_KEY = 'exportkitExportTarget';
 const PDF_QUALITY_STORAGE_KEY = 'exportkitPdfQuality';
+const NOTION_VIDEO_MODE_STORAGE_KEY = 'exportkitNotionVideoMode';
 const WHATS_NEW_STORAGE_KEY = 'exportkitWhatsNewSeenVersion';
 const WHATS_NEW_VERSION = browser.runtime.getManifest().version;
 const WHATS_NEW_FEATURES_BY_VERSION: Record<string, MessageKey[]> = {
@@ -232,6 +247,9 @@ const WHATS_NEW_FEATURES_BY_VERSION: Record<string, MessageKey[]> = {
     ],
     '1.4.0': [
         'whatsNew.feature.infographicExport',
+    ],
+    '1.4.2': [
+        'whatsNew.feature.videoOverviewExport',
     ],
 };
 
@@ -305,6 +323,7 @@ export default function Dashboard({
     const upgradeInFlightRef = useRef(false);
     const [exportTarget, setExportTarget] = useState<ExportTarget>('download');
     const [pdfQuality, setPdfQuality] = useState<PdfQualityPreference>('size');
+    const [notionVideoMode, setNotionVideoMode] = useState<'external' | 'upload'>('external');
     const [whatsNewFeatureKeys, setWhatsNewFeatureKeys] = useState<MessageKey[]>([]);
     const plan = getPlan(session);
     const isPlus = plan === 'plus' || plan === 'pro';
@@ -350,6 +369,8 @@ export default function Dashboard({
                 return t('content.slidedeck');
             case 'infographic':
                 return t('content.infographic');
+            case 'videooverview':
+                return t('content.videoOverview');
             default:
                 return t('content.datatable');
         }
@@ -389,6 +410,13 @@ export default function Dashboard({
         const stored = localStorage.getItem(PDF_QUALITY_STORAGE_KEY);
         if (stored === 'size' || stored === 'clarity') {
             setPdfQuality(stored);
+        }
+    }, []);
+
+    useEffect(() => {
+        const stored = localStorage.getItem(NOTION_VIDEO_MODE_STORAGE_KEY);
+        if (stored === 'external' || stored === 'upload') {
+            setNotionVideoMode(stored);
         }
     }, []);
 
@@ -502,6 +530,11 @@ export default function Dashboard({
     const handlePdfQualityChange = (value: PdfQualityPreference) => {
         setPdfQuality(value);
         localStorage.setItem(PDF_QUALITY_STORAGE_KEY, value);
+    };
+
+    const handleNotionVideoModeChange = (value: 'external' | 'upload') => {
+        setNotionVideoMode(value);
+        localStorage.setItem(NOTION_VIDEO_MODE_STORAGE_KEY, value);
     };
 
     const handleConnectDrive = async () => {
@@ -651,7 +684,11 @@ export default function Dashboard({
     const handleExport = async (
         format: ExportFormat,
         contentType?: ContentType,
-        options?: { pdfQualityOverride?: PdfQualityPreference; deliveryOverride?: ExportDelivery }
+        options?: {
+            pdfQualityOverride?: PdfQualityPreference;
+            deliveryOverride?: ExportDelivery;
+            notionVideoModeOverride?: 'external' | 'upload';
+        }
     ) => {
         const actionId = contentType
             ? `${contentType}:${format}${options?.deliveryOverride ? `:${options.deliveryOverride}` : ''}`
@@ -729,11 +766,58 @@ export default function Dashboard({
             const tabTitle = sanitizeFilename(rawTabTitle);
             const timestamp = getTimestamp();
             if (contentType) {
+                const extractStart = performance.now();
                 const response = await extractByType(contentType, tabs[0].id, format);
+                if (contentType === 'videooverview') {
+                    console.info('[VIDEO_OVERVIEW_EXPORT] extract_complete', {
+                        format,
+                        elapsedMs: Math.round(performance.now() - extractStart),
+                        success: Boolean(response?.success)
+                    });
+                }
                 if (response && response.success && response.payload) {
                     const payload = response.payload;
                     const contentLabel = getContentLabel(payload.type);
+                    if (payload.type === 'videooverview' && format === 'MP4' && exportTarget === 'download') {
+                        const videoItem = payload.items[0] as { videoUrl?: string } | undefined;
+                        const videoUrl = videoItem?.videoUrl;
+                        if (!videoUrl) {
+                            showNotice('error', t('notice.exportFailed'));
+                            return;
+                        }
+                        const filename = `notebooklm_video_overview_${tabTitle}_${timestamp}.mp4`;
+                        const downloadStart = performance.now();
+                        const bgDownload = await browser.runtime.sendMessage({
+                            type: 'download-video-file',
+                            url: videoUrl,
+                            filename
+                        });
+                        console.info('[VIDEO_OVERVIEW_EXPORT] bg_download_complete', {
+                            elapsedMs: Math.round(performance.now() - downloadStart),
+                            mode: bgDownload?.mode,
+                            bytes: bgDownload?.bytes,
+                            success: Boolean(bgDownload?.success)
+                        });
+                        if (!bgDownload?.success) {
+                            showNotice('error', t('notice.exportFailed'));
+                            return;
+                        }
+                        if (requiresPlus && !isPlus) {
+                            const trialResult = await consumeTrial(true);
+                            if (typeof trialResult.remaining === 'number') {
+                                setTrialRemaining(trialResult.remaining);
+                            }
+                        }
+                        showNotice('success', t('notice.exportSuccess', {
+                            contentLabel,
+                            destination: t('common.downloads'),
+                            format: formatName(format),
+                            trialMessage: '',
+                        }));
+                        return;
+                    }
                     let result;
+                    const effectiveNotionVideoMode = options?.notionVideoModeOverride ?? notionVideoMode;
                     switch (payload.type) {
                         case 'quiz':
                             result = await exportByType('quiz', payload.items, format, tabTitle, timestamp);
@@ -808,6 +892,26 @@ export default function Dashboard({
                                 payload.meta
                             );
                             break;
+                        case 'videooverview':
+                            if (exportTarget === 'notion' && effectiveNotionVideoMode === 'external') {
+                                result = {
+                                    success: true as const,
+                                    count: payload.items.length,
+                                    filename: `notebooklm_video_overview_${tabTitle}_${timestamp}.mp4`,
+                                    mimeType: 'video/mp4',
+                                    blob: new Blob([], { type: 'video/mp4' }),
+                                };
+                            } else {
+                                result = await exportByType(
+                                    'videooverview',
+                                    payload.items,
+                                    format,
+                                    tabTitle,
+                                    timestamp,
+                                    payload.meta
+                                );
+                            }
+                            break;
                         default:
                             result = await exportByType('datatable', payload.items, format, tabTitle, timestamp, payload.meta);
                             break;
@@ -863,6 +967,7 @@ export default function Dashboard({
                                 notebookTitle: rawTabTitle,
                                 items: payload.items,
                                 meta: payload.meta,
+                                notionVideoMode: options?.notionVideoModeOverride ?? notionVideoMode,
                             }
                             : undefined
                     );
@@ -1003,6 +1108,8 @@ export default function Dashboard({
                     onExport={handleExport}
                     pdfQuality={pdfQuality}
                     onPdfQualityChange={handlePdfQualityChange}
+                    notionVideoMode={notionVideoMode}
+                    onNotionVideoModeChange={handleNotionVideoModeChange}
                     notionExportFormatByType={NOTION_EXPORT_FORMAT_BY_TYPE}
                 />
 

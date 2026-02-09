@@ -28,6 +28,7 @@ type ExportOption = {
 };
 
 export type ExportDelivery = 'download' | 'clipboard';
+export type NotionVideoMode = 'external' | 'upload';
 
 export type ExportSection = {
   title: string;
@@ -42,10 +43,16 @@ type ExportActionsProps = {
   onExport: (
     format: ExportFormat,
     contentType?: ContentType,
-    options?: { pdfQualityOverride?: PdfQualityPreference; deliveryOverride?: ExportDelivery }
+    options?: {
+      pdfQualityOverride?: PdfQualityPreference;
+      deliveryOverride?: ExportDelivery;
+      notionVideoModeOverride?: NotionVideoMode;
+    }
   ) => void;
   pdfQuality: PdfQualityPreference;
   onPdfQualityChange: (value: PdfQualityPreference) => void;
+  notionVideoMode: NotionVideoMode;
+  onNotionVideoModeChange: (value: NotionVideoMode) => void;
   notionExportFormatByType: Record<ContentType, ExportFormat>;
 };
 
@@ -56,11 +63,15 @@ export const ExportActions = ({
   onExport,
   pdfQuality,
   onPdfQualityChange,
+  notionVideoMode,
+  onNotionVideoModeChange,
   notionExportFormatByType
 }: ExportActionsProps) => {
   const { t, formatList } = useI18n();
   const [activePdfQualityKey, setActivePdfQualityKey] = useState<string | null>(null);
+  const [activeNotionVideoModeKey, setActiveNotionVideoModeKey] = useState<string | null>(null);
   const pdfQualityRef = useRef<HTMLDivElement | null>(null);
+  const notionVideoModeRef = useRef<HTMLDivElement | null>(null);
   const isNotionTarget = exportTarget === 'notion';
   const isFileTarget = exportTarget === 'download' || exportTarget === 'drive';
   const notionLayoutByType = useMemo<Record<ContentType, string>>(() => ({
@@ -74,10 +85,11 @@ export const ExportActions = ({
     source: t('export.notionLayout.source'),
     slidedeck: t('export.notionLayout.slidedeck'),
     infographic: t('export.notionLayout.infographic'),
+    videooverview: t('export.notionLayout.videoOverview'),
   }), [t]);
 
   useEffect(() => {
-    if (!activePdfQualityKey) {
+    if (!activePdfQualityKey && !activeNotionVideoModeKey) {
       return;
     }
     const handleOutsideClick = (event: MouseEvent) => {
@@ -88,19 +100,28 @@ export const ExportActions = ({
       if (pdfQualityRef.current && !pdfQualityRef.current.contains(target)) {
         setActivePdfQualityKey(null);
       }
+      if (notionVideoModeRef.current && !notionVideoModeRef.current.contains(target)) {
+        setActiveNotionVideoModeKey(null);
+      }
     };
     document.addEventListener('mousedown', handleOutsideClick);
     return () => {
       document.removeEventListener('mousedown', handleOutsideClick);
     };
-  }, [activePdfQualityKey]);
+  }, [activePdfQualityKey, activeNotionVideoModeKey]);
   const handlePdfChoice = (value: PdfQualityPreference, contentType: ContentType) => {
     onPdfQualityChange(value);
     onExport('PDF', contentType, { pdfQualityOverride: value });
     setActivePdfQualityKey(null);
   };
+  const handleNotionVideoModeChoice = (value: NotionVideoMode, contentType: ContentType) => {
+    onNotionVideoModeChange(value);
+    onExport(notionExportFormatByType[contentType], contentType, { notionVideoModeOverride: value });
+    setActiveNotionVideoModeKey(null);
+  };
   const handleExportClick = (option: ExportOption, contentType: ContentType) => {
     setActivePdfQualityKey(null);
+    setActiveNotionVideoModeKey(null);
     onExport(option.format, contentType, {
       deliveryOverride: option.delivery
     });
@@ -194,28 +215,79 @@ export const ExportActions = ({
     );
   };
 
-  const renderNotionSection = (section: ExportSection) => (
-    <div key={section.contentType} className="export-section">
-      <div className="section-label">{section.title}</div>
-      <div className="section-grid notion-grid">
-        <button
-          onClick={() => onExport(notionExportFormatByType[section.contentType], section.contentType)}
-          disabled={!!loadingAction}
-          className="export-btn notion-export-btn"
-        >
-          <span className="button-content">
-            {t('common.exportToNotion')}
-            {loadingAction === `${section.contentType}:${notionExportFormatByType[section.contentType]}` && (
-              <Spinner />
-            )}
-          </span>
-        </button>
-        <div className="notion-layout-detail">
-          {notionLayoutByType[section.contentType]}
+  const renderNotionSection = (section: ExportSection) => {
+    const actionId = `${section.contentType}:${notionExportFormatByType[section.contentType]}`;
+    const key = `${section.contentType}-notion`;
+    const isVideoOverview = section.contentType === 'videooverview';
+    return (
+      <div key={section.contentType} className="export-section">
+        <div className="section-label">{section.title}</div>
+        <div className="section-grid notion-grid">
+          {isVideoOverview ? (
+            <div
+              className="export-option"
+              ref={activeNotionVideoModeKey === key ? notionVideoModeRef : null}
+            >
+              <button
+                onClick={() => {
+                  if (activeNotionVideoModeKey === key) {
+                    onExport(notionExportFormatByType[section.contentType], section.contentType, {
+                      notionVideoModeOverride: notionVideoMode,
+                    });
+                  } else {
+                    setActiveNotionVideoModeKey(key);
+                  }
+                }}
+                disabled={!!loadingAction}
+                className="export-btn notion-export-btn"
+              >
+                <span className="button-content">
+                  {t('common.exportToNotion')}
+                  {loadingAction === actionId && <Spinner />}
+                </span>
+              </button>
+              {activeNotionVideoModeKey === key && (
+                <div className="pdf-quality-popover">
+                  <div className="pdf-quality-title">{t('export.notionVideoTitle')}</div>
+                  <div className="pdf-quality-actions">
+                    <button
+                      type="button"
+                      className={`pdf-quality-btn ${notionVideoMode === 'external' ? 'active' : ''}`}
+                      onClick={() => handleNotionVideoModeChoice('external', section.contentType)}
+                    >
+                      {t('export.notionVideoExternal')}
+                    </button>
+                    <button
+                      type="button"
+                      className={`pdf-quality-btn ${notionVideoMode === 'upload' ? 'active' : ''}`}
+                      onClick={() => handleNotionVideoModeChoice('upload', section.contentType)}
+                    >
+                      {t('export.notionVideoUpload')}
+                    </button>
+                  </div>
+                  <div className="notion-video-hint">{t('export.notionVideoHint')}</div>
+                </div>
+              )}
+            </div>
+          ) : (
+            <button
+              onClick={() => onExport(notionExportFormatByType[section.contentType], section.contentType)}
+              disabled={!!loadingAction}
+              className="export-btn notion-export-btn"
+            >
+              <span className="button-content">
+                {t('common.exportToNotion')}
+                {loadingAction === actionId && <Spinner />}
+              </span>
+            </button>
+          )}
+          <div className="notion-layout-detail">
+            {notionLayoutByType[section.contentType]}
+          </div>
         </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   const renderFileSection = (section: ExportSection) => (
     <div key={section.contentType} className="export-section">

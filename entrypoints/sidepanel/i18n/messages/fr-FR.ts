@@ -56,6 +56,7 @@ export const FR_MESSAGES: Record<string, MessageValue> = {
   'whatsNew.feature.reportHtmlExport': 'Prise en charge de l\'export de rapport en HTML',
   'whatsNew.feature.chatHtmlExport': 'Prise en charge de l\'export de chat en HTML',
   'whatsNew.feature.infographicExport': 'Nouveaux exports d\'infographies vers PNG, HTML, PDF et Notion',
+  'whatsNew.feature.videoOverviewExport': 'Nouveaux exports d\'aperçu vidéo en MP4, audio WAV et exports storyboard (ZIP, PDF, PowerPoint, HTML)',
   'whatsNew.action.gotIt': 'Compris',
 
   'header.signOutTitle': 'Se déconnecter',
@@ -70,13 +71,18 @@ export const FR_MESSAGES: Record<string, MessageValue> = {
   'export.section.source': 'Exports de sources',
   'export.section.slidedeck': 'Exports de diaporamas',
   'export.section.infographic': 'Exports d’infographies',
+  'export.section.videoOverview': 'Exports d’aperçu vidéo',
   'export.option.clipboard': 'Presse-papiers',
   'export.hint.notion': 'Les exports Notion utilisent des mises en page natives.',
   'export.comingSoon': 'Bientôt disponible',
-  'export.comingSoonDetail': 'Aperçus vidéo et audio en transcription/diapositives',
+  'export.comingSoonDetail': 'Aperçus vidéo et audio en transcription',
   'export.pdfQualityTitle': 'Qualité PDF',
   'export.pdfQualitySize': 'Taille d’abord',
   'export.pdfQualityClarity': 'Clarté d’abord',
+  'export.notionVideoTitle': 'Mode vidéo Notion',
+  'export.notionVideoExternal': 'URL externe seule (Plus rapide)',
+  'export.notionVideoUpload': 'Vidéo + images (Plus lent)',
+  'export.notionVideoHint': 'Le mode URL externe ignore l\'extraction des images pour accélérer l\'export.',
   'export.supportedBy': ({ locale, apps }) => {
     if (!apps || typeof apps !== 'string') {
       return 'Pris en charge par';
@@ -98,6 +104,7 @@ export const FR_MESSAGES: Record<string, MessageValue> = {
   'export.notionLayout.source': 'Détail de la source avec résumé, sujets clés et contenu structuré',
   'export.notionLayout.slidedeck': 'Document unique avec images de diapositives et bascules de texte alternatif par diapositive',
   'export.notionLayout.infographic': 'Document unique avec image infographique et bascule des détails',
+  'export.notionLayout.videoOverview': 'Vidéo dans une page Notion native, avec images storyboard en option',
 
   'content.quiz': 'Quiz',
   'content.flashcards': 'Fiches',
@@ -109,6 +116,7 @@ export const FR_MESSAGES: Record<string, MessageValue> = {
   'content.datatable': 'Tableau de données',
   'content.slidedeck': 'Diaporama',
   'content.infographic': 'Infographie',
+  'content.videoOverview': 'Aperçu vidéo',
 
   'drive.setup': 'Configuration Drive',
   'drive.step.signIn': '1. Connecte-toi à ton compte',

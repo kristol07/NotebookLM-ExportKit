@@ -55,6 +55,7 @@ export const JA_MESSAGES: Record<string, MessageValue> = {
   'whatsNew.feature.reportHtmlExport': 'レポートの HTML エクスポートに対応',
   'whatsNew.feature.chatHtmlExport': 'チャットの HTML エクスポートに対応',
   'whatsNew.feature.infographicExport': 'インフォグラフィックを PNG/HTML/PDF、Notion へエクスポート可能に',
+  'whatsNew.feature.videoOverviewExport': '動画概要を MP4、WAV 音声、ストーリーボード（ZIP / PDF / PowerPoint / HTML）でエクスポート可能に',
   'whatsNew.action.gotIt': '確認しました',
 
   'header.signOutTitle': 'サインアウト',
@@ -69,13 +70,18 @@ export const JA_MESSAGES: Record<string, MessageValue> = {
   'export.section.source': 'ソースのエクスポート',
   'export.section.slidedeck': 'スライドデッキのエクスポート',
   'export.section.infographic': 'インフォグラフィックのエクスポート',
+  'export.section.videoOverview': '動画概要のエクスポート',
   'export.option.clipboard': 'クリップボード',
   'export.hint.notion': 'Notion のエクスポートはネイティブレイアウトを使用します。',
   'export.comingSoon': '近日公開',
-  'export.comingSoonDetail': '動画・音声の概要を文字起こし/スライドへ',
+  'export.comingSoonDetail': '動画・音声の概要を文字起こしへ',
   'export.pdfQualityTitle': 'PDF 品質',
   'export.pdfQualitySize': 'サイズ優先',
   'export.pdfQualityClarity': '画質優先',
+  'export.notionVideoTitle': 'Notion 動画モード',
+  'export.notionVideoExternal': '外部 URL のみ（高速）',
+  'export.notionVideoUpload': '動画 + フレーム（低速）',
+  'export.notionVideoHint': '外部 URL モードではフレーム抽出を省略し、エクスポートを高速化します。',
   'export.supportedBy': ({ apps }) => {
     if (!apps || typeof apps !== 'string') {
       return '対応';
@@ -96,6 +102,7 @@ export const JA_MESSAGES: Record<string, MessageValue> = {
   'export.notionLayout.source': '概要、主要トピック、構造化コンテンツを含むソース詳細',
   'export.notionLayout.slidedeck': '各スライドの代替テキストトグル付き、画像を1つのドキュメントに配置',
   'export.notionLayout.infographic': 'インフォグラフィック画像と詳細トグルを1つのドキュメントに配置',
+  'export.notionLayout.videoOverview': 'Notion ネイティブページに動画を出力（ストーリーボード画像は任意）',
 
   'content.quiz': 'クイズ',
   'content.flashcards': 'フラッシュカード',
@@ -107,6 +114,7 @@ export const JA_MESSAGES: Record<string, MessageValue> = {
   'content.datatable': 'データテーブル',
   'content.slidedeck': 'スライドデッキ',
   'content.infographic': 'インフォグラフィック',
+  'content.videoOverview': '動画概要',
 
   'drive.setup': 'Drive のセットアップ',
   'drive.step.signIn': '1. アカウントにサインイン',

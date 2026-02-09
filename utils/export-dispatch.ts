@@ -27,7 +27,8 @@ import {
     QuizItem,
     SlideDeckItem,
     InfographicItem,
-    SourceItem
+    SourceItem,
+    VideoOverviewItem
 } from './export-core';
 import { exportDatatable } from './datatable-export';
 import { exportFlashcards } from './flashcard-export';
@@ -39,6 +40,7 @@ import { exportChat } from './chat-export';
 import { exportSources } from './source-export';
 import { exportSlideDeck } from './slidedeck-export';
 import { exportInfographic } from './infographic-export';
+import { exportVideoOverview } from './videooverview-export';
 
 export const supportedFormatsByType: Record<ContentType, ExportFormat[]> = {
     quiz: ['CSV', 'JSON', 'HTML', 'Anki'],
@@ -50,12 +52,13 @@ export const supportedFormatsByType: Record<ContentType, ExportFormat[]> = {
     chat: ['PDF', 'Word', 'JSON', 'Markdown', 'HTML'],
     source: ['Word', 'Markdown', 'PDF'],
     slidedeck: ['PDF', 'PPTX', 'HTML', 'ZIP'],
-    infographic: ['PNG', 'HTML', 'PDF']
+    infographic: ['PNG', 'HTML', 'PDF'],
+    videooverview: ['MP4', 'WAV', 'Markdown', 'ZIP', 'PDF', 'PPTX', 'HTML']
 };
 
 export const exportByType = async (
     type: ContentType,
-    items: QuizItem[] | FlashcardItem[] | MindmapNode[] | DataTableRow[] | NoteBlock[] | ChatMessage[] | SourceItem[] | SlideDeckItem[] | InfographicItem[],
+    items: QuizItem[] | FlashcardItem[] | MindmapNode[] | DataTableRow[] | NoteBlock[] | ChatMessage[] | SourceItem[] | SlideDeckItem[] | InfographicItem[] | VideoOverviewItem[],
     format: ExportFormat,
     tabTitle: string,
     timestamp: string,
@@ -101,6 +104,10 @@ export const exportByType = async (
 
     if (type === 'infographic') {
         return exportInfographic(items as InfographicItem[], format, tabTitle, timestamp);
+    }
+
+    if (type === 'videooverview') {
+        return exportVideoOverview(items as VideoOverviewItem[], format, tabTitle, timestamp);
     }
 
     return exportDatatable(items as DataTableRow[], format, tabTitle, timestamp, meta?.sources);

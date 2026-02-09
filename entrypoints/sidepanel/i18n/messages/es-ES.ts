@@ -56,6 +56,7 @@ export const ES_MESSAGES: Record<string, MessageValue> = {
   'whatsNew.feature.reportHtmlExport': 'Compatibilidad con exportación de informes a HTML',
   'whatsNew.feature.chatHtmlExport': 'Compatibilidad con exportación de chat a HTML',
   'whatsNew.feature.infographicExport': 'Nuevas exportaciones de infografías a PNG, HTML, PDF y Notion',
+  'whatsNew.feature.videoOverviewExport': 'Nuevas exportaciones de resumen de video a MP4, audio WAV y exportaciones storyboard (ZIP, PDF, PowerPoint, HTML)',
   'whatsNew.action.gotIt': 'Entendido',
 
   'header.signOutTitle': 'Cerrar sesión',
@@ -70,13 +71,18 @@ export const ES_MESSAGES: Record<string, MessageValue> = {
   'export.section.source': 'Exportaciones de fuentes',
   'export.section.slidedeck': 'Exportaciones de diapositivas',
   'export.section.infographic': 'Exportaciones de infografías',
+  'export.section.videoOverview': 'Exportaciones de resumen de video',
   'export.option.clipboard': 'Portapapeles',
   'export.hint.notion': 'Las exportaciones a Notion usan diseños nativos.',
   'export.comingSoon': 'Próximamente',
-  'export.comingSoonDetail': 'Resúmenes de video y audio a transcripción/diapositivas',
+  'export.comingSoonDetail': 'Resúmenes de video y audio a transcripción',
   'export.pdfQualityTitle': 'Calidad de PDF',
   'export.pdfQualitySize': 'Priorizar tamaño',
   'export.pdfQualityClarity': 'Priorizar claridad',
+  'export.notionVideoTitle': 'Modo de video en Notion',
+  'export.notionVideoExternal': 'Solo URL externa (Más rápido)',
+  'export.notionVideoUpload': 'Video + fotogramas (Más lento)',
+  'export.notionVideoHint': 'El modo URL externa omite la extracción de fotogramas para acelerar la exportación.',
   'export.supportedBy': ({ locale, apps }) => {
     if (!apps || typeof apps !== 'string') {
       return 'Compatible con';
@@ -97,6 +103,7 @@ export const ES_MESSAGES: Record<string, MessageValue> = {
   'export.notionLayout.source': 'Detalle de fuente con resumen, temas clave y contenido estructurado',
   'export.notionLayout.slidedeck': 'Documento único con imágenes de diapositivas y alternar texto alternativo por diapositiva',
   'export.notionLayout.infographic': 'Documento único con imagen de infografía y alternar detalles',
+  'export.notionLayout.videoOverview': 'Video en una página nativa de Notion, con fotogramas opcionales del storyboard',
 
   'content.quiz': 'Cuestionario',
   'content.flashcards': 'Tarjetas',
@@ -108,6 +115,7 @@ export const ES_MESSAGES: Record<string, MessageValue> = {
   'content.datatable': 'Tabla de datos',
   'content.slidedeck': 'Presentación',
   'content.infographic': 'Infografía',
+  'content.videoOverview': 'Resumen de video',
 
   'drive.setup': 'Configuración de Drive',
   'drive.step.signIn': '1. Inicia sesión en tu cuenta',

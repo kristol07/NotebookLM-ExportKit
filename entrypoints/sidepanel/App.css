@@ -930,6 +930,13 @@
   gap: var(--space-1);
 }
 
+.notion-video-hint {
+  margin-top: var(--space-1);
+  font-size: var(--size-xxs);
+  color: var(--muted);
+  line-height: 1.35;
+}
+
 .pdf-quality-btn {
   border: 1px solid var(--stroke);
   border-radius: var(--radius-sm);
