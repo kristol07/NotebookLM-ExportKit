@@ -55,7 +55,7 @@ export const JA_MESSAGES: Record<string, MessageValue> = {
   'whatsNew.feature.reportHtmlExport': 'レポートの HTML エクスポートに対応',
   'whatsNew.feature.chatHtmlExport': 'チャットの HTML エクスポートに対応',
   'whatsNew.feature.infographicExport': 'インフォグラフィックを PNG/HTML/PDF、Notion へエクスポート可能に',
-  'whatsNew.feature.videoOverviewExport': '動画概要を MP4、WAV 音声、フレーム ZIP でエクスポート可能に',
+  'whatsNew.feature.videoOverviewExport': '動画概要を MP4、WAV 音声、ストーリーボード（ZIP / PDF / PowerPoint / HTML）でエクスポート可能に',
   'whatsNew.action.gotIt': '確認しました',
 
   'header.signOutTitle': 'サインアウト',
@@ -74,7 +74,7 @@ export const JA_MESSAGES: Record<string, MessageValue> = {
   'export.option.clipboard': 'クリップボード',
   'export.hint.notion': 'Notion のエクスポートはネイティブレイアウトを使用します。',
   'export.comingSoon': '近日公開',
-  'export.comingSoonDetail': '動画・音声の概要を文字起こし/スライドへ',
+  'export.comingSoonDetail': '動画・音声の概要を文字起こしへ',
   'export.pdfQualityTitle': 'PDF 品質',
   'export.pdfQualitySize': 'サイズ優先',
   'export.pdfQualityClarity': '画質優先',

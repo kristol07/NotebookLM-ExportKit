@@ -133,7 +133,10 @@ const buildExportSections = (t: (key: any, params?: any) => string): ExportSecti
         options: [
             { format: 'MP4', label: 'MP4' },
             { format: 'WAV', label: 'Audio (WAV)' },
-            { format: 'ZIP', label: 'Frames ZIP' },
+            { format: 'ZIP', label: 'Storyboard ZIP', isPlus: true },
+            { format: 'PDF', label: 'Storyboard PDF', isPlus: true },
+            { format: 'PPTX', label: 'Storyboard PowerPoint', isPlus: true },
+            { format: 'HTML', label: 'Storyboard HTML', isPlus: true },
         ],
     },
     {

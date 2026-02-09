@@ -37,7 +37,14 @@ export const extractVideoOverview = async (tabId: number, format: ExportFormat):
             args: [format],
             func: (formatArg: ExportFormat) => {
                 try {
-                    if (formatArg !== 'MP4' && formatArg !== 'WAV' && formatArg !== 'ZIP') {
+                    if (
+                        formatArg !== 'MP4'
+                        && formatArg !== 'WAV'
+                        && formatArg !== 'ZIP'
+                        && formatArg !== 'PDF'
+                        && formatArg !== 'PPTX'
+                        && formatArg !== 'HTML'
+                    ) {
                         return { success: false, error: 'unsupported_format', frameUrl: window.location.href };
                     }
 

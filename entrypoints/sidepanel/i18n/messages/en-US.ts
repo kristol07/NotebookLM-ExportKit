@@ -56,7 +56,7 @@ export const EN_MESSAGES: Record<string, MessageValue> = {
   'whatsNew.feature.reportHtmlExport': 'Support for report export to HTML',
   'whatsNew.feature.chatHtmlExport': 'Support for chat export to HTML',
   'whatsNew.feature.infographicExport': 'Added infographic exports to PNG, HTML, PDF, and Notion',
-  'whatsNew.feature.videoOverviewExport': 'Added video overview exports to MP4, WAV audio, and ZIP frames',
+  'whatsNew.feature.videoOverviewExport': 'Added video overview exports to MP4, WAV audio, and storyboard exports (ZIP, PDF, PowerPoint, HTML)',
   'whatsNew.action.gotIt': 'Got it',
 
   'header.signOutTitle': 'Sign Out',
@@ -75,7 +75,7 @@ export const EN_MESSAGES: Record<string, MessageValue> = {
   'export.option.clipboard': 'Clipboard',
   'export.hint.notion': 'Notion exports use native layouts.',
   'export.comingSoon': 'Coming soon',
-  'export.comingSoonDetail': 'Video & Audio Overviews to Transcript/Slides',
+  'export.comingSoonDetail': 'Video & Audio Overviews to Transcript',
   'export.pdfQualityTitle': 'PDF quality',
   'export.pdfQualitySize': 'Size first',
   'export.pdfQualityClarity': 'Clarity first',

@@ -56,7 +56,7 @@ export const FR_MESSAGES: Record<string, MessageValue> = {
   'whatsNew.feature.reportHtmlExport': 'Prise en charge de l\'export de rapport en HTML',
   'whatsNew.feature.chatHtmlExport': 'Prise en charge de l\'export de chat en HTML',
   'whatsNew.feature.infographicExport': 'Nouveaux exports d\'infographies vers PNG, HTML, PDF et Notion',
-  'whatsNew.feature.videoOverviewExport': 'Nouveaux exports d’aperçu vidéo en MP4, audio WAV et ZIP d’images',
+  'whatsNew.feature.videoOverviewExport': 'Nouveaux exports d\'aperçu vidéo en MP4, audio WAV et exports storyboard (ZIP, PDF, PowerPoint, HTML)',
   'whatsNew.action.gotIt': 'Compris',
 
   'header.signOutTitle': 'Se déconnecter',
@@ -75,7 +75,7 @@ export const FR_MESSAGES: Record<string, MessageValue> = {
   'export.option.clipboard': 'Presse-papiers',
   'export.hint.notion': 'Les exports Notion utilisent des mises en page natives.',
   'export.comingSoon': 'Bientôt disponible',
-  'export.comingSoonDetail': 'Aperçus vidéo et audio en transcription/diapositives',
+  'export.comingSoonDetail': 'Aperçus vidéo et audio en transcription',
   'export.pdfQualityTitle': 'Qualité PDF',
   'export.pdfQualitySize': 'Taille d’abord',
   'export.pdfQualityClarity': 'Clarté d’abord',

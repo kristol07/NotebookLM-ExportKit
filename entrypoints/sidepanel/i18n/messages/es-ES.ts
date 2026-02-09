@@ -56,7 +56,7 @@ export const ES_MESSAGES: Record<string, MessageValue> = {
   'whatsNew.feature.reportHtmlExport': 'Compatibilidad con exportación de informes a HTML',
   'whatsNew.feature.chatHtmlExport': 'Compatibilidad con exportación de chat a HTML',
   'whatsNew.feature.infographicExport': 'Nuevas exportaciones de infografías a PNG, HTML, PDF y Notion',
-  'whatsNew.feature.videoOverviewExport': 'Nuevas exportaciones de resumen de video a MP4, audio WAV y ZIP de fotogramas',
+  'whatsNew.feature.videoOverviewExport': 'Nuevas exportaciones de resumen de video a MP4, audio WAV y exportaciones storyboard (ZIP, PDF, PowerPoint, HTML)',
   'whatsNew.action.gotIt': 'Entendido',
 
   'header.signOutTitle': 'Cerrar sesión',
@@ -75,7 +75,7 @@ export const ES_MESSAGES: Record<string, MessageValue> = {
   'export.option.clipboard': 'Portapapeles',
   'export.hint.notion': 'Las exportaciones a Notion usan diseños nativos.',
   'export.comingSoon': 'Próximamente',
-  'export.comingSoonDetail': 'Resúmenes de video y audio a transcripción/diapositivas',
+  'export.comingSoonDetail': 'Resúmenes de video y audio a transcripción',
   'export.pdfQualityTitle': 'Calidad de PDF',
   'export.pdfQualitySize': 'Priorizar tamaño',
   'export.pdfQualityClarity': 'Priorizar claridad',
