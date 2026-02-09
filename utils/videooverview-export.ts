@@ -22,11 +22,13 @@ import { ExportFormat, ExportResult, VideoOverviewItem } from './export-core';
 
 const EXPORT_LOG = '[VIDEO_OVERVIEW_EXPORT]';
 const now = () => Math.round(performance.now());
+const VIDEO_FILE_IN_ARCHIVE = 'video.mp4';
 const PREVIEW_WIDTH = 48;
 const PREVIEW_HEIGHT = 27;
 const MAX_CANDIDATE_SAMPLES = 240;
 const MAX_EXTRACTED_FRAMES = 96;
 const MAX_FRAME_CACHE_ENTRIES = 4;
+const MAX_VIDEO_BLOB_CACHE_ENTRIES = 3;
 
 type ExtractedFrame = {
     index: number;
@@ -45,7 +47,13 @@ type CachedFramesEntry = {
     updatedAt: number;
 };
 
+type CachedVideoBlobEntry = {
+    promise: Promise<Blob>;
+    updatedAt: number;
+};
+
 const extractedFramesCache = new Map<string, CachedFramesEntry>();
+const videoBlobCache = new Map<string, CachedVideoBlobEntry>();
 
 const toBlob = (canvas: HTMLCanvasElement, quality = 0.86) =>
     new Promise<Blob>((resolve, reject) => {
@@ -103,6 +111,17 @@ const escapeHtml = (value: string) =>
         .replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&#39;');
+
+const escapeMarkdown = (value: string) =>
+    value
+        .replace(/\\/g, '\\\\')
+        .replace(/`/g, '\\`')
+        .replace(/\*/g, '\\*')
+        .replace(/_/g, '\\_')
+        .replace(/\[/g, '\\[')
+        .replace(/\]/g, '\\]')
+        .replace(/\(/g, '\\(')
+        .replace(/\)/g, '\\)');
 
 const seekVideo = (video: HTMLVideoElement, timeSeconds: number) =>
     new Promise<void>((resolve, reject) => {
@@ -355,6 +374,61 @@ const fetchVideoBlob = async (videoUrl: string) => {
     return fetchVideoBlobViaBackground(videoUrl);
 };
 
+const normalizeVideoUrlForCache = (videoUrl: string) => {
+    const trimmedUrl = videoUrl.trim();
+    if (!trimmedUrl) {
+        return '';
+    }
+    try {
+        const parsed = new URL(trimmedUrl);
+        return `${parsed.origin}${parsed.pathname}`;
+    } catch {
+        return trimmedUrl;
+    }
+};
+
+export const buildVideoOverviewFrameCacheKey = (videoUrl: string) =>
+    `videooverview:${normalizeVideoUrlForCache(videoUrl)}`;
+
+const pruneVideoBlobCache = () => {
+    if (videoBlobCache.size <= MAX_VIDEO_BLOB_CACHE_ENTRIES) {
+        return;
+    }
+    const sorted = Array.from(videoBlobCache.entries())
+        .sort((a, b) => a[1].updatedAt - b[1].updatedAt);
+    while (sorted.length > MAX_VIDEO_BLOB_CACHE_ENTRIES) {
+        const oldest = sorted.shift();
+        if (!oldest) {
+            break;
+        }
+        videoBlobCache.delete(oldest[0]);
+    }
+};
+
+const getOrFetchVideoBlob = (videoUrl: string) => {
+    const cacheKey = normalizeVideoUrlForCache(videoUrl);
+    const existing = videoBlobCache.get(cacheKey);
+    if (existing) {
+        existing.updatedAt = Date.now();
+        console.info(`${EXPORT_LOG} video_blob_cache_hit`, { cacheKey });
+        return existing.promise;
+    }
+
+    console.info(`${EXPORT_LOG} video_blob_cache_miss`, { cacheKey });
+    const promise = fetchVideoBlob(videoUrl)
+        .catch((error) => {
+            videoBlobCache.delete(cacheKey);
+            throw error;
+        });
+
+    videoBlobCache.set(cacheKey, {
+        promise,
+        updatedAt: Date.now()
+    });
+    pruneVideoBlobCache();
+    return promise;
+};
+
 const loadVideoElement = (videoBlob: Blob) =>
     new Promise<{ video: HTMLVideoElement; objectUrl: string }>((resolve, reject) => {
         const objectUrl = URL.createObjectURL(videoBlob);
@@ -484,6 +558,49 @@ const exportFramesZip = async (videoBlob: Blob, cacheKey: string): Promise<Frame
     };
 };
 
+const buildVideoOverviewMarkdown = (
+    frames: ExtractedFrame[],
+    title: string,
+    durationLabel?: string
+) => {
+    const lines: string[] = [`# ${escapeMarkdown(title || 'Video overview')}`, ''];
+    if (durationLabel?.trim()) {
+        lines.push(`Duration: ${escapeMarkdown(durationLabel.trim())}`, '');
+    }
+    lines.push('## Video', '');
+    lines.push(`<video controls src="./${VIDEO_FILE_IN_ARCHIVE}"></video>`, '');
+    lines.push('## Frames', '');
+    frames.forEach((frame) => {
+        const filename = `frame_${String(frame.index).padStart(4, '0')}.jpg`;
+        lines.push(`### Frame ${frame.index}`, '');
+        lines.push(`![Frame ${frame.index}](frames/${filename})`, '');
+    });
+    return lines.join('\n').trimEnd();
+};
+
+const exportFramesMarkdown = async (
+    videoBlob: Blob,
+    cacheKey: string,
+    title: string,
+    durationLabel?: string
+): Promise<FrameExportResult> => {
+    const frames = await extractVideoOverviewFrames(videoBlob, { cacheKey });
+    const zip = new JSZip();
+    const framesFolder = zip.folder('frames');
+    if (framesFolder) {
+        frames.forEach((frame) => {
+            framesFolder.file(`frame_${String(frame.index).padStart(4, '0')}.jpg`, frame.blob);
+        });
+    }
+    zip.file(VIDEO_FILE_IN_ARCHIVE, videoBlob);
+    const markdown = buildVideoOverviewMarkdown(frames, title, durationLabel);
+    zip.file('video-overview.md', markdown);
+    return {
+        blob: await zip.generateAsync({ type: 'blob' }),
+        count: frames.length
+    };
+};
+
 const exportFramesPdf = async (videoBlob: Blob, cacheKey: string): Promise<FrameExportResult> => {
     const frames = await extractVideoOverviewFrames(videoBlob, { cacheKey });
     const firstFrameDataUrl = await blobToDataUrl(frames[0].blob);
@@ -519,7 +636,11 @@ const exportFramesPdf = async (videoBlob: Blob, cacheKey: string): Promise<Frame
     };
 };
 
-const exportFramesPptx = async (videoBlob: Blob, cacheKey: string): Promise<FrameExportResult> => {
+const exportFramesPptx = async (
+    videoBlob: Blob,
+    cacheKey: string,
+    title: string
+): Promise<FrameExportResult> => {
     const frames = await extractVideoOverviewFrames(videoBlob, { cacheKey });
     const firstFrameDataUrl = await blobToDataUrl(frames[0].blob);
     const firstSize = await getImageDimensions(firstFrameDataUrl);
@@ -534,6 +655,34 @@ const exportFramesPptx = async (videoBlob: Blob, cacheKey: string): Promise<Fram
         height: slideHeight
     });
     pptx.layout = 'VIDEO_OVERVIEW_FRAMES';
+
+    const videoSlide = pptx.addSlide();
+    const videoDataUrl = await blobToDataUrl(videoBlob);
+    videoSlide.addImage({
+        data: firstFrameDataUrl,
+        x: 0,
+        y: 0,
+        w: slideWidth,
+        h: slideHeight
+    });
+    videoSlide.addMedia({
+        type: 'video',
+        data: videoDataUrl,
+        x: 0,
+        y: 0,
+        w: slideWidth,
+        h: slideHeight
+    });
+    videoSlide.addText(title || 'Video overview', {
+        x: 0.8,
+        y: 0.8,
+        w: slideWidth - 1.6,
+        h: 0.8,
+        fontSize: 28,
+        bold: true,
+        color: 'FFFFFF',
+        shadow: { type: 'outer', color: '000000', blur: 2, angle: 45, opacity: 0.5 }
+    });
 
     for (let i = 0; i < frames.length; i += 1) {
         const slide = pptx.addSlide();
@@ -553,7 +702,7 @@ const exportFramesPptx = async (videoBlob: Blob, cacheKey: string): Promise<Fram
     };
 };
 
-const buildFramesHtml = async (frames: ExtractedFrame[], title: string) => {
+const buildFramesHtml = async (frames: ExtractedFrame[], title: string, videoUrl: string) => {
     const frameItems = await Promise.all(
         frames.map(async (frame) => {
             const dataUrl = await blobToDataUrl(frame.blob);
@@ -589,6 +738,20 @@ const buildFramesHtml = async (frames: ExtractedFrame[], title: string) => {
     }
     .wrap { max-width: 1080px; margin: 0 auto; }
     h1 { margin: 0 0 20px; font-size: 28px; }
+    .video-player {
+      margin: 0 0 18px;
+      padding: 12px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      box-shadow: 0 8px 20px rgba(17, 33, 78, 0.05);
+    }
+    .video-player video {
+      width: 100%;
+      display: block;
+      background: #000;
+      border-radius: 8px;
+    }
     .frames { display: grid; gap: 20px; }
     .frame {
       margin: 0;
@@ -614,6 +777,9 @@ const buildFramesHtml = async (frames: ExtractedFrame[], title: string) => {
 <body>
   <div class="wrap">
     <h1>${escapeHtml(title)}</h1>
+    <div class="video-player">
+      <video controls preload="metadata" src="${escapeHtml(videoUrl)}"></video>
+    </div>
     <section class="frames">
       ${frameItems.join('\n')}
     </section>
@@ -622,9 +788,14 @@ const buildFramesHtml = async (frames: ExtractedFrame[], title: string) => {
 </html>`;
 };
 
-const exportFramesHtml = async (videoBlob: Blob, cacheKey: string, title: string): Promise<FrameExportResult> => {
+const exportFramesHtml = async (
+    videoBlob: Blob,
+    cacheKey: string,
+    title: string,
+    videoUrl: string
+): Promise<FrameExportResult> => {
     const frames = await extractVideoOverviewFrames(videoBlob, { cacheKey });
-    const html = await buildFramesHtml(frames, title);
+    const html = await buildFramesHtml(frames, title, videoUrl);
     return {
         blob: new Blob([html], { type: 'text/html' }),
         count: frames.length
@@ -661,7 +832,7 @@ export const exportVideoOverview = async (
     if (format === 'MP4') {
         try {
             const fetchStart = now();
-            const blob = await fetchVideoBlob(item.videoUrl);
+            const blob = await getOrFetchVideoBlob(item.videoUrl);
             console.info(`${EXPORT_LOG} mp4_blob_ready`, { elapsedMs: now() - fetchStart, bytes: blob.size });
             return {
                 success: true,
@@ -676,7 +847,7 @@ export const exportVideoOverview = async (
         }
     }
 
-    const videoBlob = await fetchVideoBlob(item.videoUrl);
+    const videoBlob = await getOrFetchVideoBlob(item.videoUrl);
 
     if (format === 'WAV') {
         try {
@@ -694,7 +865,30 @@ export const exportVideoOverview = async (
         }
     }
 
-    const frameCacheKey = `videooverview:${item.videoUrl.trim()}`;
+    const frameCacheKey = buildVideoOverviewFrameCacheKey(item.videoUrl);
+
+    const title = item.title?.trim() || tabTitle || 'video_overview';
+
+    if (format === 'Markdown') {
+        try {
+            const frames = await exportFramesMarkdown(
+                videoBlob,
+                frameCacheKey,
+                title,
+                item.durationLabel
+            );
+            return {
+                success: true,
+                count: frames.count,
+                filename: `notebooklm_video_overview_storyboard_${tabTitle}_${timestamp}.zip`,
+                mimeType: 'application/zip',
+                blob: frames.blob
+            };
+        } catch (error) {
+            console.error(`${EXPORT_LOG} markdown_export_failed`, error);
+            return { success: false, error: 'Failed to export storyboard Markdown ZIP.' };
+        }
+    }
 
     if (format === 'ZIP') {
         try {
@@ -730,7 +924,7 @@ export const exportVideoOverview = async (
 
     if (format === 'PPTX') {
         try {
-            const frames = await exportFramesPptx(videoBlob, frameCacheKey);
+            const frames = await exportFramesPptx(videoBlob, frameCacheKey, title);
             return {
                 success: true,
                 count: frames.count,
@@ -746,7 +940,12 @@ export const exportVideoOverview = async (
 
     if (format === 'HTML') {
         try {
-            const frames = await exportFramesHtml(videoBlob, frameCacheKey, tabTitle || 'video_overview_frames');
+            const frames = await exportFramesHtml(
+                videoBlob,
+                frameCacheKey,
+                title || 'video_overview_frames',
+                item.videoUrl.trim()
+            );
             return {
                 success: true,
                 count: frames.count,

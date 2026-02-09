@@ -40,6 +40,7 @@ export const extractVideoOverview = async (tabId: number, format: ExportFormat):
                     if (
                         formatArg !== 'MP4'
                         && formatArg !== 'WAV'
+                        && formatArg !== 'Markdown'
                         && formatArg !== 'ZIP'
                         && formatArg !== 'PDF'
                         && formatArg !== 'PPTX'

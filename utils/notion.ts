@@ -42,14 +42,15 @@ import {
   setNotionDatabaseId,
   setNotionWorkspaceName,
 } from './notion-auth';
-import { extractVideoOverviewFrames } from './videooverview-export';
+import { buildVideoOverviewFrameCacheKey, extractVideoOverviewFrames } from './videooverview-export';
 
 const NOTION_API_BASE = 'https://api.notion.com/v1';
 const NOTION_VERSION = '2025-09-03';
 const DEFAULT_DATABASE_TITLE = 'NotebookLM ExportKit';
 const MAX_RICH_TEXT_CHARS = 1800;
 const MAX_BLOCKS_PER_PAGE = 100;
-const MAX_NOTION_VIDEO_FRAMES = 24;
+// Hardcoded cap to keep Notion video-overview exports reliable and reasonably fast.
+const MAX_NOTION_VIDEO_FRAMES = 40;
 const NOTION_SINGLE_PART_FILE_LIMIT_BYTES = 20 * 1024 * 1024;
 
 const CONTENT_TYPE_LABELS: Record<ContentType, string> = {
@@ -819,7 +820,7 @@ const buildVideoOverviewBlocks = async (
 
   try {
     const frames = await extractVideoOverviewFrames(videoBlob, {
-      cacheKey: `videooverview:notion:${item.videoUrl.trim()}`,
+      cacheKey: buildVideoOverviewFrameCacheKey(item.videoUrl),
       maxFrames: MAX_NOTION_VIDEO_FRAMES,
     });
     if (frames.length === 0) {
@@ -827,17 +828,42 @@ const buildVideoOverviewBlocks = async (
     }
     blocks.push(buildDividerBlock());
     blocks.push(buildHeadingBlock(3, `Frames (${frames.length})`));
+    blocks.push(
+      buildParagraphBlock(
+        buildTextRichText(`Note: Notion frame export is capped at ${MAX_NOTION_VIDEO_FRAMES} sampled frames.`)
+      )
+    );
+    const failedFrameIndices: number[] = [];
     for (const frame of frames) {
-      const frameUploadId = await uploadBlobToNotionFile(
-        accessToken,
-        frame.blob,
-        `${sanitizedBase}_frame_${String(frame.index).padStart(3, '0')}.jpg`
-      );
-      blocks.push(buildImageUploadBlock(frameUploadId, `Frame ${frame.index}`));
+      try {
+        const frameUploadId = await uploadBlobToNotionFile(
+          accessToken,
+          frame.blob,
+          `${sanitizedBase}_frame_${String(frame.index).padStart(3, '0')}.jpg`
+        );
+        blocks.push(buildImageUploadBlock(frameUploadId, `Frame ${frame.index}`));
+      } catch (error) {
+        failedFrameIndices.push(frame.index);
+        console.warn('Notion frame upload failed.', {
+          frameIndex: frame.index,
+          error,
+        });
+      }
       if (blocks.length >= MAX_BLOCKS_PER_PAGE - 1) {
         blocks.push(buildParagraphBlock(buildTextRichText('Frames truncated due to Notion block limits.')));
         break;
       }
+    }
+    if (failedFrameIndices.length > 0) {
+      const failedLabel = failedFrameIndices.join(', ');
+      blocks.push(
+        buildParagraphBlock(
+          buildTextRichText(`Some frames failed to upload: ${failedLabel}.`)
+        )
+      );
+      console.warn('Notion frame upload completed with failures.', {
+        failedFrameIndices,
+      });
     }
   } catch (error) {
     console.warn('Notion frame extraction/upload failed.', error);

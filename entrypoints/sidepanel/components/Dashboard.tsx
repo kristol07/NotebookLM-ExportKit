@@ -133,10 +133,11 @@ const buildExportSections = (t: (key: any, params?: any) => string): ExportSecti
         options: [
             { format: 'MP4', label: 'MP4' },
             { format: 'WAV', label: 'Audio (WAV)' },
-            { format: 'ZIP', label: 'Storyboard ZIP', isPlus: true },
-            { format: 'PDF', label: 'Storyboard PDF', isPlus: true },
-            { format: 'PPTX', label: 'Storyboard PowerPoint', isPlus: true },
-            { format: 'HTML', label: 'Storyboard HTML', isPlus: true },
+            { format: 'PDF', label: 'PDF' },
+            { format: 'Markdown', label: 'Markdown', isPlus: true },
+            { format: 'ZIP', label: 'Frames ZIP', isPlus: true },
+            { format: 'PPTX', label: 'PowerPoint', isPlus: true },
+            { format: 'HTML', label: 'HTML', isPlus: true },
         ],
     },
     {
@@ -247,7 +248,7 @@ const WHATS_NEW_FEATURES_BY_VERSION: Record<string, MessageKey[]> = {
     '1.4.0': [
         'whatsNew.feature.infographicExport',
     ],
-    '1.4.1': [
+    '1.4.2': [
         'whatsNew.feature.videoOverviewExport',
     ],
 };
