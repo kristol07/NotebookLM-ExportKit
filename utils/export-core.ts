@@ -109,10 +109,17 @@ export interface VideoOverviewItem {
     durationLabel?: string;
 }
 
+export interface MathExpression {
+    latex: string;
+    html?: string;
+    display: boolean;
+}
+
 export interface NoteInline {
     text: string;
     bold?: boolean;
     italic?: boolean;
+    math?: MathExpression;
     citation?: {
         id: string;
         source: string;
@@ -148,6 +155,7 @@ export interface ChatInline {
     text: string;
     bold?: boolean;
     italic?: boolean;
+    math?: MathExpression;
     citation?: {
         id: string;
         source: string;
@@ -499,6 +507,21 @@ export const validateNoteBlocks = (items: unknown): ValidationResult => {
         if (inline.italic !== undefined && typeof inline.italic !== 'boolean') {
             errors.push(`${path}.italic must be a boolean`);
         }
+        if (inline.math !== undefined) {
+            if (!isRecord(inline.math)) {
+                errors.push(`${path}.math must be an object`);
+            } else {
+                if (!isNonEmptyString(inline.math.latex)) {
+                    errors.push(`${path}.math.latex must be a non-empty string`);
+                }
+                if (inline.math.html !== undefined && typeof inline.math.html !== 'string') {
+                    errors.push(`${path}.math.html must be a string`);
+                }
+                if (typeof inline.math.display !== 'boolean') {
+                    errors.push(`${path}.math.display must be a boolean`);
+                }
+            }
+        }
         if (inline.citation !== undefined) {
             if (!isRecord(inline.citation)) {
                 errors.push(`${path}.citation must be an object`);
@@ -599,6 +622,21 @@ export const validateChatMessages = (items: unknown): ValidationResult => {
         }
         if (inline.italic !== undefined && typeof inline.italic !== 'boolean') {
             errors.push(`${path}.italic must be a boolean`);
+        }
+        if (inline.math !== undefined) {
+            if (!isRecord(inline.math)) {
+                errors.push(`${path}.math must be an object`);
+            } else {
+                if (!isNonEmptyString(inline.math.latex)) {
+                    errors.push(`${path}.math.latex must be a non-empty string`);
+                }
+                if (inline.math.html !== undefined && typeof inline.math.html !== 'string') {
+                    errors.push(`${path}.math.html must be a string`);
+                }
+                if (typeof inline.math.display !== 'boolean') {
+                    errors.push(`${path}.math.display must be a boolean`);
+                }
+            }
         }
         if (inline.citation !== undefined) {
             if (!isRecord(inline.citation)) {

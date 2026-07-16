@@ -22,6 +22,7 @@ import {
     BorderStyle,
     Document,
     HeadingLevel,
+    ImageRun,
     LineRuleType,
     Packer,
     Paragraph,
@@ -31,6 +32,13 @@ import {
     TextRun,
     WidthType
 } from 'docx';
+import {
+    createDocxMathImageRun,
+    MATH_EXPORT_CSS,
+    renderMathHtml,
+    renderMathMarkdown,
+    waitForMathFonts
+} from './math-export';
 
 const escapeHtml = (value: string) =>
     value
@@ -85,6 +93,9 @@ const renderInlineHtml = (
     references: Map<string, string>,
     referenceOrder: string[]
 ) => {
+    if (inline.math) {
+        return renderMathHtml(inline.math);
+    }
     if (inline.citation) {
         const key = inline.citation.id;
         if (!references.has(key)) {
@@ -108,8 +119,12 @@ const renderInlineMarkdown = (
     inline: ChatInline,
     forTable: boolean,
     footnotes: Map<string, string>,
-    footnoteOrder: string[]
+    footnoteOrder: string[],
+    allowDisplay = true
 ) => {
+    if (inline.math) {
+        return renderMathMarkdown(inline.math, { allowDisplay, forTable });
+    }
     if (inline.citation) {
         const key = inline.citation.id;
         if (!footnotes.has(key)) {
@@ -163,7 +178,7 @@ const renderTableMarkdown = (
     };
 
     const renderRow = (row: ChatInline[][]) =>
-        `| ${normalizeRow(row).map((cell) => cell.map((inline) => renderInlineMarkdown(inline, true, footnotes, footnoteOrder)).join('').trim()).join(' | ')} |`;
+        `| ${normalizeRow(row).map((cell) => cell.map((inline) => renderInlineMarkdown(inline, true, footnotes, footnoteOrder, false)).join('').trim()).join(' | ')} |`;
 
     const header = renderRow(rows[0]);
     const separator = `| ${Array.from({ length: columnCount }).map(() => '---').join(' | ')} |`;
@@ -283,6 +298,7 @@ const buildChatHtmlDocument = (title: string, messages: ChatMessage[]) => {
         .chat-citation { font-size: 9pt; vertical-align: super; }
         .chat-references { margin: 0; padding-left: 18pt; }
         .chat-references li { margin: 0 0 6pt; }
+        ${MATH_EXPORT_CSS}
     </style>
 </head>
 <body>
@@ -338,13 +354,63 @@ const collectReferences = (messages: ChatMessage[]) => {
     return { references, referenceOrder };
 };
 
-const buildDocxParagraph = (
+type DocxInlineChild = TextRun | ImageRun;
+
+const buildDocxMathChild = async (inline: ChatInline): Promise<DocxInlineChild | null> => {
+    if (!inline.math) {
+        return null;
+    }
+    try {
+        return await createDocxMathImageRun(inline.math);
+    } catch (error) {
+        console.warn('Failed to render equation image for Word export.', error);
+        return new TextRun({ text: `$${inline.math.latex}$` });
+    }
+};
+
+const buildDocxParagraphs = async (
     inlines: ChatInline[],
     references: Map<string, string>,
     referenceOrder: string[]
 ) => {
-    const children: TextRun[] = [];
+    const paragraphs: Paragraph[] = [];
+    let children: DocxInlineChild[] = [];
+
+    const flushParagraph = () => {
+        if (children.length === 0) {
+            return;
+        }
+        paragraphs.push(
+            new Paragraph({
+                children,
+                spacing: DOCX_PARAGRAPH_SPACING,
+                run: DOCX_BODY_RUN
+            })
+        );
+        children = [];
+    };
+
     for (const inline of inlines) {
+        if (inline.math) {
+            const mathChild = await buildDocxMathChild(inline);
+            if (!mathChild) {
+                continue;
+            }
+            if (inline.math.display) {
+                flushParagraph();
+                paragraphs.push(
+                    new Paragraph({
+                        children: [mathChild],
+                        alignment: AlignmentType.CENTER,
+                        spacing: DOCX_PARAGRAPH_SPACING,
+                        run: DOCX_BODY_RUN
+                    })
+                );
+            } else {
+                children.push(mathChild);
+            }
+            continue;
+        }
         if (inline.citation) {
             const key = inline.citation.id;
             if (!references.has(key)) {
@@ -365,25 +431,31 @@ const buildDocxParagraph = (
             })
         );
     }
-    return new Paragraph({
-        children,
-        spacing: DOCX_PARAGRAPH_SPACING,
-        run: DOCX_BODY_RUN
-    });
+    flushParagraph();
+    if (paragraphs.length === 0) {
+        paragraphs.push(
+            new Paragraph({
+                children: [],
+                spacing: DOCX_PARAGRAPH_SPACING,
+                run: DOCX_BODY_RUN
+            })
+        );
+    }
+    return paragraphs;
 };
 
-const buildDocxTable = (
+const buildDocxTable = async (
     rows: ChatInline[][][],
     references: Map<string, string>,
     referenceOrder: string[]
 ) => {
-    const tableRows = rows.map((row) => {
-        const cells = row.map((cell) => {
-            const paragraph = buildDocxParagraph(cell, references, referenceOrder);
-            return new TableCell({ children: [paragraph], margins: DOCX_TABLE_MARGINS });
-        });
+    const tableRows = await Promise.all(rows.map(async (row) => {
+        const cells = await Promise.all(row.map(async (cell) => {
+            const paragraphs = await buildDocxParagraphs(cell, references, referenceOrder);
+            return new TableCell({ children: paragraphs, margins: DOCX_TABLE_MARGINS });
+        }));
         return new TableRow({ children: cells });
-    });
+    }));
     return new Table({
         width: { size: 100, type: WidthType.PERCENTAGE },
         rows: tableRows,
@@ -438,6 +510,7 @@ const createPdfStyleElement = () => {
         .chat-references li { margin: 0 0 6pt; }
         .chat-reference-item { margin: 0 0 6pt; padding-left: 18pt; text-indent: -18pt; }
         .chat-block { padding-top: 0; padding-bottom: 0; }
+        ${MATH_EXPORT_CSS}
     `;
     return style;
 };
@@ -571,7 +644,7 @@ const paginatePdfBlocks = (
     };
 
     const splitInlineText = (inline: ChatInline) => {
-        if (inline.citation) {
+        if (inline.citation || inline.math) {
             return [inline];
         }
         const text = inline.text || '';
@@ -605,7 +678,7 @@ const paginatePdfBlocks = (
         if (last?.text) {
             last.text = last.text.replace(/\s+$/, '');
         }
-        return normalized.filter((inline) => inline.text.length > 0 || inline.citation);
+        return normalized.filter((inline) => inline.text.length > 0 || inline.citation || inline.math);
     };
 
     const buildMessageBlock = (
@@ -898,6 +971,7 @@ const paginatePdfBlocks = (
 };
 
 const exportChatPdf = async (title: string, messages: ChatMessage[], pdfQuality: PdfQualityPreference = 'size') => {
+    await waitForMathFonts();
     const { references, referenceOrder } = collectReferences(messages);
     const preset = PDF_PRESETS[pdfQuality] || PDF_PRESETS.size;
     const pdfBlocks: PdfRenderBlock[] = [
@@ -938,7 +1012,7 @@ const exportChatPdf = async (title: string, messages: ChatMessage[], pdfQuality:
     return pdf.output('blob');
 };
 
-const buildDocxMessage = (
+const buildDocxMessage = async (
     message: ChatMessage,
     references: Map<string, string>,
     referenceOrder: string[]
@@ -951,17 +1025,17 @@ const buildDocxMessage = (
         })
     ];
 
-    message.chunks.forEach((chunk) => {
+    for (const chunk of message.chunks) {
         if (chunk.type === 'paragraph') {
-            children.push(buildDocxParagraph(chunk.inlines, references, referenceOrder));
-            return;
+            children.push(...await buildDocxParagraphs(chunk.inlines, references, referenceOrder));
+            continue;
         }
         if (chunk.type === 'code') {
             children.push(buildDocxCodeBlock(chunk.text));
-            return;
+            continue;
         }
-        children.push(buildDocxTable(chunk.rows, references, referenceOrder));
-    });
+        children.push(await buildDocxTable(chunk.rows, references, referenceOrder));
+    }
 
     children.push(new Paragraph({ children: [], spacing: { after: 200 } }));
     return children;
@@ -991,6 +1065,13 @@ export const exportChat = async (
                                     text: inline.text,
                                     bold: inline.bold,
                                     italic: inline.italic,
+                                    math: inline.math
+                                        ? {
+                                            latex: inline.math.latex,
+                                            html: inline.math.html,
+                                            display: inline.math.display
+                                        }
+                                        : undefined,
                                     citation: inline.citation
                                         ? { id: inline.citation.id, source: inline.citation.source }
                                         : undefined
@@ -1008,6 +1089,13 @@ export const exportChat = async (
                                         text: inline.text,
                                         bold: inline.bold,
                                         italic: inline.italic,
+                                        math: inline.math
+                                            ? {
+                                                latex: inline.math.latex,
+                                                html: inline.math.html,
+                                                display: inline.math.display
+                                            }
+                                            : undefined,
                                         citation: inline.citation
                                             ? { id: inline.citation.id, source: inline.citation.source }
                                             : undefined
@@ -1069,9 +1157,11 @@ export const exportChat = async (
                 heading: HeadingLevel.HEADING_1,
                 alignment: AlignmentType.LEFT,
                 spacing: { after: 240 }
-            }),
-            ...messages.flatMap((message) => buildDocxMessage(message, references, referenceOrder))
+            })
         ];
+        for (const message of messages) {
+            children.push(...await buildDocxMessage(message, references, referenceOrder));
+        }
 
         if (referenceOrder.length > 0) {
             children.push(

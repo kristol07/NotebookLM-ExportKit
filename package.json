@@ -2,7 +2,7 @@
   "name": "notebooklm-exportkit",
   "description": "Export NotebookLM chats, quizzes, flashcards, mindmaps, notes, reports, and tables to multiple formats, with Google Drive and Notion delivery.",
   "private": true,
-  "version": "1.4.3",
+  "version": "1.4.4",
   "type": "module",
   "scripts": {
     "dev": "wxt",
@@ -22,6 +22,7 @@
     "html2canvas": "^1.4.1",
     "jspdf": "^3.0.4",
     "jszip": "^3.10.1",
+    "katex": "0.16.47",
     "pptxgenjs": "^4.0.1",
     "react": "^19.2.3",
     "react-dom": "^19.2.3",

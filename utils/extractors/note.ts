@@ -17,6 +17,7 @@
 import { browser } from 'wxt/browser';
 import { ExportFormat, NormalizedExportPayload, NoteBlock, validateNoteBlocks } from '../export-core';
 import { RawExtractResult } from './common';
+import { injectRichTextExtractor } from './rich-text';
 
 export interface TypeExtractResult {
     success: boolean;
@@ -27,6 +28,7 @@ export interface TypeExtractResult {
 
 export const extractNote = async (tabId: number, format: ExportFormat): Promise<TypeExtractResult> => {
     try {
+        await injectRichTextExtractor(tabId);
         const results = await browser.scripting.executeScript({
             target: { tabId, allFrames: true },
             args: [format],
@@ -36,91 +38,11 @@ export const extractNote = async (tabId: number, format: ExportFormat): Promise<
                         return { success: false, error: 'unsupported_format', frameUrl: window.location.href };
                     }
 
-                    const normalizeWhitespace = (value: string) => value.replace(/\s+/g, ' ');
-
-                    const trimInlines = (inlines: { text: string; bold?: boolean; italic?: boolean; citation?: { id: string; source: string } }[]) => {
-                        if (inlines.length === 0) return inlines;
-                        inlines[0].text = inlines[0].text.replace(/^\s+/, '');
-                        if (inlines.length > 0) {
-                            inlines[inlines.length - 1].text = inlines[inlines.length - 1].text.replace(/\s+$/, '');
-                        }
-                        return inlines.filter((inline) => inline.text.length > 0 || inline.citation);
-                    };
-
-                    const formatCitation = (ariaLabel?: string | null, fallback?: string | null) => {
-                        const label = ariaLabel?.trim();
-                        if (label) {
-                            const match = label.match(/^(\d+)\s*:\s*(.+)$/);
-                            if (match) {
-                                return { id: match[1], source: match[2] };
-                            }
-                            return { id: label, source: label };
-                        }
-                        const text = fallback?.trim();
-                        if (text) {
-                            return { id: text, source: text };
-                        }
-                        return null;
-                    };
-
-                    const pushInline = (
-                        inlines: { text: string; bold?: boolean; italic?: boolean; citation?: { id: string; source: string } }[],
-                        text: string,
-                        style: { bold?: boolean; italic?: boolean }
-                    ) => {
-                        const normalized = normalizeWhitespace(text);
-                        if (normalized.trim().length === 0) {
-                            return;
-                        }
-                        const last = inlines[inlines.length - 1];
-                        if (last && !last.citation && last.bold === style.bold && last.italic === style.italic) {
-                            last.text += normalized;
-                            return;
-                        }
-                        inlines.push({ text: normalized, bold: style.bold, italic: style.italic });
-                    };
-
-                    const collectInlines = (element: Element) => {
-                        const inlines: { text: string; bold?: boolean; italic?: boolean; citation?: { id: string; source: string } }[] = [];
-                        const walk = (node: Node, style: { bold?: boolean; italic?: boolean }) => {
-                            if (node.nodeType === Node.TEXT_NODE) {
-                                pushInline(inlines, node.textContent || '', style);
-                                return;
-                            }
-                            if (node.nodeType !== Node.ELEMENT_NODE) {
-                                return;
-                            }
-                            const el = node as HTMLElement;
-                            if (el.matches('span[aria-label]')) {
-                                const ariaLabel = el.getAttribute('aria-label');
-                                if (ariaLabel && /^\d+\s*:/.test(ariaLabel)) {
-                                    const citation = formatCitation(ariaLabel, el.textContent);
-                                    if (citation) {
-                                        inlines.push({ text: '', ...style, citation });
-                                    }
-                                    return;
-                                }
-                            }
-
-                            const nextStyle = { ...style };
-                            if (el.tagName === 'B' || el.tagName === 'STRONG') {
-                                nextStyle.bold = true;
-                            }
-                            if (el.tagName === 'I' || el.tagName === 'EM') {
-                                nextStyle.italic = true;
-                            }
-                            el.childNodes.forEach((child) => walk(child, nextStyle));
-                        };
-
-                        element.childNodes.forEach((child) => walk(child, {}));
-                        return trimInlines(inlines);
-                    };
-
-                    const collectCodeText = (element: Element) => {
-                        const codeElement = element.querySelector('code') || element;
-                        const rawText = codeElement.textContent || '';
-                        return rawText.replace(/\r\n/g, '\n').replace(/\r/g, '\n').replace(/\n+$/, '');
-                    };
+                    const richText = (globalThis as any).__NOTEBOOKLM_EXPORT_RICH_TEXT__;
+                    if (!richText) {
+                        return { success: false, error: 'rich_text_helper_missing', frameUrl: window.location.href };
+                    }
+                    const { collectCodeText, collectInlines } = richText;
 
                     const root =
                         document.querySelector('note-editor') ||
@@ -135,7 +57,7 @@ export const extractNote = async (tabId: number, format: ExportFormat): Promise<
                         | null;
                     const title = titleInput?.value?.trim() || '';
 
-                    const elements = Array.from(root.querySelectorAll('div.paragraph, table, pre'));
+                    const elements = Array.from(root.querySelectorAll('.paragraph, table, pre'));
                     const blocks: NoteBlock[] = [];
 
                     for (const element of elements) {

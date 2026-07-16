@@ -254,6 +254,9 @@ const WHATS_NEW_FEATURES_BY_VERSION: Record<string, MessageKey[]> = {
     '1.4.3': [
         'whatsNew.feature.exportActionsDiscovery',
     ],
+    '1.4.4': [
+        'whatsNew.feature.latexExport',
+    ],
 };
 
 const compareSemver = (a: string, b: string) => {

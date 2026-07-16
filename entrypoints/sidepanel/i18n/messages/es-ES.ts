@@ -58,6 +58,7 @@ export const ES_MESSAGES: Record<string, MessageValue> = {
   'whatsNew.feature.infographicExport': 'Nuevas exportaciones de infografías a PNG, HTML, PDF y Notion',
   'whatsNew.feature.videoOverviewExport': 'Nuevas exportaciones de resumen de video a MP4, audio WAV y exportaciones storyboard (ZIP, PDF, PowerPoint, HTML)',
   'whatsNew.feature.exportActionsDiscovery': 'Mejor descubrimiento de acciones de exportación con pestañas por tipo de contenido y rutas recientes por destino',
+  'whatsNew.feature.latexExport': 'Se añadieron exportaciones a LaTeX',
   'whatsNew.action.gotIt': 'Entendido',
 
   'header.signOutTitle': 'Cerrar sesión',

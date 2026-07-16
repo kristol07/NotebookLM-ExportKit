@@ -57,6 +57,7 @@ export const JA_MESSAGES: Record<string, MessageValue> = {
   'whatsNew.feature.infographicExport': 'インフォグラフィックを PNG/HTML/PDF、Notion へエクスポート可能に',
   'whatsNew.feature.videoOverviewExport': '動画概要を MP4、WAV 音声、ストーリーボード（ZIP / PDF / PowerPoint / HTML）でエクスポート可能に',
   'whatsNew.feature.exportActionsDiscovery': 'コンテンツタイプ別タブと出力先ごとの最近使ったルートで、エクスポート操作を見つけやすく改善',
+  'whatsNew.feature.latexExport': 'LaTeX エクスポートを追加',
   'whatsNew.action.gotIt': '確認しました',
 
   'header.signOutTitle': 'サインアウト',

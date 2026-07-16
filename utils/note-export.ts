@@ -22,6 +22,7 @@ import {
     BorderStyle,
     Document,
     HeadingLevel,
+    ImageRun,
     LineRuleType,
     Packer,
     Paragraph,
@@ -31,6 +32,13 @@ import {
     TextRun,
     WidthType
 } from 'docx';
+import {
+    createDocxMathImageRun,
+    MATH_EXPORT_CSS,
+    renderMathHtml,
+    renderMathMarkdown,
+    waitForMathFonts
+} from './math-export';
 
 const escapeHtml = (value: string) =>
     value
@@ -57,6 +65,9 @@ const renderInlineHtml = (
     references: Map<string, string>,
     referenceOrder: string[]
 ) => {
+    if (inline.math) {
+        return renderMathHtml(inline.math);
+    }
     if (inline.citation) {
         const key = inline.citation.id;
         if (!references.has(key)) {
@@ -80,8 +91,12 @@ const renderInlineMarkdown = (
     inline: NoteInline,
     forTable: boolean,
     footnotes: Map<string, string>,
-    footnoteOrder: string[]
+    footnoteOrder: string[],
+    allowDisplay = true
 ) => {
+    if (inline.math) {
+        return renderMathMarkdown(inline.math, { allowDisplay, forTable });
+    }
     if (inline.citation) {
         const key = inline.citation.id;
         if (!footnotes.has(key)) {
@@ -112,7 +127,10 @@ const renderHeadingMarkdown = (
     footnotes: Map<string, string>,
     footnoteOrder: string[]
 ) => {
-    const heading = renderParagraphMarkdown(inlines, footnotes, footnoteOrder);
+    const heading = inlines
+        .map((inline) => renderInlineMarkdown(inline, false, footnotes, footnoteOrder, false))
+        .join('')
+        .trim();
     if (!heading) {
         return '';
     }
@@ -155,7 +173,7 @@ const renderTableMarkdown = (rows: NoteInline[][][], footnotes: Map<string, stri
     };
 
     const renderRow = (row: NoteInline[][]) =>
-        `| ${normalizeRow(row).map((cell) => cell.map((inline) => renderInlineMarkdown(inline, true, footnotes, footnoteOrder)).join('').trim()).join(' | ')} |`;
+        `| ${normalizeRow(row).map((cell) => cell.map((inline) => renderInlineMarkdown(inline, true, footnotes, footnoteOrder, false)).join('').trim()).join(' | ')} |`;
 
     const header = renderRow(rows[0]);
     const separator = `| ${Array.from({ length: columnCount }).map(() => '---').join(' | ')} |`;
@@ -237,6 +255,7 @@ const createPdfStyleElement = () => {
         .note-export .note-references li { margin: 0 0 6pt; }
         .note-export .note-reference-item { margin: 0 0 6pt; padding-left: 18pt; text-indent: -18pt; }
         .note-block { padding-top: 0.1px; padding-bottom: 0.1px; }
+        ${MATH_EXPORT_CSS}
     `;
     return style;
 };
@@ -300,13 +319,63 @@ const buildReferenceBlocks = (references: Map<string, string>, referenceOrder: s
         })
     ];
 };
-const buildDocxParagraph = (
+type DocxInlineChild = TextRun | ImageRun;
+
+const buildDocxMathChild = async (inline: NoteInline): Promise<DocxInlineChild | null> => {
+    if (!inline.math) {
+        return null;
+    }
+    try {
+        return await createDocxMathImageRun(inline.math);
+    } catch (error) {
+        console.warn('Failed to render equation image for Word export.', error);
+        return new TextRun({ text: `$${inline.math.latex}$` });
+    }
+};
+
+const buildDocxParagraphs = async (
     inlines: NoteInline[],
     references: Map<string, string>,
     referenceOrder: string[]
 ) => {
-    const children: TextRun[] = [];
+    const paragraphs: Paragraph[] = [];
+    let children: DocxInlineChild[] = [];
+
+    const flushParagraph = () => {
+        if (children.length === 0) {
+            return;
+        }
+        paragraphs.push(
+            new Paragraph({
+                children,
+                spacing: DOCX_PARAGRAPH_SPACING,
+                run: DOCX_BODY_RUN
+            })
+        );
+        children = [];
+    };
+
     for (const inline of inlines) {
+        if (inline.math) {
+            const mathChild = await buildDocxMathChild(inline);
+            if (!mathChild) {
+                continue;
+            }
+            if (inline.math.display) {
+                flushParagraph();
+                paragraphs.push(
+                    new Paragraph({
+                        children: [mathChild],
+                        alignment: AlignmentType.CENTER,
+                        spacing: DOCX_PARAGRAPH_SPACING,
+                        run: DOCX_BODY_RUN
+                    })
+                );
+            } else {
+                children.push(mathChild);
+            }
+            continue;
+        }
         if (inline.citation) {
             const key = inline.citation.id;
             if (!references.has(key)) {
@@ -331,21 +400,34 @@ const buildDocxParagraph = (
             })
         );
     }
-    return new Paragraph({
-        children,
-        spacing: DOCX_PARAGRAPH_SPACING,
-        run: DOCX_BODY_RUN
-    });
+    flushParagraph();
+    if (paragraphs.length === 0) {
+        paragraphs.push(
+            new Paragraph({
+                children: [],
+                spacing: DOCX_PARAGRAPH_SPACING,
+                run: DOCX_BODY_RUN
+            })
+        );
+    }
+    return paragraphs;
 };
 
-const buildDocxHeading = (
+const buildDocxHeading = async (
     level: number,
     inlines: NoteInline[],
     references: Map<string, string>,
     referenceOrder: string[]
 ) => {
-    const children: TextRun[] = [];
+    const children: DocxInlineChild[] = [];
     for (const inline of inlines) {
+        if (inline.math) {
+            const mathChild = await buildDocxMathChild(inline);
+            if (mathChild) {
+                children.push(mathChild);
+            }
+            continue;
+        }
         if (inline.citation) {
             const key = inline.citation.id;
             if (!references.has(key)) {
@@ -387,18 +469,18 @@ const buildDocxHeading = (
     });
 };
 
-const buildDocxTable = (
+const buildDocxTable = async (
     rows: NoteInline[][][],
     references: Map<string, string>,
     referenceOrder: string[]
 ) => {
-    const tableRows = rows.map((row) => {
-        const cells = row.map((cell) => {
-            const paragraph = buildDocxParagraph(cell, references, referenceOrder);
-            return new TableCell({ children: [paragraph], margins: DOCX_TABLE_MARGINS });
-        });
+    const tableRows = await Promise.all(rows.map(async (row) => {
+        const cells = await Promise.all(row.map(async (cell) => {
+            const paragraphs = await buildDocxParagraphs(cell, references, referenceOrder);
+            return new TableCell({ children: paragraphs, margins: DOCX_TABLE_MARGINS });
+        }));
         return new TableRow({ children: cells });
-    });
+    }));
     return new Table({
         width: { size: 100, type: WidthType.PERCENTAGE },
         rows: tableRows,
@@ -462,6 +544,7 @@ const generateLegacyDocHtml = (title: string, blocks: NoteBlock[]) => {
         pre { font-family: "Consolas", "Courier New", monospace; }
         .note-citation { font-size: 9pt; vertical-align: super; }
         .note-references { margin: 0; padding-left: 18pt; }
+        ${MATH_EXPORT_CSS}
     </style>
 </head>
 <body>
@@ -716,6 +799,7 @@ const paginatePdfBlocks = (
 };
 
 const exportNotePdf = async (title: string, blocks: NoteBlock[], pdfQuality: PdfQualityPreference = 'size') => {
+    await waitForMathFonts();
     const { references, referenceOrder } = collectReferences(blocks);
     const preset = PDF_PRESETS[pdfQuality] || PDF_PRESETS.size;
     const pdfBlocks: PdfRenderBlock[] = [
@@ -828,20 +912,23 @@ export const exportNote = async (
                 heading: HeadingLevel.HEADING_1,
                 alignment: AlignmentType.LEFT,
                 spacing: { after: 240 }
-            }),
-            ...blocks.flatMap((block) => {
-                if (block.type === 'paragraph') {
-                    return buildDocxParagraph(block.inlines, references, referenceOrder);
-                }
-                if (block.type === 'heading') {
-                    return buildDocxHeading(block.level, block.inlines, references, referenceOrder);
-                }
-                if (block.type === 'code') {
-                    return buildDocxCodeBlock(block.text);
-                }
-                return buildDocxTable(block.rows, references, referenceOrder);
             })
         ];
+        for (const block of blocks) {
+            if (block.type === 'paragraph') {
+                children.push(...await buildDocxParagraphs(block.inlines, references, referenceOrder));
+                continue;
+            }
+            if (block.type === 'heading') {
+                children.push(await buildDocxHeading(block.level, block.inlines, references, referenceOrder));
+                continue;
+            }
+            if (block.type === 'code') {
+                children.push(buildDocxCodeBlock(block.text));
+                continue;
+            }
+            children.push(await buildDocxTable(block.rows, references, referenceOrder));
+        }
 
         if (referenceOrder.length > 0) {
             children.push(new Paragraph({ children: [], spacing: { after: 200 } }));

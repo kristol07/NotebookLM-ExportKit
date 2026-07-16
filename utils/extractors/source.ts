@@ -17,6 +17,7 @@
 import { browser } from 'wxt/browser';
 import { ExportFormat, NormalizedExportPayload, NoteBlock, SourceItem, validateSourceItems } from '../export-core';
 import { RawExtractResult } from './common';
+import { injectRichTextExtractor } from './rich-text';
 
 export interface TypeExtractResult {
     success: boolean;
@@ -27,6 +28,7 @@ export interface TypeExtractResult {
 
 export const extractSource = async (tabId: number, format: ExportFormat): Promise<TypeExtractResult> => {
     try {
+        await injectRichTextExtractor(tabId);
         const results = await browser.scripting.executeScript({
             target: { tabId, allFrames: true },
             args: [format],
@@ -36,89 +38,18 @@ export const extractSource = async (tabId: number, format: ExportFormat): Promis
                         return { success: false, error: 'unsupported_format', frameUrl: window.location.href };
                     }
 
-                    const normalizeWhitespace = (value: string) => value.replace(/\s+/g, ' ');
-
-                    const trimInlines = (inlines: { text: string; bold?: boolean; italic?: boolean }[]) => {
-                        if (inlines.length === 0) return inlines;
-                        inlines[0].text = inlines[0].text.replace(/^\s+/, '');
-                        if (inlines.length > 0) {
-                            inlines[inlines.length - 1].text = inlines[inlines.length - 1].text.replace(/\s+$/, '');
-                        }
-                        return inlines.filter((inline) => inline.text.length > 0);
-                    };
-
-                    const shouldSkipLineNumber = (node: Node) => {
-                        if (node.nodeType !== Node.TEXT_NODE) {
-                            return false;
-                        }
-                        const parent = node.parentElement;
-                        if (!parent || !parent.matches('span[data-start-index]')) {
-                            return false;
-                        }
-                        const paragraph = parent.closest('div.paragraph');
-                        if (!paragraph || !paragraph.hasAttribute('data-start-index')) {
-                            return false;
-                        }
-                        const text = node.textContent || '';
-                        return /^\s*\d+\s*$/.test(text);
-                    };
-
-                    const pushInline = (
-                        inlines: { text: string; bold?: boolean; italic?: boolean }[],
-                        text: string,
-                        style: { bold?: boolean; italic?: boolean }
-                    ) => {
-                        const normalized = normalizeWhitespace(text);
-                        if (normalized.trim().length === 0) {
-                            return;
-                        }
-                        const last = inlines[inlines.length - 1];
-                        if (last && last.bold === style.bold && last.italic === style.italic) {
-                            last.text += normalized;
-                            return;
-                        }
-                        inlines.push({ text: normalized, bold: style.bold, italic: style.italic });
-                    };
-
-                    const collectInlines = (element: Element) => {
-                        const inlines: { text: string; bold?: boolean; italic?: boolean }[] = [];
-                        const walk = (node: Node, style: { bold?: boolean; italic?: boolean }) => {
-                            if (node.nodeType === Node.TEXT_NODE) {
-                                if (!shouldSkipLineNumber(node)) {
-                                    pushInline(inlines, node.textContent || '', style);
-                                }
-                                return;
-                            }
-                            if (node.nodeType !== Node.ELEMENT_NODE) {
-                                return;
-                            }
-                            const el = node as HTMLElement;
-
-                            const nextStyle = { ...style };
-                            if (el.tagName === 'B' || el.tagName === 'STRONG') {
-                                nextStyle.bold = true;
-                            }
-                            if (el.tagName === 'I' || el.tagName === 'EM') {
-                                nextStyle.italic = true;
-                            }
-                            el.childNodes.forEach((child) => walk(child, nextStyle));
-                        };
-
-                        element.childNodes.forEach((child) => walk(child, {}));
-                        return trimInlines(inlines);
-                    };
-
-                    const collectCodeText = (element: Element) => {
-                        const codeElement = element.querySelector('code') || element;
-                        const rawText = codeElement.textContent || '';
-                        return rawText.replace(/\r\n/g, '\n').replace(/\r/g, '\n').replace(/\n+$/, '');
-                    };
-
-                    const isSeparator = (inlines: { text: string }[]) => {
-                        const raw = inlines.map((inline) => inline.text).join('');
-                        const compact = raw.replace(/\s+/g, '');
-                        return compact.length > 0 && /^-+$/.test(compact);
-                    };
+                    const richText = (globalThis as any).__NOTEBOOKLM_EXPORT_RICH_TEXT__;
+                    if (!richText) {
+                        return { success: false, error: 'rich_text_helper_missing', frameUrl: window.location.href };
+                    }
+                    const {
+                        collectCodeText,
+                        collectInlines: collectRichInlines,
+                        isSeparator,
+                        normalizeWhitespace
+                    } = richText;
+                    const collectInlines = (element: Element) =>
+                        collectRichInlines(element, { includeCitations: true, skipLineNumbers: true });
 
                     const extractSourceDetail = (doc: Document) => {
                         const viewer = doc.querySelector('source-viewer');
@@ -168,7 +99,7 @@ export const extractSource = async (tabId: number, format: ExportFormat): Promis
                             viewer.querySelector('.elements-container') ||
                             viewer.querySelector('labs-tailwind-doc-viewer') ||
                             viewer;
-                        const elements = Array.from(contentRoot.querySelectorAll('div.paragraph, table, pre'));
+                        const elements = Array.from(contentRoot.querySelectorAll('.paragraph, table, pre'));
 
                         for (const element of elements) {
                             if (element.tagName === 'TABLE') {

@@ -32,6 +32,7 @@ If you rely on NotebookLM for study, teaching, or knowledge management, this ext
 What it does:
 
   - Export NotebookLM content to multiple formats (varies by content type).
+  - Preserve inline and display LaTeX equations in note, report, chat, and source-detail exports to Markdown/clipboard, Word, PDF, and Notion.
   - Preserve structure for quizzes, flashcards, and mindmaps so exports stay readable and ready to use.
   - One-click exports designed for common workflows in Excel/Sheets, Anki, Obsidian, Notion, Word, PDF, HTML, PowerPoint (PPTX), and mind-mapping tools.
   - Send exports directly to Google Drive or Notion, or keep the default local download flow.

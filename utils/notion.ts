@@ -185,6 +185,15 @@ const buildTextRichText = (
 const buildInlineRichText = (inlines: Array<NoteInline | ChatInline>) => {
   const richText: any[] = [];
   inlines.forEach((inline) => {
+    if (inline.math?.latex) {
+      richText.push({
+        type: 'equation',
+        equation: {
+          expression: inline.math.latex.slice(0, 1000),
+        },
+      });
+      return;
+    }
     if (inline.citation) {
       const link = inline.citation.source && isUrl(inline.citation.source) ? inline.citation.source : undefined;
       richText.push(
@@ -231,17 +240,20 @@ const buildParagraphBlock = (richText: any[], children?: any[]) => ({
   },
 });
 
-const buildHeadingBlock = (level: 1 | 2 | 3, text: string, color?: string) => {
+const buildHeadingRichTextBlock = (level: 1 | 2 | 3, richText: any[]) => {
   const safeLevel = level === 1 ? 1 : level === 2 ? 2 : 3;
   const type = safeLevel === 1 ? 'heading_1' : safeLevel === 2 ? 'heading_2' : 'heading_3';
   return {
     object: 'block',
     type,
     [type]: {
-      rich_text: buildTextRichText(text, color ? { color } : undefined),
+      rich_text: richText,
     },
   };
 };
+
+const buildHeadingBlock = (level: 1 | 2 | 3, text: string, color?: string) =>
+  buildHeadingRichTextBlock(level, buildTextRichText(text, color ? { color } : undefined));
 
 const buildToggleBlock = (text: string, children?: any[]) => ({
   object: 'block',
@@ -573,9 +585,9 @@ const buildNoteContentBlocks = (items: NoteBlock[]) => {
       return;
     }
     if (block.type === 'heading') {
-      const text = block.inlines.map((inline) => inline.text).join('').trim();
-      if (text) {
-        blocks.push(buildHeadingBlock(block.level, text));
+      const richText = buildInlineRichText(block.inlines);
+      if (richText.length > 0) {
+        blocks.push(buildHeadingRichTextBlock(block.level, richText));
       }
       return;
     }

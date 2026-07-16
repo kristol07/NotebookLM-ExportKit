@@ -7,6 +7,7 @@ For Google OAuth/Drive setup, see `docs/GOOGLE_OAUTH_SETUP.md`.
 
 ### Core
 - `utils/export-core.ts` owns shared types and validation.
+- Rich-text inline types can carry a first-class `MathExpression` (`latex`, optional rendered `html`, and `display` mode).
 - `utils/export-dispatch.ts` routes by content type to the correct exporter and enforces per-type format support.
 - `utils/export-delivery.ts` handles delivery targets (download, Google Drive, Notion) after exporters build blobs or accept structured payloads for destination-native layouts.
 - Clipboard delivery for Markdown (select content types) is handled in the dashboard when the target is **download**, so it can bypass file saving while reusing the same export pipeline.
@@ -14,8 +15,14 @@ For Google OAuth/Drive setup, see `docs/GOOGLE_OAUTH_SETUP.md`.
 ### Content-specific
 - `utils/quiz-export.ts`, `utils/flashcard-export.ts`, `utils/mindmap-export.ts`, `utils/datatable-export.ts`, `utils/note-export.ts`, `utils/report-export.ts`, `utils/slidedeck-export.ts`, `utils/infographic-export.ts`, and `utils/videooverview-export.ts` implement per-type formats and keep HTML UIs distinct where needed.
 - `utils/extractors/` contains one extractor per content type (including notes and reports) and a shared `data-app-data` extraction helper.
+- `utils/extractors/rich-text.ts` injects `public/exportkit-rich-text.js`, which provides shared text, citation, code, list, and KaTeX extraction for notes, reports, chats, and source details.
+- `utils/math-export.ts` owns format-specific equation rendering:
+  - Markdown and clipboard use `$...$` for inline math and `$$...$$` for display math.
+  - PDF/HTML reuse sanitized rendered KaTeX markup with bundled KaTeX styles and fonts.
+  - Word rasterizes each equation to a transparent image before adding it to the DOCX.
+  - Notion exports use native equation rich text.
 - Note extraction details: see `docs/NOTE_EXTRACTION.md`.
-- Notes currently support Markdown, Word, and PDF exports; PDF uses HTML rendering for layout.
+- Notes currently support Markdown, Word, and PDF exports; PDF uses HTML rendering for layout. Reports and source details reuse the note renderer, so they receive the same rich-text and equation behavior.
 - Slide decks support PDF, PPTX, HTML, and ZIP (Markdown + image files).
 - Infographics support PNG, HTML, PDF, and Notion native rendering.
 - Video overviews support MP4, WAV audio, storyboard exports in Markdown ZIP/ZIP/PDF/PPTX/HTML (including video links in Markdown/PPTX/HTML), and Notion native video+frame layouts.
@@ -45,6 +52,7 @@ Treat **type-specific extractors and type-specific format support** as the defau
 Recommended steps:
 1. **Type-specific extraction**
    - Keep extraction in `utils/extractors/` and add one extractor per content type.
+   - For NotebookLM rich-text DOM, reuse the injected rich-text helper so equations remain structured instead of being flattened to glyph text.
 2. **Supported formats per type**
    - Define a per-type supported-format list (e.g., `supportedFormats: Record<ContentType, ExportFormat[]>`) and enforce it before dispatch.
 3. **Type-specific exporters**
