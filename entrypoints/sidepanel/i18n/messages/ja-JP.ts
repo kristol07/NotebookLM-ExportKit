@@ -49,7 +49,9 @@ export const JA_MESSAGES: Record<string, MessageValue> = {
   'common.copy': 'コピー',
   'whatsNew.badge': '新機能',
   'whatsNew.title': '新着情報',
-  'whatsNew.subtitle': 'このバージョンで追加された機能',
+  'whatsNew.subtitle': '前回の利用以降に変わった点を簡潔にご紹介します。',
+  'whatsNew.welcomeTitle': 'ExportKit へようこそ',
+  'whatsNew.welcomeSubtitle': 'エクスポートの準備ができました。このバージョンの新機能をご紹介します。',
   'whatsNew.feature.sideDeckExport': 'スライドデッキのエクスポートを追加',
   'whatsNew.feature.dataTableSources': 'データテーブルのエクスポートをソース一覧付きで改善',
   'whatsNew.feature.reportHtmlExport': 'レポート向けの HTML エクスポートを追加',
@@ -58,7 +60,9 @@ export const JA_MESSAGES: Record<string, MessageValue> = {
   'whatsNew.feature.videoOverviewExport': '動画概要を MP4、WAV 音声、ストーリーボード（ZIP / PDF / PowerPoint / HTML）でエクスポート可能に',
   'whatsNew.feature.exportActionsDiscovery': 'コンテンツタイプ別タブと出力先ごとの最近使ったルートで、エクスポート操作を見つけやすく改善',
   'whatsNew.feature.latexExport': 'LaTeX エクスポートを追加',
+  'whatsNew.feature.notebookLmCompatibility': 'NotebookLM のリブランド後もエクスポートできるよう ExportKit を更新',
   'whatsNew.action.gotIt': '確認しました',
+  'whatsNew.action.startExporting': 'エクスポートを始める',
 
   'header.signOutTitle': 'サインアウト',
 

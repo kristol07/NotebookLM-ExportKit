@@ -257,6 +257,9 @@ const WHATS_NEW_FEATURES_BY_VERSION: Record<string, MessageKey[]> = {
     '1.4.4': [
         'whatsNew.feature.latexExport',
     ],
+    '1.5.1': [
+        'whatsNew.feature.notebookLmCompatibility',
+    ],
 };
 
 const compareSemver = (a: string, b: string) => {
@@ -272,11 +275,17 @@ const compareSemver = (a: string, b: string) => {
     return 0;
 };
 
-const getUnseenWhatsNewFeatureKeys = (seenVersion: string | null): MessageKey[] => {
-    const unseenVersions = Object.keys(WHATS_NEW_FEATURES_BY_VERSION)
-        .filter((version) => compareSemver(version, WHATS_NEW_VERSION) <= 0)
-        .filter((version) => !seenVersion || compareSemver(version, seenVersion) > 0)
-        .sort(compareSemver);
+const getWhatsNewContent = (seenVersion: string | null): {
+    featureKeys: MessageKey[];
+    isFirstInstall: boolean;
+} => {
+    const isFirstInstall = seenVersion === null;
+    const unseenVersions = isFirstInstall
+        ? (WHATS_NEW_FEATURES_BY_VERSION[WHATS_NEW_VERSION] ? [WHATS_NEW_VERSION] : [])
+        : Object.keys(WHATS_NEW_FEATURES_BY_VERSION)
+            .filter((version) => compareSemver(version, WHATS_NEW_VERSION) <= 0)
+            .filter((version) => compareSemver(version, seenVersion) > 0)
+            .sort(compareSemver);
 
     const dedupedKeys: MessageKey[] = [];
     const seenKeys = new Set<MessageKey>();
@@ -290,7 +299,7 @@ const getUnseenWhatsNewFeatureKeys = (seenVersion: string | null): MessageKey[] 
             dedupedKeys.push(key);
         });
     });
-    return dedupedKeys;
+    return { featureKeys: dedupedKeys, isFirstInstall };
 };
 const DRIVE_EXPORT_REQUIRES_PLUS = true;
 const NOTION_EXPORT_REQUIRES_PLUS = true;
@@ -324,6 +333,7 @@ export default function Dashboard({
     const [showUpgradeModal, setShowUpgradeModal] = useState(false);
     const [showSettingsPanel, setShowSettingsPanel] = useState(false);
     const [showWhatsNewModal, setShowWhatsNewModal] = useState(false);
+    const [isWhatsNewFirstInstall, setIsWhatsNewFirstInstall] = useState(false);
     const [upgradeContext, setUpgradeContext] = useState<'drive' | 'notion' | 'format' | 'general' | null>(null);
     const noticeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const upgradeInFlightRef = useRef(false);
@@ -428,9 +438,10 @@ export default function Dashboard({
 
     useEffect(() => {
         const seenVersion = localStorage.getItem(WHATS_NEW_STORAGE_KEY);
-        const unseenKeys = getUnseenWhatsNewFeatureKeys(seenVersion);
-        setWhatsNewFeatureKeys(unseenKeys);
-        if (unseenKeys.length > 0 && seenVersion !== WHATS_NEW_VERSION) {
+        const whatsNewContent = getWhatsNewContent(seenVersion);
+        setWhatsNewFeatureKeys(whatsNewContent.featureKeys);
+        setIsWhatsNewFirstInstall(whatsNewContent.isFirstInstall);
+        if (whatsNewContent.featureKeys.length > 0) {
             setShowWhatsNewModal(true);
         }
     }, []);
@@ -1158,7 +1169,12 @@ export default function Dashboard({
                 <SettingsPanel onClose={() => setShowSettingsPanel(false)} />
             )}
             {showWhatsNewModal && (
-                <WhatsNewModal onClose={handleCloseWhatsNewModal} featureKeys={whatsNewFeatureKeys} />
+                <WhatsNewModal
+                    onClose={handleCloseWhatsNewModal}
+                    featureKeys={whatsNewFeatureKeys}
+                    version={WHATS_NEW_VERSION}
+                    isFirstInstall={isWhatsNewFirstInstall}
+                />
             )}
         </div>
     );

@@ -11,13 +11,15 @@ This document describes how the sidepanel "What's New" popup works and how to up
   - `WHATS_NEW_FEATURES_BY_VERSION`
 - `WHATS_NEW_VERSION` is read from `browser.runtime.getManifest().version`.
 - On sidepanel load:
-  - It collects feature keys for all mapped versions where `seenVersion < version <= WHATS_NEW_VERSION`.
+  - On a first install (no stored version), it only loads the mapping for `WHATS_NEW_VERSION`.
+  - On an upgrade, it collects feature keys for all mapped versions where `seenVersion < version <= WHATS_NEW_VERSION`.
   - If no unseen keys are found, popup does not show.
   - Otherwise, popup shows once with the merged unseen list.
 - Closing the popup writes `exportkitWhatsNewSeenVersion = WHATS_NEW_VERSION`, so it stays hidden for that version afterward.
+- Long upgrade histories remain available in a bounded, scrollable feature list instead of growing the modal beyond the sidepanel viewport.
 
 ## Content Model
-- The popup renders a dynamic list of i18n keys (`MessageKey[]`) merged from unseen versions in `WHATS_NEW_FEATURES_BY_VERSION`.
+- The popup renders a dynamic list of i18n keys (`MessageKey[]`) from the current version on first install, or merged from unseen versions on upgrade.
 - This allows different item counts per version and supports users who skip intermediate releases.
 - Modal component:
   - `entrypoints/sidepanel/components/dashboard/WhatsNewModal.tsx`

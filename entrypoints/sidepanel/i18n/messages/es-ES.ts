@@ -50,7 +50,9 @@ export const ES_MESSAGES: Record<string, MessageValue> = {
   'common.copy': 'Copiar',
   'whatsNew.badge': 'Nuevo',
   'whatsNew.title': 'Novedades',
-  'whatsNew.subtitle': 'Últimas funciones de esta versión',
+  'whatsNew.subtitle': 'Un vistazo rápido a los cambios desde tu última visita.',
+  'whatsNew.welcomeTitle': 'Te damos la bienvenida a ExportKit',
+  'whatsNew.welcomeSubtitle': 'Tus herramientas de exportación están listas. Estas son las novedades de esta versión.',
   'whatsNew.feature.sideDeckExport': 'Se añadieron exportaciones de presentaciones',
   'whatsNew.feature.dataTableSources': 'Se mejoraron las exportaciones de tablas de datos con una lista de fuentes',
   'whatsNew.feature.reportHtmlExport': 'Se añadió exportación HTML para informes',
@@ -59,7 +61,9 @@ export const ES_MESSAGES: Record<string, MessageValue> = {
   'whatsNew.feature.videoOverviewExport': 'Nuevas exportaciones de resumen de video a MP4, audio WAV y exportaciones storyboard (ZIP, PDF, PowerPoint, HTML)',
   'whatsNew.feature.exportActionsDiscovery': 'Mejor descubrimiento de acciones de exportación con pestañas por tipo de contenido y rutas recientes por destino',
   'whatsNew.feature.latexExport': 'Se añadieron exportaciones a LaTeX',
+  'whatsNew.feature.notebookLmCompatibility': 'Se actualizó ExportKit para mantener las exportaciones funcionando tras el cambio de marca de NotebookLM',
   'whatsNew.action.gotIt': 'Entendido',
+  'whatsNew.action.startExporting': 'Empezar a exportar',
 
   'header.signOutTitle': 'Cerrar sesión',
 

@@ -49,8 +49,10 @@ export const EN_MESSAGES: Record<string, MessageValue> = {
   'common.exportToNotion': 'Export to Notion',
   'common.copy': 'Copy',
   'whatsNew.badge': 'New',
-  'whatsNew.title': 'What is new',
-  'whatsNew.subtitle': 'Latest features in this version',
+  'whatsNew.title': 'What\'s new',
+  'whatsNew.subtitle': 'A quick look at what changed since your last visit.',
+  'whatsNew.welcomeTitle': 'Welcome to ExportKit',
+  'whatsNew.welcomeSubtitle': 'Your export tools are ready. Here is what is new in this release.',
   'whatsNew.feature.sideDeckExport': 'Added slide deck exports',
   'whatsNew.feature.dataTableSources': 'Improved data table exports with a source list',
   'whatsNew.feature.reportHtmlExport': 'Added HTML export for reports',
@@ -59,7 +61,9 @@ export const EN_MESSAGES: Record<string, MessageValue> = {
   'whatsNew.feature.videoOverviewExport': 'Added video overview exports to MP4, WAV audio, and storyboard exports (ZIP, PDF, PowerPoint, HTML)',
   'whatsNew.feature.exportActionsDiscovery': 'Improved export action discovery with content-type tabs and destination-based recent routes',
   'whatsNew.feature.latexExport': 'Added LaTeX exports',
+  'whatsNew.feature.notebookLmCompatibility': 'Updated ExportKit to keep exports working after NotebookLM\'s rebrand',
   'whatsNew.action.gotIt': 'Got it',
+  'whatsNew.action.startExporting': 'Start exporting',
 
   'header.signOutTitle': 'Sign Out',
 
