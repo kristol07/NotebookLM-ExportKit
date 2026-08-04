@@ -26,7 +26,7 @@ export interface TypeExtractResult {
 }
 
 /**
- * Extract mindmap data from NotebookLM's SVG-based mindmap viewer
+ * Extract mindmap data from NotebookLM's structured app data or legacy SVG viewer
  */
 export const extractMindmap = async (tabId: number, format: ExportFormat): Promise<TypeExtractResult> => {
     try {
@@ -45,6 +45,107 @@ export const extractMindmap = async (tabId: number, format: ExportFormat): Promi
                             return { title: match[1].trim(), childCount: parseInt(match[2], 10) };
                         }
                         return { title: label.trim(), childCount: 0 };
+                    };
+
+                    /**
+                     * Normalize NotebookLM's structured mindmap data. The current app uses
+                     * `name`, while exported/older normalized payloads use `title`.
+                     */
+                    const normalizeStructuredNode = (value: unknown): MindmapNode | null => {
+                        if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
+
+                        const record = value as Record<string, unknown>;
+                        const rawTitle = typeof record.title === 'string'
+                            ? record.title
+                            : typeof record.name === 'string'
+                                ? record.name
+                                : '';
+                        const title = rawTitle.trim();
+                        if (!title) return null;
+
+                        const node: MindmapNode = { title };
+                        if (typeof record.id === 'string' && record.id.trim()) {
+                            node.id = record.id;
+                        }
+
+                        if (record.children !== undefined && record.children !== null) {
+                            if (!Array.isArray(record.children)) return null;
+
+                            const children: MindmapNode[] = [];
+                            for (const child of record.children) {
+                                const normalizedChild = normalizeStructuredNode(child);
+                                if (!normalizedChild) return null;
+                                children.push(normalizedChild);
+                            }
+                            if (children.length > 0) {
+                                node.children = children;
+                            }
+                        }
+
+                        return node;
+                    };
+
+                    const normalizeStructuredMindmap = (value: unknown): MindmapNode[] | null => {
+                        let roots: unknown = value;
+                        if (value && typeof value === 'object' && !Array.isArray(value)) {
+                            const record = value as Record<string, unknown>;
+                            if (record.mindmap !== undefined) {
+                                roots = record.mindmap;
+                            } else if (record.root !== undefined) {
+                                roots = record.root;
+                            }
+                        }
+
+                        const rootValues = Array.isArray(roots) ? roots : [roots];
+                        if (rootValues.length === 0) return null;
+
+                        const normalizedRoots: MindmapNode[] = [];
+                        for (const root of rootValues) {
+                            const normalizedRoot = normalizeStructuredNode(root);
+                            if (!normalizedRoot) return null;
+                            normalizedRoots.push(normalizedRoot);
+                        }
+                        return normalizedRoots;
+                    };
+
+                    const parseDataAppData = (raw: string, doc: Document): unknown | null => {
+                        const candidates = [raw];
+                        const decoder = doc.createElement('textarea');
+                        decoder.innerHTML = raw;
+                        if (decoder.value !== raw) {
+                            candidates.push(decoder.value);
+                        }
+
+                        for (const candidate of candidates) {
+                            try {
+                                return JSON.parse(candidate);
+                            } catch (parseError) {
+                                // Try the next decoding level.
+                            }
+                        }
+                        return null;
+                    };
+
+                    const extractStructuredMindmap = (
+                        doc: Document
+                    ): { mindmap: MindmapNode[]; svg: string | null } | null => {
+                        const dataElements = Array.from(doc.querySelectorAll('[data-app-data]'));
+                        for (const dataElement of dataElements) {
+                            const rawData = dataElement.getAttribute('data-app-data');
+                            if (!rawData) continue;
+
+                            const parsedData = parseDataAppData(rawData, doc);
+                            if (parsedData === null) continue;
+
+                            const mindmap = normalizeStructuredMindmap(parsedData);
+                            if (!mindmap) continue;
+
+                            const svgElement = dataElement.querySelector('svg[role="tree"]')
+                                || dataElement.querySelector('svg')
+                                || doc.querySelector('svg[role="tree"]');
+                            return { mindmap, svg: svgElement?.outerHTML || null };
+                        }
+                        return null;
                     };
 
                     /**
@@ -205,13 +306,26 @@ export const extractMindmap = async (tabId: number, format: ExportFormat): Promi
 
                         // Only extract mindmap for mindmap formats
                         if (formatArg === 'OPML' || formatArg === 'FreeMind' || formatArg === 'JSONCanvas' || formatArg === 'SVG' || formatArg === 'Markdown' || formatArg === 'HTML') {
-                            // Look for mindmap viewer component
-                            const mindmapViewer = doc.querySelector('mindmap-viewer');
-                            if (mindmapViewer) {
+                            // New NotebookLM embeds the complete tree in app-root[data-app-data].
+                            // Prefer it because it remains complete even when SVG nodes are collapsed.
+                            const structuredMindmap = extractStructuredMindmap(doc);
+                            if (structuredMindmap) {
+                                return {
+                                    success: true,
+                                    data: structuredMindmap,
+                                    frameUrl: doc.URL
+                                };
+                            }
+
+                            // Fall back to the legacy SVG representation. Current builds no longer
+                            // wrap the SVG in mindmap-viewer, so also recognize the ARIA tree directly.
+                            const svgElement = doc.querySelector('mindmap-viewer svg[role="tree"]')
+                                || doc.querySelector('mindmap-viewer svg')
+                                || doc.querySelector('svg[role="tree"]');
+                            if (svgElement) {
                                 // Find all SVG nodes with role="treeitem"
-                                const svgNodes = Array.from(mindmapViewer.querySelectorAll('g.node[role="treeitem"]'));
-                                const svgLinks = Array.from(mindmapViewer.querySelectorAll('path.link'));
-                                const svgElement = mindmapViewer.querySelector('svg');
+                                const svgNodes = Array.from(svgElement.querySelectorAll('g.node[role="treeitem"]'));
+                                const svgLinks = Array.from(svgElement.querySelectorAll('path.link'));
 
                                 if (svgNodes.length === 0) {
                                     return { success: false, error: 'no_nodes_found', frameUrl: doc.URL };
